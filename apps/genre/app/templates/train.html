@@ -1,0 +1,628 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Runs · BEARDOWN</title>
+<link rel="icon" type="image/svg+xml" href="/static/assets/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/css/style.css">
+<style>
+  /* Runs panel — shared TRON tokens from style.css, rp- namespace */
+  .rp-wrap{max-width:1080px;margin:0 auto;padding:22px}
+  .rp-fk{font-family:var(--disp);letter-spacing:.22em;color:var(--cyan);font-size:12px;
+         text-shadow:0 0 12px rgba(45,226,230,.4)}
+  .rp-title{font-family:var(--disp);font-weight:700;letter-spacing:.06em;margin:.25em 0 .15em;font-size:26px}
+  .rp-sub{color:var(--muted);font-size:13px;line-height:1.6;max-width:84ch}
+  .rp-sec{font-family:var(--disp);letter-spacing:.16em;color:var(--cyan);font-size:12.5px;
+          text-transform:uppercase;margin:26px 0 10px;display:flex;align-items:center;gap:10px}
+  .rp-sec::after{content:"";flex:1;height:1px;background:var(--line)}
+  b{color:#eaf6f8}
+  code{font-family:var(--mono);color:var(--cyan);background:#0a131c;border:1px solid var(--line);
+       border-radius:3px;padding:1px 5px}
+
+  /* KPI tiles (usage roll-up) */
+  .rp-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-top:4px}
+  .rp-kpi{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:11px 13px}
+  .rp-kpi .kv{font-family:var(--disp);font-weight:700;font-size:19px;color:var(--text)}
+  .rp-kpi .kl{color:var(--muted);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;margin-top:3px}
+  .rp-kpi .ku{color:var(--cyan-dim);font-size:11px}
+
+  /* generic card */
+  .rp-card{background:var(--panel);border:1px solid var(--line);border-radius:10px;
+           padding:16px 18px;margin:12px 0;position:relative;overflow:hidden}
+  .rp-card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--line)}
+  .rp-card.pass::before{background:var(--good)}
+  .rp-card.fail::before{background:var(--amber)}
+  .rp-card.frozen::before{background:var(--cyan)}
+  .rp-h{display:flex;align-items:center;gap:11px;flex-wrap:wrap;margin-bottom:2px}
+  .rp-name{font-family:var(--disp);font-weight:700;font-size:16px;letter-spacing:.04em}
+  .rp-meta{color:var(--muted);font-size:11.5px;letter-spacing:.04em}
+  .rp-pill{font-size:10px;letter-spacing:.13em;text-transform:uppercase;padding:3px 8px;
+           border-radius:3px;border:1px solid currentColor}
+  .rp-pill.pass{color:var(--good)} .rp-pill.fail{color:var(--amber)} .rp-pill.cyan{color:var(--cyan)}
+  .rp-spacer{flex:1}
+
+  /* metric chips row */
+  .rp-chips{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 6px}
+  .rp-chip{background:#0a131c;border:1px solid var(--line);border-radius:6px;padding:7px 11px;min-width:96px}
+  .rp-chip .cv{font-family:var(--disp);font-weight:700;font-size:17px;color:var(--text)}
+  .rp-chip .cl{color:var(--muted);font-size:10px;letter-spacing:.09em;text-transform:uppercase;margin-top:2px}
+  .rp-chip.good .cv{color:var(--good)} .rp-chip.amber .cv{color:var(--amber)} .rp-chip.cyan .cv{color:var(--cyan)}
+
+  /* two-column body */
+  .rp-cols{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:10px}
+  @media(max-width:760px){.rp-cols{grid-template-columns:1fr}}
+  .rp-block{background:#0a131c;border:1px solid var(--line);border-radius:7px;padding:11px 13px}
+  .rp-block h4{margin:0 0 8px;font-family:var(--disp);font-size:11px;letter-spacing:.13em;
+               text-transform:uppercase;color:var(--cyan-dim)}
+  .rp-kvtab{display:grid;grid-template-columns:auto 1fr;gap:3px 12px;font-size:12.5px}
+  .rp-kvtab .k{color:var(--muted)} .rp-kvtab .v{color:var(--text);text-align:right;font-variant-numeric:tabular-nums}
+  .rp-basis{font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;padding:1px 5px;border-radius:3px;
+            border:1px solid currentColor;margin-left:5px}
+  .rp-basis.measured{color:var(--good)} .rp-basis.modeled{color:var(--amber)}
+
+  /* per-genre bars */
+  .rp-bars{display:grid;grid-template-columns:64px 1fr 42px;gap:4px 8px;align-items:center;font-size:11.5px;margin-top:2px}
+  .rp-bars .g{color:var(--muted);text-align:right}
+  .rp-bars .track{height:9px;background:#0a131c;border:1px solid var(--line);border-radius:5px;overflow:hidden}
+  .rp-bars .fill{height:100%;border-radius:5px}
+  .rp-bars .pct{color:var(--text);font-variant-numeric:tabular-nums;text-align:right}
+
+  /* svg curve */
+  .rp-curve{width:100%;height:150px;display:block}
+  .rp-legend{display:flex;gap:14px;font-size:11px;color:var(--muted);margin-top:6px;flex-wrap:wrap}
+  .rp-legend i{display:inline-block;width:11px;height:3px;vertical-align:middle;margin-right:5px;border-radius:2px}
+
+  /* ops table */
+  table.rp-ops{width:100%;border-collapse:collapse;font-size:11.5px;margin-top:2px}
+  table.rp-ops th,table.rp-ops td{text-align:right;padding:3px 6px;border-bottom:1px solid var(--line)}
+  table.rp-ops th:first-child,table.rp-ops td:first-child{text-align:left;color:var(--cyan-dim)}
+  table.rp-ops th{color:var(--muted);font-weight:400;letter-spacing:.06em;text-transform:uppercase;font-size:10px}
+  table.rp-ops td{font-variant-numeric:tabular-nums}
+
+  /* raw json reveal */
+  details.rp-raw{margin-top:11px;border-top:1px solid var(--line);padding-top:9px}
+  details.rp-raw summary{cursor:pointer;color:var(--muted);font-size:11.5px;letter-spacing:.08em;
+                         text-transform:uppercase;list-style:none}
+  details.rp-raw summary::-webkit-details-marker{display:none}
+  details.rp-raw summary::before{content:"▸ ";color:var(--cyan)}
+  details.rp-raw[open] summary::before{content:"▾ "}
+  details.rp-raw pre{margin:8px 0 0;background:#070d14;border:1px solid var(--line);border-radius:6px;
+                     padding:11px 13px;overflow:auto;max-height:340px;font-size:11px;line-height:1.5;color:#9fc7cf}
+
+  .rp-empty{background:var(--panel);border:1px dashed var(--line);border-radius:10px;padding:22px;
+            color:var(--muted);font-size:13px;line-height:1.7}
+  .rp-empty b{color:var(--text)}
+
+  /* toggle viewer */
+  .rp-toggles{display:flex;gap:14px;flex-wrap:wrap;align-items:center;margin:10px 0 4px}
+  .rp-seg{display:inline-flex;border:1px solid var(--line);border-radius:5px;overflow:hidden}
+  .rp-seg button{font-family:var(--mono);background:var(--panel);border:none;color:var(--muted);
+    padding:6px 13px;cursor:pointer;letter-spacing:.1em;font-size:11.5px;text-transform:uppercase;
+    border-right:1px solid var(--line)}
+  .rp-seg button:last-child{border-right:none}
+  .rp-seg button:hover{color:var(--text)}
+  .rp-seg button.on{background:var(--cyan);color:#04161a}
+  .rp-seg.amber button.on{background:var(--amber)}
+  .rp-segl{color:var(--muted);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;margin-right:-8px}
+
+  .rp-scalars{display:grid;grid-template-columns:repeat(auto-fit,minmax(132px,1fr));gap:9px;margin-top:6px}
+  .rp-stat{background:#0a131c;border:1px solid var(--line);border-radius:7px;padding:9px 12px}
+  .rp-stat .v{font-family:var(--disp);font-weight:700;font-size:17px;color:var(--text)}
+  .rp-stat .l{color:var(--muted);font-size:9.5px;letter-spacing:.09em;text-transform:uppercase;margin-top:3px}
+
+  /* per-genre table */
+  table.rp-pg{width:100%;border-collapse:collapse;font-size:12px;margin-top:6px}
+  table.rp-pg th,table.rp-pg td{padding:4px 8px;border-bottom:1px solid var(--line);text-align:right;font-variant-numeric:tabular-nums}
+  table.rp-pg th{color:var(--muted);font-weight:400;text-transform:uppercase;letter-spacing:.06em;font-size:10px}
+  table.rp-pg td:first-child,table.rp-pg th:first-child{text-align:left;color:var(--cyan-dim)}
+  table.rp-pg .f1cell{position:relative}
+  table.rp-pg .f1bar{position:absolute;left:0;top:50%;transform:translateY(-50%);height:60%;
+    border-radius:3px;opacity:.28;z-index:0} table.rp-pg .f1cell span{position:relative;z-index:1}
+
+  /* confusion heatmap */
+  .rp-cm{display:grid;gap:2px;margin-top:8px;font-size:9px;max-width:600px}
+  .rp-cm .cell{border-radius:2px;display:flex;align-items:center;justify-content:center;
+    color:#04161a;font-variant-numeric:tabular-nums;height:30px;cursor:default;font-size:9.5px}
+  .rp-cm .axl{color:var(--muted);display:flex;align-items:center;justify-content:flex-end;padding-right:4px;font-size:9.5px}
+  .rp-cm .axt{color:var(--muted);text-align:center;font-size:8.5px;writing-mode:vertical-rl;transform:rotate(180deg);height:52px}
+  .rp-cmnote{color:var(--muted);font-size:11px;margin-top:7px;line-height:1.6}
+
+  /* per-genre: grouped horizontal bars (all scores) */
+  .rp-pgleg{display:flex;gap:16px;font-size:11px;color:var(--muted);margin:6px 0 10px;flex-wrap:wrap}
+  .rp-pgleg i{display:inline-block;width:11px;height:8px;border-radius:2px;vertical-align:middle;margin-right:5px}
+  .rp-pgblock{margin:8px 0;padding-bottom:6px;border-bottom:1px solid var(--line)}
+  .rp-pgname{font-family:var(--mono);font-size:11.5px;color:var(--cyan-dim);margin-bottom:3px}
+  .rp-pgbar{display:grid;grid-template-columns:24px 1fr 42px;gap:8px;align-items:center;font-size:11px;margin:2px 0}
+  .rp-pgbar .lab{color:var(--muted);text-align:right;letter-spacing:.05em}
+  .rp-pgbar .track{height:8px;background:#0a131c;border:1px solid var(--line);border-radius:5px;overflow:hidden}
+  .rp-pgbar .fill{height:100%;border-radius:5px}
+  .rp-pgbar .val{text-align:right;font-variant-numeric:tabular-nums;color:var(--text)}
+
+  /* reliability diagram */
+  .rp-rel{width:100%;height:220px;display:block;margin-top:6px}
+  .rp-relstats{display:flex;gap:14px;flex-wrap:wrap;margin-top:6px}
+  .rp-foot{color:var(--muted);font-size:12px;margin-top:24px;border-top:1px solid var(--line);padding-top:12px;line-height:1.6}
+</style>
+</head>
+<body class="page">
+<div class="rp-wrap">
+
+  <div class="rp-fk">F·O·R·G·E //  TRAINING · RUNS</div>
+  <div class="rp-title">Runs</div>
+  <div class="rp-sub">The kitchen sink. Everything <code>train.py</code> records, rendered straight from
+    the artifacts on disk — no recomputation. Each run emits a <code>run.json</code> (full config,
+    per-epoch curve, headline metrics, embedded compute) and a <code>compute.json</code>; the frozen
+    bundle carries the canonical per-genre model card. Raw JSON for every run is one click away at the
+    bottom of its card.</div>
+
+  <!-- USAGE ROLL-UP -->
+  <div class="rp-sec">Compute ledger</div>
+  <div id="rpLedger"><div class="rp-empty">reading <code>/api/usage</code>…</div></div>
+
+  <!-- FROZEN MODEL CARD(S) + METRICS WALL -->
+  <div class="rp-sec">Frozen model card · metrics wall</div>
+  <div id="rpCards"><div class="rp-empty">reading <code>/api/metrics_full</code>…</div></div>
+
+  <!-- RUN ROSTER -->
+  <div class="rp-sec">Run history</div>
+  <div id="rpRuns"><div class="rp-empty">reading <code>/api/runs</code>…</div></div>
+
+  <div class="rp-foot">Sources: <code>runs/&lt;model&gt;/&lt;ts&gt;/run.json</code> +
+    <code>compute.json</code> (training tier), <code>models/&lt;model&gt;/metrics.json</code> (frozen
+    bundle), and <code>_shared/usage.py</code> (energy/carbon/$). The ledger here and the
+    <code>python _shared/usage.py</code> CLI read the same records and agree by construction. Modeled
+    energy is TDP×time — edit <code>_shared/usage_assumptions.yaml</code> to make the dollars real.</div>
+
+</div>
+
+<script>
+const GENRE_C = {  // stable hues so a genre keeps its colour across val/test
+  blues:"#2de2e6", classical:"#39d98a", country:"#f0a500", disco:"#ff6a1a",
+  hiphop:"#b56cff", jazz:"#5ec8ff", metal:"#ff5470", pop:"#ffd166",
+  reggae:"#6ee7b7", rock:"#9fb3c8"
+};
+// viridis colormap (9 anchor stops sampled from matplotlib viridis), for science plots
+const VIRIDIS = [
+  [0.000,[68,1,84]],   [0.125,[71,45,123]], [0.250,[59,82,139]],
+  [0.375,[44,114,142]],[0.500,[33,145,140]],[0.625,[40,174,128]],
+  [0.750,[94,201,98]], [0.875,[173,220,48]],[1.000,[253,231,37]]
+];
+function viridis(t){
+  t = Math.max(0, Math.min(1, t));
+  for(let i=0;i<VIRIDIS.length-1;i++){
+    const [a,ca]=VIRIDIS[i], [b,cb]=VIRIDIS[i+1];
+    if(t<=b){ const f=(t-a)/(b-a||1);
+      return `rgb(${Math.round(ca[0]+f*(cb[0]-ca[0]))},${Math.round(ca[1]+f*(cb[1]-ca[1]))},${Math.round(ca[2]+f*(cb[2]-ca[2]))})`; }
+  }
+  return "rgb(253,231,37)";
+}
+const VIRIDIS_CSS = "linear-gradient(to right," + VIRIDIS.map(([s,c])=>`rgb(${c[0]},${c[1]},${c[2]}) ${(s*100).toFixed(0)}%`).join(",") + ")";
+const $ = (s,r=document)=>r.querySelector(s);
+const esc = s => String(s).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+const fmt = (x,d=4)=> (x==null||Number.isNaN(x)) ? "—" : (+x).toFixed(d);
+const pct = x => (x==null||Number.isNaN(x)) ? "—" : (100*x).toFixed(1)+"%";
+const when = ts => { if(!ts) return ""; const d=new Date(ts*1000);
+  return isNaN(d) ? "" : d.toLocaleString([], {year:"numeric",month:"short",day:"2-digit",hour:"2-digit",minute:"2-digit"}); };
+
+function basisBadge(b){
+  if(!b) return "";
+  const meas = /^measured/.test(b);
+  return `<span class="rp-basis ${meas?'measured':'modeled'}" title="${esc(b)}">${meas?'measured':'modeled'}</span>`;
+}
+
+// ---- usage ledger (KPI tiles + per-experiment) -----------------------------
+async function paintLedger(){
+  let L=null;
+  try{ const r=await fetch("/api/usage"); if(r.ok) L=await r.json(); }catch(e){}
+  const host=$("#rpLedger");
+  if(!L || !L.totals || !L.totals.n){
+    host.innerHTML = `<div class="rp-empty">No runs recorded yet — the ledger fills in once
+      <code>train.py</code> emits a <code>compute.json</code>.</div>`;
+    return;
+  }
+  const t=L.totals, meas=L.all_energy_measured;
+  const tiles=[
+    ["runs", t.n, ""],
+    ["wall", (t.wall_seconds/60).toFixed(1), "min"],
+    ["energy", (t.energy_kwh*1000).toFixed(1), "Wh"],
+    ["carbon", (t.carbon_kg*1000).toFixed(1), "g CO₂e"],
+    ["cost · local", "$"+t.cost_local_usd.toFixed(3), ""],
+    ["cost · cloud", "$"+t.cost_cloud_usd.toFixed(3), ""],
+  ];
+  let html = `<div class="rp-kpis">` + tiles.map(([l,v,u])=>
+    `<div class="rp-kpi"><div class="kv">${v}</div><div class="kl">${l}</div>
+       ${u?`<div class="ku">${u}</div>`:""}</div>`).join("") + `</div>`;
+  html += `<div class="rp-meta" style="margin-top:8px">energy basis:
+    ${basisBadge(meas?"measured":"modeled")} · roll-up of ${t.n} run(s)
+    across ${Object.keys(L.by_experiment||{}).length} experiment(s) · generated ${esc(L.generated||"")}</div>`;
+  host.innerHTML = html;
+}
+
+// ---- per-genre F1 bars ------------------------------------------------------
+function bars(per){
+  if(!per) return "";
+  const rows = Object.entries(per).sort((a,b)=>b[1]-a[1]).map(([g,v])=>{
+    const c = GENRE_C[g]||"var(--cyan)";
+    return `<div class="g">${esc(g)}</div>
+      <div class="track"><div class="fill" style="width:${(100*v).toFixed(1)}%;background:${c}"></div></div>
+      <div class="pct">${(100*v).toFixed(0)}</div>`;
+  }).join("");
+  return `<div class="rp-bars">${rows}</div>`;
+}
+
+// ---- frozen model card + metrics-wall toggle viewer ------------------------
+const VS = { full:null, split:"val", tab:"overview", raw:false };  // viewer state
+
+async function paintCards(){
+  const host=$("#rpCards");
+  let MF=null;
+  try{ const r=await fetch("/api/metrics_full"); if(r.ok) MF=await r.json(); }catch(e){}
+  if(MF && MF.cards && MF.cards.length){
+    VS.full = MF.cards[0].full;                 // first frozen bundle
+    VS.full._name = MF.cards[0].name;
+    const splits = Object.keys(VS.full.splits||{});
+    VS.split = splits.includes("val") ? "val" : (splits[0]||"val");
+    renderViewer();
+    return;
+  }
+  // fallback: simple per-genre F1 card from /api/model_card (metrics.py not run yet)
+  await paintSimpleCard(host);
+}
+
+function renderViewer(){
+  const f=VS.full, host=$("#rpCards");
+  const cv=f.cv||{}, acc=f.acceptance||{};
+  const splits=Object.keys(f.splits||{});
+  const passed=!!acc.passed;
+  const seg=(label,opts,cur,key,cls="")=>`<span class="rp-segl">${label}</span><div class="rp-seg ${cls}">`+
+    opts.map(([v,t])=>`<button class="${cur===v?'on':''}" data-${key}="${v}">${t}</button>`).join("")+`</div>`;
+  const tabs=[["overview","Overview"],["genre","Per-genre"],["confusion","Confusion"],
+              ["calibration","Calibration"],["roc","ROC"]];
+  host.innerHTML=`
+    <div class="rp-card frozen">
+      <div class="rp-h">
+        <span class="rp-name">${esc(f._name||f.bundle||"model")}</span>
+        <span class="rp-pill cyan">frozen bundle</span>
+        <span class="rp-spacer"></span>
+        <span class="rp-pill ${passed?'pass':'fail'}">${passed?'gate ✓':'below gate'}</span>
+      </div>
+      <div class="rp-chips">
+        <span class="rp-chip cyan"><span class="cv">${fmt(cv.mean,3)}<span style="font-size:11px;color:var(--muted)"> ±${fmt(cv.std,3)}</span></span><span class="cl">CV mean (${cv.folds||"—"}-fold)</span></span>
+        <span class="rp-chip"><span class="cv">${pct((f.splits[VS.split]?.scalars||{}).accuracy)}</span><span class="cl">${VS.split} acc</span></span>
+        <span class="rp-chip"><span class="cv">${fmt((f.splits[VS.split]?.scalars||{}).macro_f1,3)}</span><span class="cl">${VS.split} macro-F1</span></span>
+        <span class="rp-chip"><span class="cv">${fmt((f.splits[VS.split]?.scalars||{}).roc_auc_macro,3)}</span><span class="cl">${VS.split} ROC-AUC</span></span>
+      </div>
+      <div class="rp-toggles">
+        ${seg("split", splits.map(s=>[s,s]), VS.split, "split")}
+        ${seg("view", tabs, VS.tab, "tab", "amber")}
+      </div>
+      <div id="rpViewBody"></div>
+      <div class="rp-meta" style="margin-top:10px">recomputed ${esc(f.generated||"")} · schema ${esc(f.schema_version||"")} · from the frozen weights (no retrain)</div>
+      <details class="rp-raw"><summary>raw metrics_full.json</summary><pre>${esc(JSON.stringify(f,null,2))}</pre></details>
+    </div>`;
+  host.querySelectorAll("[data-split]").forEach(b=>b.onclick=()=>{VS.split=b.dataset.split;renderViewer();});
+  host.querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>{VS.tab=b.dataset.tab;renderViewer();});
+  renderViewBody();
+}
+
+function renderViewBody(){
+  const f=VS.full, sp=f.splits[VS.split], body=$("#rpViewBody");
+  if(!sp){ body.innerHTML=`<div class="rp-meta">no ${esc(VS.split)} split</div>`; return; }
+  const G=f.genres;
+  if(VS.tab==="overview")    body.innerHTML=viewOverview(sp);
+  else if(VS.tab==="genre")  body.innerHTML=viewGenre(sp,G);
+  else if(VS.tab==="confusion"){ body.innerHTML=viewConfusion(sp,G); wireConfToggle(); }
+  else if(VS.tab==="calibration") body.innerHTML=viewCalibration(sp);
+  else if(VS.tab==="roc")    body.innerHTML=viewRoc(sp,G);
+}
+
+function viewOverview(sp){
+  const s=sp.scalars, items=[
+    ["accuracy",pct(s.accuracy)],["balanced acc",pct(s.balanced_accuracy)],
+    ["macro F1",fmt(s.macro_f1,3)],["weighted F1",fmt(s.weighted_f1,3)],["micro F1",fmt(s.micro_f1,3)],
+    ["macro precision",fmt(s.macro_precision,3)],["macro recall",fmt(s.macro_recall,3)],
+    ["cohen κ",fmt(s.cohen_kappa,3)],["top-2 acc",pct(s.top2_accuracy)],
+    ["ROC-AUC macro",fmt(s.roc_auc_macro,3)],["ROC-AUC micro",fmt(s.roc_auc_micro,3)],
+    ["log loss",fmt(s.log_loss,3)],["brier",fmt(s.brier,3)],["n",s.n],
+  ];
+  return `<div class="rp-scalars">`+items.map(([l,v])=>
+    `<div class="rp-stat"><div class="v">${v}</div><div class="l">${l}</div></div>`).join("")+`</div>`;
+}
+
+function viewGenre(sp,G){
+  const pg=sp.per_genre;
+  const MC={precision:"#2de2e6", recall:"#f0a500", f1:"#39d98a"};  // metric colors
+  const sorted=Object.entries(pg).sort((a,b)=>b[1].f1-a[1].f1);
+  // horizontal graphs — three bars (P / R / F1) per genre
+  const bar=(lab,v,c)=>`<div class="rp-pgbar"><span class="lab">${lab}</span>
+      <div class="track"><div class="fill" style="width:${(100*v).toFixed(1)}%;background:${c}"></div></div>
+      <span class="val">${fmt(v,3)}</span></div>`;
+  const blocks=sorted.map(([g,m])=>`
+    <div class="rp-pgblock">
+      <div class="rp-pgname">${esc(g)} <span style="color:var(--muted)">· n=${m.support}</span></div>
+      ${bar("P", m.precision, MC.precision)}
+      ${bar("R", m.recall,    MC.recall)}
+      ${bar("F1",m.f1,        MC.f1)}
+    </div>`).join("");
+  const legend=`<div class="rp-pgleg">
+      <span><i style="background:${MC.precision}"></i>precision</span>
+      <span><i style="background:${MC.recall}"></i>recall</span>
+      <span><i style="background:${MC.f1}"></i>F1</span></div>`;
+  // raw table — the numbers
+  const trows=sorted.map(([g,m])=>`<tr>
+      <td>${esc(g)}</td><td>${fmt(m.precision,3)}</td><td>${fmt(m.recall,3)}</td>
+      <td>${fmt(m.f1,3)}</td><td>${m.support}</td></tr>`).join("");
+  // macro footer
+  const s=sp.scalars;
+  const table=`<table class="rp-pg"><thead><tr><th>genre</th><th>precision</th><th>recall</th><th>F1</th><th>support</th></tr></thead>
+    <tbody>${trows}</tbody>
+    <tfoot><tr style="border-top:2px solid var(--line)">
+      <td style="color:var(--cyan)">macro avg</td><td>${fmt(s.macro_precision,3)}</td>
+      <td>${fmt(s.macro_recall,3)}</td><td>${fmt(s.macro_f1,3)}</td><td>${s.n}</td></tr></tfoot></table>`;
+  return legend + blocks +
+    `<h4 style="margin:14px 0 2px;font-family:var(--disp);font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:var(--cyan-dim)">raw numbers</h4>` +
+    table;
+}
+
+// confusion heatmap (row-normalized recall view, toggle to raw counts)
+function viewConfusion(sp,G){
+  const cm=sp.confusion, raw=cm.raw, norm=cm.row_normalized, k=G.length;
+  const M = VS.raw ? raw : norm;
+  const maxRaw = Math.max(...raw.flat(),1);
+  const tval=(v)=> VS.raw ? v/maxRaw : v;            // 0..1 -> viridis
+  const txt=(i,j,v)=> (VS.raw? v : (v>=0.005? Math.round(v*100):"") );
+  let grid=`<div class="rp-cm" style="grid-template-columns:56px repeat(${k},1fr)">`;
+  grid+=`<div></div>`+G.map(g=>`<div class="axt">${esc(g)}</div>`).join("");
+  for(let i=0;i<k;i++){
+    grid+=`<div class="axl">${esc(G[i])}</div>`;
+    for(let j=0;j<k;j++){
+      const v=M[i][j], rc=raw[i][j], pc=norm[i][j], t=tval(v);
+      const title=`true ${G[i]} → pred ${G[j]}: ${rc} (${(100*pc).toFixed(0)}%)`;
+      // viridis is dark (purple) low, bright (yellow) high -> light text on the dark end
+      const fg = t<0.55 ? "#dfe7ea" : "#04161a";
+      grid+=`<div class="cell" title="${esc(title)}" style="background:${viridis(t)};color:${fg}">${txt(i,j,v)}</div>`;
+    }
+  }
+  grid+=`</div>`;
+  const cbHi = VS.raw ? maxRaw : "100%";
+  const colorbar=`<div style="display:flex;align-items:center;gap:8px;margin-top:10px;font-size:10px;color:var(--muted)">
+      <span>0</span>
+      <div style="flex:1;max-width:240px;height:10px;border:1px solid var(--line);border-radius:3px;background:${VIRIDIS_CSS}"></div>
+      <span>${cbHi}</span>
+      <span style="margin-left:4px;letter-spacing:.08em;text-transform:uppercase">viridis · ${VS.raw?'count':'recall %'}</span>
+    </div>`;
+  return `<div class="rp-toggles" style="margin-top:2px">
+      <span class="rp-segl">cells</span>
+      <div class="rp-seg"><button class="${!VS.raw?'on':''}" id="cmNorm">row % (recall)</button>
+        <button class="${VS.raw?'on':''}" id="cmRaw">raw counts</button></div></div>
+    ${grid}${colorbar}
+    <div class="rp-cmnote">Rows = true genre, columns = predicted. The bright (yellow) diagonal is correct;
+      brighter off-diagonal cells are where it leaks. Hover any cell for the count. Look for <b>symmetric</b>
+      off-diagonal pairs (a genuine boundary) vs <b>one-directional</b> bleed (a fixable bias).</div>`;
+}
+function wireConfToggle(){
+  const n=$("#cmNorm"), r=$("#cmRaw");
+  if(n) n.onclick=()=>{VS.raw=false;renderViewBody();};
+  if(r) r.onclick=()=>{VS.raw=true;renderViewBody();};
+}
+
+// reliability diagram
+function viewCalibration(sp){
+  const cal=sp.calibration, bins=cal.bins||[];
+  const W=520,H=220,padL=36,padR=12,padT=12,padB=28, plotW=W-padL-padR, plotH=H-padT-padB;
+  const x=v=>padL+plotW*v, y=v=>padT+plotH*(1-v);
+  const nb=bins.length, bw=plotW/nb;
+  let bars="";
+  bins.forEach((b,i)=>{
+    if(b.count===0||b.acc==null) return;
+    const cx=padL+bw*(i+0.5), bx=padL+bw*i+1.5, bwidth=bw-3;
+    const accH=plotH*b.acc;
+    // gap (over/under-confidence) shaded from acc up/down to confidence
+    const top=Math.min(b.acc,b.conf), bot=Math.max(b.acc,b.conf);
+    bars+=`<rect x="${bx.toFixed(1)}" y="${y(b.acc).toFixed(1)}" width="${bwidth.toFixed(1)}" height="${accH.toFixed(1)}" fill="#2de2e6" opacity="0.55"/>`;
+    bars+=`<rect x="${bx.toFixed(1)}" y="${y(bot).toFixed(1)}" width="${bwidth.toFixed(1)}" height="${(plotH*(bot-top)).toFixed(1)}" fill="#ff5470" opacity="0.30"/>`;
+  });
+  const grid=[0,.25,.5,.75,1].map(v=>`
+    <line x1="${padL}" y1="${y(v).toFixed(1)}" x2="${W-padR}" y2="${y(v).toFixed(1)}" stroke="#1c2a3a"/>
+    <text x="${padL-6}" y="${(y(v)+3).toFixed(1)}" fill="#6f8693" font-size="9" text-anchor="end">${v.toFixed(2)}</text>`).join("");
+  const diag=`<line x1="${x(0)}" y1="${y(0)}" x2="${x(1)}" y2="${y(1)}" stroke="#6f8693" stroke-dasharray="4 3"/>`;
+  const svg=`<svg class="rp-rel" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet">
+    ${grid}${bars}${diag}
+    <text x="${padL}" y="${H-8}" fill="#6f8693" font-size="9">conf 0</text>
+    <text x="${W-padR}" y="${H-8}" fill="#6f8693" font-size="9" text-anchor="end">1</text>
+    <text x="10" y="${padT+6}" fill="#6f8693" font-size="9">acc</text></svg>`;
+  const chip=(l,v)=>`<div class="rp-stat"><div class="v">${v}</div><div class="l">${l}</div></div>`;
+  return svg+`<div class="rp-relstats">
+      ${chip("ECE",fmt(cal.ece,4))}${chip("MCE",fmt(cal.mce,4))}${chip("brier",fmt(sp.scalars.brier,4))}
+      ${chip("bins",cal.n_bins)}</div>
+    <div class="rp-cmnote">Cyan = observed accuracy per confidence bin; dashed line = perfect calibration.
+      Red overlay marks the gap (bin above the line = under-confident, below = over-confident). ECE is the
+      count-weighted mean gap.</div>`;
+}
+
+function viewRoc(sp,G){
+  const roc=sp.roc, auc=roc.per_genre_auc, ap=roc.per_genre_ap;
+  const rows=Object.keys(auc).sort((a,b)=>(auc[b]??-1)-(auc[a]??-1)).map(g=>{
+    const c=GENRE_C[g]||"var(--cyan)", a=auc[g], pa=ap[g];
+    return `<div class="g">${esc(g)}</div>
+      <div class="track"><div class="fill" style="width:${a!=null?(100*a).toFixed(1):0}%;background:${c}"></div></div>
+      <div class="pct">${a!=null?a.toFixed(3):"—"}</div>`;
+  }).join("");
+  const chip=(l,v)=>`<div class="rp-stat"><div class="v">${v}</div><div class="l">${l}</div></div>`;
+  const s=sp.scalars;
+  return `<h4 style="margin:2px 0 4px;font-family:var(--disp);font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:var(--cyan-dim)">macro-averaged</h4>
+    <div class="rp-scalars" style="margin-bottom:10px">
+      ${chip("macro F1",fmt(s.macro_f1,3))}${chip("macro precision",fmt(s.macro_precision,3))}${chip("macro recall",fmt(s.macro_recall,3))}
+      ${chip("ROC-AUC macro",fmt(roc.macro_auc,3))}${chip("ROC-AUC micro",fmt(roc.micro_auc,3))}</div>
+    <h4 style="margin:6px 0;font-family:var(--disp);font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:var(--cyan-dim)">per-genre AUC (one-vs-rest)</h4>
+    <div class="rp-bars">${rows}</div>
+    <div class="rp-cmnote">Macro = unweighted mean over the 10 genres (every genre counts equally, so rock/disco
+      pull it down as hard as classical pulls it up). AUC is threshold-free — a weak-F1 genre with high AUC is
+      mostly a threshold/precision problem; low AUC means the score itself can't separate it.</div>`;
+}
+
+// fallback: the simple per-genre F1 card when metrics_full.json isn't present yet
+async function paintSimpleCard(host){
+  let C=null;
+  try{ const r=await fetch("/api/model_card"); if(r.ok) C=await r.json(); }catch(e){}
+  if(!C || !C.cards || !C.cards.length){
+    host.innerHTML=`<div class="rp-empty"><b>No frozen bundle found.</b></div>`; return;
+  }
+  const note=`<div class="rp-empty" style="margin-bottom:10px">Showing the legacy <code>metrics.json</code>.
+    For the full toggle viewer (confusion · calibration · ROC), run:<br>
+    <code>python projects\\genre\\src\\metrics.py --config projects\\genre\\configs\\beardown.yaml --bundle projects\\genre\\models\\beardown</code></div>`;
+  host.innerHTML = note + C.cards.map(card=>{
+    const m=card.metrics||{}, cv=m.cv||{}, val=m.val||{}, test=m.test||{}, acc=m.acceptance||{};
+    const passed=!!acc.passed;
+    return `<div class="rp-card frozen">
+      <div class="rp-h"><span class="rp-name">${esc(card.name)}</span>
+        <span class="rp-pill cyan">frozen bundle</span><span class="rp-spacer"></span>
+        <span class="rp-pill ${passed?'pass':'fail'}">${passed?'gate ✓':'below gate'}</span></div>
+      <div class="rp-chips">
+        <span class="rp-chip cyan"><span class="cv">${fmt(cv.mean,3)} ±${fmt(cv.std,3)}</span><span class="cl">CV mean</span></span>
+        <span class="rp-chip"><span class="cv">${pct(val.accuracy)}</span><span class="cl">val acc</span></span>
+        <span class="rp-chip"><span class="cv">${pct(test.accuracy)}</span><span class="cl">test acc</span></span></div>
+      <div class="rp-cols">
+        <div class="rp-block"><h4>per-genre F1 · val</h4>${bars(val.per_genre_f1)}</div>
+        <div class="rp-block"><h4>per-genre F1 · test</h4>${bars(test.per_genre_f1)}</div></div>
+    </div>`;
+  }).join("");
+}
+
+// ---- training curve (svg) ---------------------------------------------------
+function curve(epochs){
+  const E=(epochs||[]).filter(e=>e!=null);
+  if(E.length<2) return `<div class="rp-meta">no per-epoch history</div>`;
+  const W=520,H=150,padL=34,padR=10,padT=10,padB=22;
+  const n=E.length;
+  const xs=i=>padL+(W-padL-padR)*(i/(n-1));
+  const accY=v=>padT+(H-padT-padB)*(1-v);                     // acc on [0,1]
+  const losses=E.map(e=>e.val_loss).filter(v=>v!=null);
+  const lmax=losses.length?Math.max(...losses):1;
+  const lossY=v=>padT+(H-padT-padB)*(1-(lmax>0?v/lmax:0));    // loss scaled to its own max
+  const path=(key,fn)=>{
+    const pts=E.map((e,i)=> e[key]==null?null:`${xs(i).toFixed(1)},${fn(e[key]).toFixed(1)}`).filter(Boolean);
+    return pts.length?`<polyline points="${pts.join(" ")}" fill="none" stroke-width="1.6"`:null;
+  };
+  const pTrain=path("train_acc",accY), pVal=path("val_acc",accY), pLoss=path("val_loss",lossY);
+  // best val_acc marker
+  let bi=-1,bv=-1; E.forEach((e,i)=>{ if(e.val_acc!=null && e.val_acc>bv){bv=e.val_acc;bi=i;} });
+  const grid=[0,0.25,0.5,0.75,1.0].map(v=>`
+    <line x1="${padL}" y1="${accY(v).toFixed(1)}" x2="${W-padR}" y2="${accY(v).toFixed(1)}" stroke="#1c2a3a" stroke-width="1"/>
+    <text x="${padL-6}" y="${(accY(v)+3).toFixed(1)}" fill="#6f8693" font-size="9" text-anchor="end">${v.toFixed(2)}</text>`).join("");
+  const best = bi>=0 ? `<circle cx="${xs(bi).toFixed(1)}" cy="${accY(bv).toFixed(1)}" r="3.4" fill="#f0a500"/>
+     <text x="${xs(bi).toFixed(1)}" y="${(accY(bv)-7).toFixed(1)}" fill="#f0a500" font-size="9" text-anchor="middle">best ${bv.toFixed(3)} @ ep ${bi+1}</text>` : "";
+  return `<svg class="rp-curve" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet">
+    ${grid}
+    ${pLoss?pLoss+' stroke="#ff6a1a" stroke-dasharray="3 3" opacity="0.85"/>':""}
+    ${pTrain?pTrain+' stroke="#6f8693"/>':""}
+    ${pVal?pVal+' stroke="#2de2e6"/>':""}
+    ${best}
+    <text x="${padL}" y="${H-6}" fill="#6f8693" font-size="9">ep 1</text>
+    <text x="${W-padR}" y="${H-6}" fill="#6f8693" font-size="9" text-anchor="end">ep ${n}</text>
+  </svg>
+  <div class="rp-legend">
+    <span><i style="background:#2de2e6"></i>val acc</span>
+    <span><i style="background:#6f8693"></i>train acc</span>
+    <span><i style="background:#ff6a1a"></i>val loss (scaled /${lmax.toFixed(2)})</span>
+    <span><i style="background:#f0a500"></i>best</span>
+  </div>`;
+}
+
+// ---- compute + usage blocks -------------------------------------------------
+function computeBlock(c){
+  if(!c) return "";
+  const flops = c.est_flops!=null ? (c.est_flops/1e9).toFixed(2)+" GFLOP" : "—";
+  const vram  = c.peak_vram_mb!=null ? c.peak_vram_mb.toFixed(0)+" MB" : "—";
+  let ops="";
+  if(Array.isArray(c.ops)&&c.ops.length){
+    ops = `<table class="rp-ops"><thead><tr><th>path</th><th>wall s</th><th>n</th><th>peak MB</th></tr></thead><tbody>`
+      + c.ops.map(o=>`<tr><td>${esc(o.label)}</td><td>${fmt(o.wall_s,3)}</td><td>${o.n??"—"}</td>
+          <td>${o.peak_vram_mb!=null?o.peak_vram_mb.toFixed(0):(o.peak_rss_mb!=null?o.peak_rss_mb.toFixed(0):"—")}</td></tr>`).join("")
+      + `</tbody></table>`;
+  }
+  return `<div class="rp-block"><h4>compute</h4>
+    <div class="rp-kvtab">
+      <div class="k">device</div><div class="v">${esc(c.device||"—")}</div>
+      <div class="k">params</div><div class="v">${c.n_params!=null?c.n_params.toLocaleString():"—"}</div>
+      <div class="k">est FLOPs</div><div class="v">${flops}</div>
+      <div class="k">wall</div><div class="v">${fmt(c.wall_seconds,2)} s</div>
+      <div class="k">throughput</div><div class="v">${fmt(c.throughput_samples_per_s,1)} smp/s</div>
+      <div class="k">peak RSS</div><div class="v">${c.peak_rss_mb!=null?c.peak_rss_mb.toFixed(0)+" MB":"—"}</div>
+      <div class="k">peak VRAM</div><div class="v">${vram}</div>
+    </div>${ops?`<div style="margin-top:8px">${ops}</div>`:""}</div>`;
+}
+
+function usageBlock(u){
+  if(!u) return `<div class="rp-block"><h4>usage</h4><div class="rp-meta">ledger unavailable</div></div>`;
+  return `<div class="rp-block"><h4>energy · carbon · cost</h4>
+    <div class="rp-kvtab">
+      <div class="k">energy</div><div class="v">${(u.energy_kwh*1000).toFixed(2)} Wh ${basisBadge(u.energy_basis)}</div>
+      <div class="k">avg power</div><div class="v">${fmt(u.avg_power_watts,1)} W ${basisBadge(u.power_basis)}</div>
+      <div class="k">carbon</div><div class="v">${(u.carbon_kg*1000).toFixed(2)} g CO₂e</div>
+      <div class="k">cost · local</div><div class="v">$${u.cost_local_usd.toFixed(4)}</div>
+      <div class="k">cost · cloud</div><div class="v">$${u.cost_cloud_usd.toFixed(4)}</div>
+      <div class="k">device·hours</div><div class="v">${fmt(u.device_hours,4)}</div>
+    </div></div>`;
+}
+
+// ---- run roster -------------------------------------------------------------
+async function paintRuns(){
+  let R=null;
+  try{ const r=await fetch("/api/runs"); if(r.ok) R=await r.json(); }catch(e){}
+  const host=$("#rpRuns");
+  if(!R || !R.runs || !R.runs.length){
+    host.innerHTML = `<div class="rp-empty"><b>No runs recorded yet.</b><br>
+      Train / re-freeze the backbone and this fills with one card per run:
+      <br><code>python projects/genre/src/train.py --config projects/genre/configs/beardown.yaml</code>
+      <br><br>The frozen model card above is read straight from the delivered bundle, so it's here regardless.</div>`;
+    return;
+  }
+  host.innerHTML = R.runs.map(run=>{
+    const fm=run.final_metrics||{}, tgt=run.paper_target||{};
+    const gate = tgt.accept_min ?? 0.75;
+    const passed = (fm.val_accuracy!=null) && (fm.val_accuracy>=gate);
+    const cls = passed?"pass":"fail";
+    return `
+    <div class="rp-card ${cls}">
+      <div class="rp-h">
+        <span class="rp-name">${esc(run.model||"?")}</span>
+        <span class="rp-meta">${esc(run.run_id||"")} · ${when(run.created)}
+          ${run.git_sha?` · <code>${esc(run.git_sha)}</code>`:""} · split ${esc(run.split_mode||"?")}
+          · schema ${esc(run.schema_version||"?")}</span>
+        <span class="rp-spacer"></span>
+        <span class="rp-pill ${passed?'pass':'fail'}">${passed?'gate ✓':'below gate'}</span>
+      </div>
+
+      <div class="rp-chips">
+        <span class="rp-chip ${passed?'good':'amber'}"><span class="cv">${pct(fm.val_accuracy)}</span><span class="cl">val acc</span></span>
+        <span class="rp-chip"><span class="cv">${fmt(fm.val_macro_f1,3)}</span><span class="cl">val macro-F1</span></span>
+        <span class="rp-chip"><span class="cv">${pct(fm.test_accuracy)}</span><span class="cl">test acc</span></span>
+        <span class="rp-chip"><span class="cv">${fmt(fm.test_macro_f1,3)}</span><span class="cl">test macro-F1</span></span>
+        <span class="rp-chip cyan"><span class="cv">${fmt(fm.cv_mean_acc,3)}<span style="font-size:11px;color:var(--muted)"> ±${fmt(fm.cv_std_acc,3)}</span></span><span class="cl">CV mean</span></span>
+      </div>
+
+      <div class="rp-block" style="margin-top:6px">
+        <h4>training curve</h4>${curve(run.epochs)}
+      </div>
+
+      <div class="rp-cols">
+        ${computeBlock(run.compute)}
+        ${usageBlock(run.usage)}
+      </div>
+
+      <details class="rp-raw"><summary>config</summary>
+        <pre>${esc(JSON.stringify(run.config||{},null,2))}</pre></details>
+      <details class="rp-raw"><summary>raw run.json (everything)</summary>
+        <pre>${esc(JSON.stringify(run,null,2))}</pre></details>
+    </div>`;
+  }).join("");
+}
+
+paintLedger(); paintCards(); paintRuns();
+</script>
+</body>
+</html>

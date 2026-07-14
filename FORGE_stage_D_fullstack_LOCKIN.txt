@@ -1,0 +1,73 @@
+================================================================================
+FORGE — STAGE-D FULL-STACK LOCK-IN RECORD
+INFO 698 capstone · 3rd-party hosting architecture · locked 2026-07-13 · rev1.1 domain+repo
+================================================================================
+
+--------------------------------------------------------------------------------
+DECISION (one line)
+--------------------------------------------------------------------------------
+Home box + Cloudflare Tunnel serves the per-experiment Flask containers under one
+Cloudflare-registered domain; docs stay on GitHub Pages at the apex; one subdomain
+per experiment. Recurring cost = the domain (~$10/yr). Zero app-code changes.
+
+--------------------------------------------------------------------------------
+TOPOLOGY (the DNS map)
+--------------------------------------------------------------------------------
+forge-observatory.com            -> GitHub Pages (INFO_698_documentation)      [static, free]
+genre.forge-observatory.com      -> Tunnel -> genre container   (projects/genre/app)
+phonon.forge-observatory.com     -> Tunnel -> phonon container  (projects/phonon/app)
+atlas.forge-observatory.com      -> Tunnel -> atlas container   (designed on the fly)
+forge.forge-observatory.com      -> RESERVED (INFO_698_software, later)
+
+Tunnel sidecar rides the docker network -> ingress targets service names
+(http://genre:5000 etc). No host ports need publishing at all.
+
+--------------------------------------------------------------------------------
+3RD-PARTY SERVICES (all of them)
+--------------------------------------------------------------------------------
+Cloudflare Registrar    domain purchase, at-cost (.com ~$10.11/yr, renews same)
+Cloudflare DNS + TLS    free plan; CF nameservers mandatory w/ Registrar (desired)
+Cloudflare Tunnel       free (Zero Trust free plan); cloudflared, outbound-only
+GitHub Pages            docs hosting (already in use)
+-- nothing else. No VPS, no PaaS, no monthly bill.
+
+--------------------------------------------------------------------------------
+WHY (rationale, terse)
+--------------------------------------------------------------------------------
+- Desktop CPU/RAM >> any $6-9 VPS -> HMC gold-standard path stays usable.
+- Tunnel is outbound-only: no port forwarding, no static IP, home IP never
+  published, inbound firewall stays closed, TLS automatic at the edge.
+- Subdomains, not /paths: Flask apps assume root -> zero code change; Tunnel
+  ingress maps hostname->service natively; per-app crash isolation matches
+  the one-container-per-EXP design.
+- Non-binding: everything is docker-compose. Escape hatch = copy compose to a
+  VPS and repoint DNS. Nothing in the stack changes.
+
+--------------------------------------------------------------------------------
+KNOWN LIMITS (accepted)
+--------------------------------------------------------------------------------
+- Site is up only while the box is awake -> cloudflared as a service,
+  restart: unless-stopped on containers, disable machine sleep.
+- Residential upload bandwidth is the ceiling (fine at committee-scale traffic).
+
+--------------------------------------------------------------------------------
+BUILD SEQUENCE
+--------------------------------------------------------------------------------
+P0  Buy domain @ CF Registrar; Zero Trust free-plan signup            [Steve, now]
+P1  cloudflared sidecar service in docker-compose + ingress rules
+    (tunnel token in .env, NOT in git)                                [next]
+P2  DNS: apex + www -> GitHub Pages (CNAME flattening);
+    subdomain CNAMEs auto-created by the tunnel
+P3  Compose grows one service per experiment (genre/phonon/atlas) so
+    all run simultaneously; internal :5000 each, no host publishing
+P4  atlas app designed on the fly; slots into the same pattern
+P5  (optional) GitHub Actions: build forge:cpu on tag
+
+--------------------------------------------------------------------------------
+OPEN ITEMS
+--------------------------------------------------------------------------------
+- Domain name: TBD at checkout
+- Zero Trust team name: TBD
+- Repo currently lives under OneDrive -> verify bind-mount + sync don't
+  fight on a long-running server (P1 check; may serve from a non-synced copy)
+- atlas experiment app: designed during build

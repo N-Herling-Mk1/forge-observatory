@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="BEARDOWN">
+  <rect width="64" height="64" rx="12" fill="#0a0a0a"/>
+  <!-- B body: squarer left stem, rounded right lobes (rTL,rTR,rBR,rBL = 4,11,11,4) -->
+  <path fill="#f5a407" d="M15 12
+           L42 12 A11 11 0 0 1 53 23
+           L53 41 A11 11 0 0 1 42 52
+           L15 52 A4 4 0 0 1 11 48
+           L11 16 A4 4 0 0 1 15 12 Z"/>
+  <!-- counters (punched in bg colour) -->
+  <rect x="18.2" y="19.4" width="25.4" height="9.0" rx="3" fill="#0a0a0a"/>
+  <rect x="18.2" y="35.6" width="27.2" height="9.0" rx="3" fill="#0a0a0a"/>
+</svg>

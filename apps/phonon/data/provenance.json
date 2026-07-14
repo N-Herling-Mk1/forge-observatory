@@ -1,0 +1,37 @@
+{
+  "schema": "provenance/1.0",
+  "project": "phonon",
+  "dataset": "Chen et al. (2021) DFPT phonon density of states",
+  "underlying_source": "Petretto et al., high-throughput DFPT phonon database (Sci. Data 5, 180065, 2018)",
+  "obtained": {
+    "from_repo": "https://github.com/zhantaochen/phonondos_e3nn",
+    "branch": "main",
+    "pulled": "2026-06-24",
+    "verified": "2026-06-25",
+    "found_via": "the Chen et al. paper's data-availability link to the authors' GitHub reproduction repo"
+  },
+  "paper": {
+    "citation": "Chen, Andrejevic, Smidt, Ding, Xu, Chuang, Lou, Cheng, Owens, Li. Direct Prediction of Phonon Density of States with Euclidean Neural Networks. Adv. Sci. 8, 2004214 (2021).",
+    "arxiv": "2009.05163",
+    "doi": "10.1002/advs.202004214",
+    "pdf": ["https://arxiv.org/pdf/2009.05163", "https://onlinelibrary.wiley.com/doi/10.1002/advs.202004214"]
+  },
+  "composition": { "n_materials": 1524, "splits": {"train":1220,"val":152,"test":152},
+    "grid": {"bins":51, "range_cm":[0,1000], "step_cm":20.0, "shared":true},
+    "high_res_truth": {"bins":4404, "smoothing":"Savitzky-Golay window=101 order=3"} },
+  "representations": ["periodic_crystal_graph (max_radius 5 Å)", "mass_onehot_118", "dos_51bin_0_1000cm"],
+  "license": "see upstream repo",
+  "files": [
+    {"name":"phdos_e3nn_len51max1000_fwin101ord3.pkl","bytes":56003399,"role":"training data: material_id[1524], cif[1524], phfre(51), phdos(1524,51), phfre_gt(4404), phdos_gt(1524,4404)","sha256":"e9f23703c06e09a68562ef0f5501c88e01b182c0d3d4b7b45350ad3ff2fd4410","verified":"sha256"},
+    {"name":"200801_trteva_indices.pkl","bytes":12434,"role":"train/test/val split indices (1220/152/152, disjoint)","sha256":"ea8d82da6bfdadfdd60d980625b179ccebeebdd10e45d045b7667837bb9d3cb3","verified":"sha256"},
+    {"name":"reference_model.torch","bytes":16846038,"role":"authors' trained e3nn model (sanity-check reference, not data)","sha256":null,"verified":"size"},
+    {"name":"mp_screening.csv (mp_data.csv)","bytes":77343,"role":"4347 (mp-id, formula) rows for the downstream high-Cv demo; no DoS","sha256":null,"verified":"size"},
+    {"name":"phdos_dataset.zip","bytes":7389955,"role":"archive the .pkl was extracted from (kept for re-extract)","sha256":null,"verified":"size"}
+  ],
+  "repull_curls": [
+    "https://raw.githubusercontent.com/zhantaochen/phonondos_e3nn/main/models/phdos_e3nn_len51max1000_fwin101ord3.zip",
+    "https://raw.githubusercontent.com/zhantaochen/phonondos_e3nn/main/models/200801_trteva_indices.pkl",
+    "https://raw.githubusercontent.com/zhantaochen/phonondos_e3nn/main/models/200803-1018_len51max1000_fwin101ord3_trial_run_full_data.torch",
+    "https://raw.githubusercontent.com/zhantaochen/phonondos_e3nn/main/data/mp_data.csv"
+  ]
+}

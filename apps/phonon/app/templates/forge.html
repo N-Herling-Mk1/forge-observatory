@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>panel · PHONON</title>
+<link rel="icon" href="/static/assets/favicon.ico" sizes="any">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body class="page">
+  <div class="stub-page">
+    <div class="stub-mark"><span class="dot"></span></div>
+    <h1 class="stub-name" id="stubName">PANEL</h1>
+    <div class="stub-note" id="stubNote">panel scaffolded &mdash; content arrives with its model stage</div>
+    <div class="tag" id="stubTag">stub</div>
+  </div>
+<script>
+  // [display name, one-line description, genealogy stage that fills it in]
+  const map = {
+    experiment: ["EXPERIMENT", "the Chen et al. E(3)NN architecture & reproduction target", "mk1"],
+    eda:        ["EDA", "1,524 crystals: element coverage, spectral entropy, example DOS", "mk1"],
+    data:       ["DATA", "CIF to periodic graph, mass encoding, the 1220/152/152 split", "mk1"],
+    train:      ["TRAINING", "loss curves & the reproduction scorecard", "mk1"],
+    model:      ["MODEL", "the mk1 -> mk2 -> mk3 registry", "mk1"],
+    infer:      ["PREDICT", "DOS Explorer: structure in, predicted spectrum out", "mk1"],
+    derived:    ["DERIVED", "Cv(T), entropy, effective Debye T from the spectrum", "mk1"],
+    alloy:      ["ALLOY", "the A-p B composition sweep (two-hot trick)", "mk1"],
+    forge:      ["FORGE", "the Bayesian last-layer posterior & tau knob", "mk2"],
+    glossary:   ["GLOSSARY", "every term and symbol, equations in KaTeX", "mk1"],
+  };
+  const key = location.pathname.replace(/\//g,"") || "panel";
+  const [name, note, stage] = map[key] || ["PANEL", "placeholder", ""];
+  document.getElementById("stubName").textContent = name;
+  document.getElementById("stubNote").textContent = note;
+  const tag = document.getElementById("stubTag");
+  if(stage){ tag.textContent = "arrives in " + stage; tag.classList.add("tag-" + stage); }
+</script>
+</body>
+</html>

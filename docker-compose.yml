@@ -1,0 +1,38 @@
+# forge-observatory — production compose.
+# All Python executes here (your box). Cloudflare Tunnel is the only ingress:
+# cloudflared reaches apps by SERVICE NAME on the internal network, so no app
+# port is ever exposed beyond 127.0.0.1 (those maps are local smoke-test only).
+services:
+  genre:
+    build: .
+    image: forge-observatory:cpu
+    command: python apps/genre/app/server.py
+    environment: { FORGE_HOST: 0.0.0.0, FORGE_PORT: 5000 }
+    ports: ["127.0.0.1:5001:5000"]
+    restart: unless-stopped
+
+  phonon:
+    build: .
+    image: forge-observatory:cpu
+    command: python apps/phonon/app/server.py
+    environment: { FORGE_HOST: 0.0.0.0, FORGE_PORT: 5000 }
+    ports: ["127.0.0.1:5002:5000"]
+    restart: unless-stopped
+
+  # atlas:                      # designed on the fly — uncomment at birth
+  #   build: .
+  #   image: forge-observatory:cpu
+  #   command: python apps/atlas/app/server.py
+  #   environment: { FORGE_HOST: 0.0.0.0, FORGE_PORT: 5000 }
+  #   ports: ["127.0.0.1:5003:5000"]
+  #   restart: unless-stopped
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    command: tunnel --no-autoupdate run --token ${TUNNEL_TOKEN}
+    restart: unless-stopped
+    depends_on: [genre, phonon]
+# Ingress (set in Zero Trust dashboard, not here):
+#   genre.forge-observatory.com  -> http://genre:5000
+#   phonon.forge-observatory.com -> http://phonon:5000
+#   atlas.forge-observatory.com  -> http://atlas:5000   (later)

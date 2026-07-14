@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DOS Explorer · PHONON</title>
+<link rel="icon" href="/static/assets/favicon.ico" sizes="any">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/css/style.css">
+<style>
+  .dx{ padding:18px 22px 40px; max-width:1180px; margin:0 auto; }
+  .dx-head{ display:flex; align-items:flex-end; justify-content:space-between; gap:16px; flex-wrap:wrap; margin-bottom:6px; }
+  .dx-head h1{ font-family:Orbitron,sans-serif; font-size:26px; letter-spacing:.06em; margin:0; color:var(--ink,#0b2530); }
+  .dx-sub{ font-family:"Share Tech Mono",monospace; font-size:12px; color:#5b7a86; margin-top:3px; }
+  .dx-ckpt{ font-family:"Share Tech Mono",monospace; font-size:11px; color:#5b7a86; border:1px solid #cfe0e6; border-radius:6px; padding:5px 10px; background:rgba(0,229,255,.05); }
+  .dx-rule{ height:2px; background:linear-gradient(90deg,#00b8d4,transparent); margin:10px 0 16px; }
+
+  /* periodic table */
+  .ptable{ display:grid; grid-template-columns:repeat(18,1fr); gap:3px; }
+  .pt{ position:relative; aspect-ratio:1/1; border-radius:4px; border:1px solid #d3e2e8;
+       background:#f3f8fa; cursor:pointer; display:flex; flex-direction:column; align-items:center;
+       justify-content:center; user-select:none; transition:transform .08s, box-shadow .08s; }
+  .pt:hover{ transform:translateY(-2px); box-shadow:0 3px 10px rgba(0,150,180,.25); z-index:2; }
+  .pt .sym{ font-family:Orbitron,sans-serif; font-size:12px; font-weight:700; line-height:1; }
+  .pt .cnt{ font-family:"Share Tech Mono",monospace; font-size:8px; opacity:.85; margin-top:1px; }
+  .pt.ood{ background:#1b1018; border:1px dashed #ff8a3d; }
+  .pt.ood .sym{ color:#ff8a3d; } .pt.ood .cnt{ color:#ff8a3d; }
+  .pt.sel{ outline:2px solid #00e5ff; outline-offset:1px; box-shadow:0 0 12px rgba(0,229,255,.6); }
+  .pt.gap{ visibility:hidden; cursor:default; }
+  .pt.dim{ opacity:.18; pointer-events:none; }
+
+  .dx-legend{ display:flex; align-items:center; gap:14px; flex-wrap:wrap; font-family:"Share Tech Mono",monospace;
+              font-size:11px; color:#5b7a86; margin:4px 0 12px; }
+  .lg-bar{ width:120px; height:10px; border-radius:5px;
+           background:linear-gradient(90deg,#0a3a44,#0a8aa6,#00e5ff); border:1px solid #cfe0e6; }
+  .lg-ood{ width:14px; height:10px; border-radius:3px; background:#1b1018; border:1px dashed #ff8a3d; display:inline-block; }
+
+  .dx-main{ display:grid; grid-template-columns:300px 1fr; gap:18px; margin-top:18px; }
+  @media(max-width:760px){ .dx-main{ grid-template-columns:1fr; } .ptable{ gap:2px; } .pt .cnt{ display:none; } }
+
+  .dx-list{ border:1px solid #d3e2e8; border-radius:8px; background:#fff; overflow:hidden; height:430px; display:flex; flex-direction:column; }
+  .dx-list-head{ font-family:Orbitron,sans-serif; font-size:12px; letter-spacing:.05em; padding:10px 12px;
+                 background:#eef6f8; border-bottom:1px solid #d3e2e8; color:#0b2530; }
+  .dx-list-body{ overflow-y:auto; flex:1; }
+  .mat{ display:flex; align-items:center; justify-content:space-between; gap:8px; padding:8px 12px;
+        border-bottom:1px solid #eef3f5; cursor:pointer; font-family:"Share Tech Mono",monospace; font-size:12px; }
+  .mat:hover{ background:rgba(0,229,255,.07); }
+  .mat.sel{ background:rgba(0,229,255,.15); }
+  .mat .f{ color:#0b2530; font-weight:700; }
+  .mat .ob{ color:#5b7a86; font-size:10px; }
+  .badge{ font-size:8px; padding:1px 5px; border-radius:4px; font-family:"Share Tech Mono",monospace; }
+  .b-train{ background:#dff3e6; color:#1d7a44; } .b-test{ background:#e6eeff; color:#2b51b8; } .b-val{ background:#fff0e0; color:#b5651d; }
+
+  .dx-plot{ border:1px solid #d3e2e8; border-radius:8px; background:#fff; padding:14px 16px; min-height:430px; }
+  .dx-plot-title{ font-family:Orbitron,sans-serif; font-size:13px; letter-spacing:.04em; color:#0b2530; margin-bottom:8px; }
+  .dx-chart svg{ width:100%; height:300px; display:block; }
+  .dx-metrics{ display:flex; gap:18px; flex-wrap:wrap; margin-top:10px; font-family:"Share Tech Mono",monospace; }
+  .mtr{ } .mtr .v{ font-size:18px; color:#0b2530; font-weight:700; } .mtr .l{ font-size:9px; color:#5b7a86; text-transform:uppercase; letter-spacing:.06em; }
+  .mtr .v.ok{ color:#1d7a44; } .mtr .v.bad{ color:#c0392b; }
+  .dx-empty{ font-family:"Share Tech Mono",monospace; font-size:12px; color:#7a949e; padding:40px 0; text-align:center; }
+</style>
+</head>
+<body class="page">
+<div class="dx">
+  <div class="dx-head">
+    <div>
+      <h1>DOS Explorer</h1>
+      <div class="dx-sub">predict a crystal's phonon density of states &middot; mk1 deterministic</div>
+    </div>
+    <div class="dx-ckpt" id="ckpt">checkpoint: loading&hellip;</div>
+  </div>
+  <div class="dx-rule"></div>
+
+  <div class="dx-legend">
+    <span>training coverage</span>
+    <span class="lg-bar"></span>
+    <span>1 &rarr; many materials</span>
+    <span style="margin-left:10px;"><span class="lg-ood"></span> never seen (OOD)</span>
+    <span style="margin-left:auto;color:#7a949e;">click an element &rarr; pick a material &rarr; predict</span>
+  </div>
+
+  <div class="ptable" id="ptable"></div>
+
+  <div class="dx-main">
+    <div class="dx-list">
+      <div class="dx-list-head" id="listHead">all materials</div>
+      <div class="dx-list-body" id="matlist"></div>
+    </div>
+    <div class="dx-plot">
+      <div class="dx-plot-title" id="plotTitle">select a material</div>
+      <div class="dx-chart" id="chart"><div class="dx-empty">predicted DOS (amber) vs DFPT ground truth (cyan) will render here</div></div>
+      <div class="dx-metrics" id="metrics"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const LAYOUT = [{"s":"H","z":1,"c":1,"r":1},{"s":"He","z":2,"c":18,"r":1},{"s":"Li","z":3,"c":1,"r":2},{"s":"Be","z":4,"c":2,"r":2},{"s":"B","z":5,"c":13,"r":2},{"s":"C","z":6,"c":14,"r":2},{"s":"N","z":7,"c":15,"r":2},{"s":"O","z":8,"c":16,"r":2},{"s":"F","z":9,"c":17,"r":2},{"s":"Ne","z":10,"c":18,"r":2},{"s":"Na","z":11,"c":1,"r":3},{"s":"Mg","z":12,"c":2,"r":3},{"s":"Al","z":13,"c":13,"r":3},{"s":"Si","z":14,"c":14,"r":3},{"s":"P","z":15,"c":15,"r":3},{"s":"S","z":16,"c":16,"r":3},{"s":"Cl","z":17,"c":17,"r":3},{"s":"Ar","z":18,"c":18,"r":3},{"s":"K","z":19,"c":1,"r":4},{"s":"Ca","z":20,"c":2,"r":4},{"s":"Sc","z":21,"c":3,"r":4},{"s":"Ti","z":22,"c":4,"r":4},{"s":"V","z":23,"c":5,"r":4},{"s":"Cr","z":24,"c":6,"r":4},{"s":"Mn","z":25,"c":7,"r":4},{"s":"Fe","z":26,"c":8,"r":4},{"s":"Co","z":27,"c":9,"r":4},{"s":"Ni","z":28,"c":10,"r":4},{"s":"Cu","z":29,"c":11,"r":4},{"s":"Zn","z":30,"c":12,"r":4},{"s":"Ga","z":31,"c":13,"r":4},{"s":"Ge","z":32,"c":14,"r":4},{"s":"As","z":33,"c":15,"r":4},{"s":"Se","z":34,"c":16,"r":4},{"s":"Br","z":35,"c":17,"r":4},{"s":"Kr","z":36,"c":18,"r":4},{"s":"Rb","z":37,"c":1,"r":5},{"s":"Sr","z":38,"c":2,"r":5},{"s":"Y","z":39,"c":3,"r":5},{"s":"Zr","z":40,"c":4,"r":5},{"s":"Nb","z":41,"c":5,"r":5},{"s":"Mo","z":42,"c":6,"r":5},{"s":"Tc","z":43,"c":7,"r":5},{"s":"Ru","z":44,"c":8,"r":5},{"s":"Rh","z":45,"c":9,"r":5},{"s":"Pd","z":46,"c":10,"r":5},{"s":"Ag","z":47,"c":11,"r":5},{"s":"Cd","z":48,"c":12,"r":5},{"s":"In","z":49,"c":13,"r":5},{"s":"Sn","z":50,"c":14,"r":5},{"s":"Sb","z":51,"c":15,"r":5},{"s":"Te","z":52,"c":16,"r":5},{"s":"I","z":53,"c":17,"r":5},{"s":"Xe","z":54,"c":18,"r":5},{"s":"Cs","z":55,"c":1,"r":6},{"s":"Ba","z":56,"c":2,"r":6},{"s":"La","z":57,"c":3,"r":6},{"s":"Hf","z":72,"c":4,"r":6},{"s":"Ta","z":73,"c":5,"r":6},{"s":"W","z":74,"c":6,"r":6},{"s":"Re","z":75,"c":7,"r":6},{"s":"Os","z":76,"c":8,"r":6},{"s":"Ir","z":77,"c":9,"r":6},{"s":"Pt","z":78,"c":10,"r":6},{"s":"Au","z":79,"c":11,"r":6},{"s":"Hg","z":80,"c":12,"r":6},{"s":"Tl","z":81,"c":13,"r":6},{"s":"Pb","z":82,"c":14,"r":6},{"s":"Bi","z":83,"c":15,"r":6},{"s":"Po","z":84,"c":16,"r":6},{"s":"At","z":85,"c":17,"r":6},{"s":"Rn","z":86,"c":18,"r":6},{"s":"Fr","z":87,"c":1,"r":7},{"s":"Ra","z":88,"c":2,"r":7},{"s":"Ac","z":89,"c":3,"r":7},{"s":"Rf","z":104,"c":4,"r":7},{"s":"Db","z":105,"c":5,"r":7},{"s":"Sg","z":106,"c":6,"r":7},{"s":"Bh","z":107,"c":7,"r":7},{"s":"Hs","z":108,"c":8,"r":7},{"s":"Mt","z":109,"c":9,"r":7},{"s":"Ds","z":110,"c":10,"r":7},{"s":"Rg","z":111,"c":11,"r":7},{"s":"Cn","z":112,"c":12,"r":7},{"s":"Nh","z":113,"c":13,"r":7},{"s":"Fl","z":114,"c":14,"r":7},{"s":"Mc","z":115,"c":15,"r":7},{"s":"Lv","z":116,"c":16,"r":7},{"s":"Ts","z":117,"c":17,"r":7},{"s":"Og","z":118,"c":18,"r":7},{"s":"Ce","z":58,"c":4,"r":8},{"s":"Pr","z":59,"c":5,"r":8},{"s":"Nd","z":60,"c":6,"r":8},{"s":"Pm","z":61,"c":7,"r":8},{"s":"Sm","z":62,"c":8,"r":8},{"s":"Eu","z":63,"c":9,"r":8},{"s":"Gd","z":64,"c":10,"r":8},{"s":"Tb","z":65,"c":11,"r":8},{"s":"Dy","z":66,"c":12,"r":8},{"s":"Ho","z":67,"c":13,"r":8},{"s":"Er","z":68,"c":14,"r":8},{"s":"Tm","z":69,"c":15,"r":8},{"s":"Yb","z":70,"c":16,"r":8},{"s":"Lu","z":71,"c":17,"r":8},{"s":"Th","z":90,"c":4,"r":9},{"s":"Pa","z":91,"c":5,"r":9},{"s":"U","z":92,"c":6,"r":9},{"s":"Np","z":93,"c":7,"r":9},{"s":"Pu","z":94,"c":8,"r":9},{"s":"Am","z":95,"c":9,"r":9},{"s":"Cm","z":96,"c":10,"r":9},{"s":"Bk","z":97,"c":11,"r":9},{"s":"Cf","z":98,"c":12,"r":9},{"s":"Es","z":99,"c":13,"r":9},{"s":"Fm","z":100,"c":14,"r":9},{"s":"Md","z":101,"c":15,"r":9},{"s":"No","z":102,"c":16,"r":9},{"s":"Lr","z":103,"c":17,"r":9}];
+const CY="#00e5ff", AM="#ffb000";
+let CAT=null, selEl=null, selIdx=null;
+
+fetch("/api/phonon/status").then(r=>r.json()).then(s=>{
+  document.getElementById("ckpt").textContent = s.ready ? ("checkpoint: "+s.ckpt) : "no checkpoint — train mk1 first";
+  if(!s.ready) document.getElementById("ckpt").style.color="#c0392b";
+}).catch(()=>{});
+
+fetch("/api/phonon/catalog").then(r=>r.json()).then(c=>{ CAT=c; renderTable(); listMaterials(null); })
+  .catch(()=>{ document.getElementById("ptable").innerHTML="<div class='dx-empty'>catalog unavailable</div>"; });
+
+function covColor(n,max){
+  const t=Math.log(n+1)/Math.log(max+1);
+  // dark teal -> bright cyan
+  const a=Math.round(40+ t*180), b=Math.round(90+ t*145), g=Math.round(60+ t*145);
+  return `rgb(${a-30|0},${g},${b})`;
+}
+function renderTable(){
+  const cov=CAT.coverage, max=Math.max(...Object.values(cov));
+  const grid=document.getElementById("ptable");
+  // fixed 18x9 grid; place tiles by c,r
+  const byPos={}; LAYOUT.forEach(e=>byPos[e.r+"-"+e.c]=e);
+  let html="";
+  for(let r=1;r<=9;r++){
+    for(let c=1;c<=18;c++){
+      const e=byPos[r+"-"+c];
+      if(!e){ html+=`<div class="pt gap"></div>`; continue; }
+      const n=cov[e.s]||0;
+      if(n===0){
+        html+=`<div class="pt ood" data-el="${e.s}" title="${e.s} — never in training (OOD)"><span class="sym">${e.s}</span><span class="cnt">0</span></div>`;
+      } else {
+        const col=covColor(n,max);
+        const dark = Math.log(n+1)/Math.log(max+1) > .45;
+        html+=`<div class="pt" data-el="${e.s}" title="${e.s} — ${n} material(s)" style="background:${col};border-color:${col};color:${dark?'#04161b':'#0b2530'}"><span class="sym">${e.s}</span><span class="cnt">${n}</span></div>`;
+      }
+    }
+  }
+  grid.innerHTML=html;
+  grid.querySelectorAll(".pt[data-el]").forEach(t=> t.onclick=()=>selectEl(t.dataset.el));
+}
+function selectEl(sym){
+  selEl=sym;
+  document.querySelectorAll(".pt").forEach(t=>t.classList.toggle("sel", t.dataset.el===sym));
+  listMaterials(sym);
+}
+function listMaterials(sym){
+  const head=document.getElementById("listHead"), body=document.getElementById("matlist");
+  let idxs;
+  if(sym){ idxs=CAT.el_idx[sym]||[]; head.textContent = `${sym} — ${idxs.length} material(s)`; }
+  else { idxs=CAT.catalog.map(m=>m.idx); head.textContent = `all materials (${idxs.length})`; }
+  if(sym && idxs.length===0){ body.innerHTML=`<div class="dx-empty">${sym} never appears in training.<br>The model has no data here — the OOD case mk2's uncertainty is built to flag.</div>`; return; }
+  const rows = idxs.slice(0,400).map(i=>{ const m=CAT.catalog[i];
+    return `<div class="mat" data-idx="${m.idx}">
+      <span class="f">${m.formula}</span>
+      <span style="display:flex;gap:8px;align-items:center;">
+        <span class="ob">${m.omega_bar} cm&#8315;&#185;</span>
+        <span class="badge b-${m.split}">${m.split}</span>
+      </span></div>`; }).join("");
+  body.innerHTML=rows;
+  body.querySelectorAll(".mat").forEach(el=> el.onclick=()=>predict(parseInt(el.dataset.idx), el));
+}
+function predict(idx, rowEl){
+  selIdx=idx;
+  document.querySelectorAll(".mat").forEach(m=>m.classList.remove("sel"));
+  if(rowEl) rowEl.classList.add("sel");
+  const m=CAT.catalog[idx];
+  document.getElementById("plotTitle").textContent = `${m.formula}  ·  predicting…`;
+  document.getElementById("chart").innerHTML=`<div class="dx-empty">running mk1 inference…</div>`;
+  document.getElementById("metrics").innerHTML="";
+  fetch("/api/phonon/predict?idx="+idx).then(r=>r.json()).then(d=>{
+    if(d.error){ document.getElementById("chart").innerHTML=`<div class="dx-empty">${d.error}</div>`; return; }
+    drawDOS(d, m.formula);
+  }).catch(e=>{ document.getElementById("chart").innerHTML=`<div class="dx-empty">request failed</div>`; });
+}
+function drawDOS(d, formula){
+  const W=620,H=300,pl=44,pr=12,pt=12,pb=34, iw=W-pl-pr, ih=H-pt-pb;
+  const f=d.freq, fmax=f[f.length-1];
+  const hasTruth = Array.isArray(d.truth);
+  const ymax=Math.max(Math.max(...d.pred), hasTruth?Math.max(...d.truth):0, 1e-6);
+  const X=v=>pl+ iw*(v/fmax), Y=v=>pt+ ih*(1-v/ymax);
+  const path=arr=> arr.map((y,i)=>`${i?'L':'M'}${X(f[i]).toFixed(1)},${Y(y).toFixed(1)}`).join(" ");
+  const area=arr=>`M${X(f[0])},${Y(0)} `+arr.map((y,i)=>`L${X(f[i]).toFixed(1)},${Y(y).toFixed(1)}`).join(" ")+` L${X(f[f.length-1])},${Y(0)} Z`;
+  const xt=[0,200,400,600,800,1000].filter(t=>t<=fmax);
+  let svg=`<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">
+    <rect x="${pl}" y="${pt}" width="${iw}" height="${ih}" fill="#fafdfe" stroke="#e3edf0"/>`;
+  xt.forEach(t=> svg+=`<line x1="${X(t)}" y1="${pt}" x2="${X(t)}" y2="${pt+ih}" stroke="#eef3f5"/><text x="${X(t)}" y="${H-12}" font-size="10" fill="#7a949e" text-anchor="middle" font-family="Share Tech Mono">${t}</text>`);
+  if(hasTruth){
+    svg+=`<path d="${area(d.truth)}" fill="${CY}" opacity="0.12"/>`;
+    svg+=`<path d="${path(d.truth)}" fill="none" stroke="${CY}" stroke-width="1.8"/>`;
+  }
+  svg+=`<path d="${path(d.pred)}" fill="none" stroke="${AM}" stroke-width="1.8" stroke-dasharray="0"/>`;
+  svg+=`<text x="${pl}" y="${H-2}" font-size="10" fill="#7a949e" font-family="Share Tech Mono">phonon frequency  &#969;  [cm&#8315;&#185;]</text>`;
+  svg+=`<text transform="translate(13,${pt+ih/2}) rotate(-90)" font-size="10" fill="#7a949e" text-anchor="middle" font-family="Share Tech Mono">g(&#969;)</text>`;
+  // legend
+  svg+=`<rect x="${W-150}" y="${pt+4}" width="14" height="3" fill="${CY}"/><text x="${W-132}" y="${pt+9}" font-size="10" fill="#5b7a86" font-family="Share Tech Mono">DFPT truth</text>`;
+  svg+=`<rect x="${W-150}" y="${pt+20}" width="14" height="3" fill="${AM}"/><text x="${W-132}" y="${pt+25}" font-size="10" fill="#5b7a86" font-family="Share Tech Mono">mk1 predicted</text>`;
+  svg+=`</svg>`;
+  document.getElementById("plotTitle").textContent = `${formula}  ·  ${d.id}  ·  ${d.ckpt}`;
+  document.getElementById("chart").innerHTML=svg;
+  const within = d.rel_err!=null && d.rel_err<=0.10;
+  let m = `<div class="mtr"><div class="v">${d.omega_bar_pred}</div><div class="l">&#969;&#772; pred cm&#8315;&#185;</div></div>`;
+  if(hasTruth){
+    m += `
+    <div class="mtr"><div class="v">${d.omega_bar_true}</div><div class="l">&#969;&#772; true cm&#8315;&#185;</div></div>
+    <div class="mtr"><div class="v ${within?'ok':'bad'}">${(d.rel_err*100).toFixed(1)}%</div><div class="l">rel err ${within?'(within 10%)':''}</div></div>
+    <div class="mtr"><div class="v">${d.js}</div><div class="l">JS divergence</div></div>
+    <div class="mtr"><div class="v">${d.emd_cm}</div><div class="l">EMD-1 cm&#8315;&#185;</div></div>`;
+  } else {
+    m += `<div class="mtr"><div class="v" style="color:#7a949e">no truth</div><div class="l">pasted CIF — no DFPT label</div></div>`;
+  }
+  document.getElementById("metrics").innerHTML = m;
+}
+</script>
+</body>
+</html>

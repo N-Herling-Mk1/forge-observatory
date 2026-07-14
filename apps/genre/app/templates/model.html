@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Models · BEARDOWN</title>
+<link rel="icon" type="image/svg+xml" href="/static/assets/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/css/style.css">
+<style>
+  /* Model panel — registry comparison + selection. mp- namespace, shared TRON tokens */
+  .mp-wrap{max-width:1080px;margin:0 auto;padding:22px}
+  .mp-fk{font-family:var(--disp);letter-spacing:.22em;color:var(--cyan);font-size:12px;text-shadow:0 0 12px rgba(45,226,230,.4)}
+  .mp-title{font-family:var(--disp);font-weight:700;letter-spacing:.06em;margin:.25em 0 .15em;font-size:26px}
+  .mp-sub{color:var(--muted);font-size:13px;line-height:1.6;max-width:84ch}
+  code{font-family:var(--mono);color:var(--cyan);background:#0a131c;border:1px solid var(--line);border-radius:3px;padding:1px 5px}
+  b{color:#eaf6f8}
+
+  /* active-model banner */
+  .mp-active{background:var(--panel);border:1px solid var(--cyan);border-radius:10px;padding:14px 18px;margin:16px 0;
+    position:relative;overflow:hidden}
+  .mp-active::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--cyan)}
+  .mp-active .lbl{font-family:var(--disp);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--cyan)}
+  .mp-active .id{font-family:var(--disp);font-weight:700;font-size:18px;color:var(--text);margin:3px 0}
+  .mp-active .meta{color:var(--muted);font-size:12px}
+  .mp-active .chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+  .mp-chip{background:#0a131c;border:1px solid var(--line);border-radius:6px;padding:6px 10px}
+  .mp-chip .v{font-family:var(--disp);font-weight:700;font-size:15px;color:var(--text)} .mp-chip.cyan .v{color:var(--cyan)}
+  .mp-chip .l{color:var(--muted);font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;margin-top:2px}
+
+  .mp-sec{font-family:var(--disp);letter-spacing:.16em;color:var(--cyan);font-size:12.5px;text-transform:uppercase;
+    margin:24px 0 8px;display:flex;align-items:center;gap:10px}
+  .mp-sec::after{content:"";flex:1;height:1px;background:var(--line)}
+
+  /* comparison table */
+  .mp-tablewrap{overflow-x:auto}
+  table.mp-cmp{width:100%;border-collapse:collapse;font-size:12px;min-width:760px}
+  table.mp-cmp th,table.mp-cmp td{padding:7px 10px;border-bottom:1px solid var(--line);text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+  table.mp-cmp th{color:var(--muted);font-weight:400;text-transform:uppercase;letter-spacing:.06em;font-size:10px}
+  table.mp-cmp td.model,table.mp-cmp th.model{text-align:left}
+  table.mp-cmp .fam{font-family:var(--disp);font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;
+    color:var(--cyan-dim);padding-top:14px}
+  table.mp-cmp tr.active td{background:rgba(45,226,230,.06)}
+  table.mp-cmp tr.active td.model{box-shadow:inset 3px 0 0 var(--cyan)}
+  .mp-mid{font-family:var(--mono);font-size:12px;color:var(--text)}
+  .mp-mid .ts{color:var(--muted);font-size:11px}
+  .pill{font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;padding:2px 7px;border-radius:3px;border:1px solid currentColor}
+  .pill.pass{color:var(--good)} .pill.fail{color:var(--amber)}
+  .mp-selbtn{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;
+    background:var(--panel);border:1px solid var(--cyan);color:var(--cyan);border-radius:4px;padding:5px 12px;cursor:pointer}
+  .mp-selbtn:hover{background:var(--cyan);color:#04161a}
+  .mp-activebadge{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--cyan)}
+  .dim{color:var(--muted)}
+  .mp-empty{background:var(--panel);border:1px dashed var(--line);border-radius:10px;padding:22px;color:var(--muted);font-size:13px;line-height:1.7}
+  .mp-empty b{color:var(--text)}
+  .mp-foot{color:var(--muted);font-size:12px;margin-top:22px;border-top:1px solid var(--line);padding-top:12px;line-height:1.6}
+  .mp-toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--panel);border:1px solid var(--cyan);
+    color:var(--text);padding:10px 18px;border-radius:8px;font-size:13px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:50}
+  .mp-toast.show{opacity:1}
+</style>
+</head>
+<body class="page">
+<div class="mp-wrap">
+  <div class="mp-fk">F·O·R·G·E //  MODEL · REGISTRY</div>
+  <div class="mp-title">Models</div>
+  <div class="mp-sub">Every training run is saved as an immutable, versioned bundle and indexed here. Compare them
+    on the evidence, then <b>select the active model</b> — the sticky pointer that song drop-in (Inference) and
+    FORGE both resolve to. There's no "best"; the panel lays out the numbers and you pick.</div>
+
+  <div id="mpActive"></div>
+  <div class="mp-sec">Registry · compare &amp; select</div>
+  <div id="mpTable"><div class="mp-empty">reading <code>/api/registry</code>…</div></div>
+
+  <div class="mp-foot">Source: <code>models/registry.json</code> + each <code>models/&lt;family&gt;__&lt;ts&gt;/</code> bundle.
+    Selecting writes the <code>selected</code> pointer; nothing is overwritten or deleted. The deep metrics
+    (confusion · calibration · ROC) for the active model live in the <b>Training</b> panel; run
+    <code>metrics.py --bundle &lt;dir&gt;</code> on any bundle to populate its full wall.</div>
+</div>
+<div class="mp-toast" id="mpToast"></div>
+
+<script>
+const $=(s,r=document)=>r.querySelector(s);
+const esc=s=>String(s).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+const fmt=(x,d=3)=>(x==null||Number.isNaN(x))?"—":(+x).toFixed(d);
+const pct=x=>(x==null||Number.isNaN(x))?"—":(100*x).toFixed(1)+"%";
+const when=ts=>{if(!ts)return"—";const d=new Date(ts*1000);return isNaN(d)?"—":d.toLocaleString([],{year:"numeric",month:"short",day:"2-digit",hour:"2-digit",minute:"2-digit"});};
+
+let REG={selected:null,entries:[]};
+
+async function load(){
+  try{const r=await fetch("/api/registry");REG=await r.json();}catch(e){REG={selected:null,entries:[],error:String(e)};}
+  render();
+}
+
+function render(){
+  const entries=REG.entries||[];
+  const sel=REG.selected;
+  // active banner
+  const a=entries.find(e=>e.id===sel);
+  const ab=$("#mpActive");
+  if(a){
+    const s=a.summary||{};
+    ab.innerHTML=`<div class="mp-active">
+      <div class="lbl">active model · used by inference + FORGE</div>
+      <div class="id">${esc(a.id)}</div>
+      <div class="meta">family <b>${esc(a.family)}</b> · saved ${when(a.created)}${a.git_sha?` · <code>${esc(a.git_sha)}</code>`:""}${a.run_id?` · run ${esc(a.run_id)}`:""}</div>
+      <div class="chips">
+        <span class="mp-chip cyan"><div class="v">${fmt(s.cv_mean,3)} ±${fmt(s.cv_std,3)}</div><div class="l">CV mean</div></span>
+        <span class="mp-chip"><div class="v">${pct(s.val_acc)}</div><div class="l">val acc</div></span>
+        <span class="mp-chip"><div class="v">${pct(s.test_acc)}</div><div class="l">test acc</div></span>
+        <span class="mp-chip"><div class="v">${fmt(s.test_macro_f1,3)}</div><div class="l">test macro-F1</div></span>
+        <span class="mp-chip"><div class="v">${s.test_ece!=null?fmt(s.test_ece,3):"—"}</div><div class="l">test ECE</div></span>
+      </div></div>`;
+  } else {
+    ab.innerHTML=`<div class="mp-active" style="border-color:var(--amber)"><div class="lbl" style="color:var(--amber)">no active model</div>
+      <div class="meta">Select one below, or train a model to populate the registry.</div></div>`;
+  }
+  // table
+  const host=$("#mpTable");
+  if(!entries.length){
+    host.innerHTML=`<div class="mp-empty"><b>No models in the registry yet.</b><br>
+      Train one and it's saved + indexed automatically:<br>
+      <code>python projects\\genre\\src\\train.py --config projects\\genre\\configs\\beardown.yaml</code></div>`;
+    return;
+  }
+  // group by family, families ordered by their newest entry
+  const fams={}; entries.forEach(e=>{(fams[e.family]=fams[e.family]||[]).push(e);});
+  const famOrder=Object.keys(fams).sort((x,y)=>Math.max(...fams[y].map(e=>e.created))-Math.max(...fams[x].map(e=>e.created)));
+  let rows="";
+  for(const fam of famOrder){
+    rows+=`<tr><td class="fam model" colspan="9">${esc(fam)} · ${fams[fam].length} run(s)</td></tr>`;
+    for(const e of fams[fam].sort((p,q)=>q.created-p.created)){
+      const s=e.summary||{}, isSel=e.id===sel;
+      const ts=e.id.split("__")[1]||"";
+      const gate=s.passed==null?`<span class="dim">—</span>`:`<span class="pill ${s.passed?'pass':'fail'}">${s.passed?'pass':'below'}</span>`;
+      const action=isSel?`<span class="mp-activebadge">● active</span>`
+        :`<button class="mp-selbtn" data-id="${esc(e.id)}">select</button>`;
+      rows+=`<tr class="${isSel?'active':''}">
+        <td class="model"><div class="mp-mid">${esc(e.family)} <span class="ts">${esc(ts)}</span></div></td>
+        <td>${pct(s.val_acc)}</td>
+        <td>${pct(s.test_acc)}</td>
+        <td>${fmt(s.test_macro_f1,3)}</td>
+        <td>${fmt(s.cv_mean,3)} <span class="dim">±${fmt(s.cv_std,3)}</span></td>
+        <td>${s.test_ece!=null?fmt(s.test_ece,3):`<span class="dim">—</span>`}</td>
+        <td>${gate}</td>
+        <td>${e.has_metrics_full?`<span class="dim" title="full metrics wall available">✓</span>`:`<span class="dim" title="run metrics.py on this bundle">—</span>`}</td>
+        <td>${action}</td></tr>`;
+    }
+  }
+  host.innerHTML=`<div class="mp-tablewrap"><table class="mp-cmp">
+    <thead><tr>
+      <th class="model">model</th><th>val acc</th><th>test acc</th><th>test F1</th>
+      <th>CV mean±σ</th><th>test ECE</th><th>gate</th><th>full</th><th></th>
+    </tr></thead><tbody>${rows}</tbody></table></div>`;
+  host.querySelectorAll("[data-id]").forEach(b=>b.onclick=()=>selectModel(b.dataset.id));
+}
+
+async function selectModel(id){
+  try{
+    const r=await fetch("/api/model/select",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id})});
+    const d=await r.json();
+    if(d.ok){ toast("active model → "+id); await load(); }
+    else { toast("select failed: "+(d.error||r.status)); }
+  }catch(e){ toast("select failed: "+e); }
+}
+
+function toast(msg){
+  const t=$("#mpToast"); t.textContent=msg; t.classList.add("show");
+  clearTimeout(toast._t); toast._t=setTimeout(()=>t.classList.remove("show"),2200);
+}
+
+load();
+</script>
+</body>
+</html>

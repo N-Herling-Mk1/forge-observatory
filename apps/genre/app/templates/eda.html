@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EDA · BEARDOWN</title>
+<link rel="icon" type="image/svg+xml" href="/static/assets/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body class="eda-page">
+
+  <div class="eda-bar">
+    <span class="eda-tag"><span class="dot"></span> Exploratory Data Analysis</span>
+    <span class="spacer"></span>
+    <div class="phase-toggle" id="phaseToggle"></div>
+    <span class="badge" id="phaseBadge">—</span>
+    <span class="gen" id="gen"></span>
+  </div>
+
+  <section class="eda-summary" id="edaSummary"></section>
+
+  <nav>
+    <button class="active" data-tab="overview">Overview</button>
+    <button data-tab="integrity">Integrity</button>
+    <button data-tab="types">Types</button>
+    <button data-tab="figures">Distributions</button>
+  </nav>
+
+  <main>
+    <section id="overview" class="active">
+      <h2>Snapshot</h2>
+      <div class="cards" id="cards"></div>
+
+      <h2>Data provenance</h2>
+      <div class="panel prov">
+        <div class="prov-row"><span class="pk">Dataset</span>
+          <span class="pv">GTZAN — music genre classification</span></div>
+        <div class="prov-row"><span class="pk">Source</span>
+          <span class="pv"><a href="https://www.kaggle.com/datasets/andradaolteanu/gtzan-dataset-music-genre-classification" target="_blank" rel="noopener">kaggle.com/andradaolteanu/gtzan-dataset-music-genre-classification</a></span></div>
+        <div class="prov-row"><span class="pk">Composition</span>
+          <span class="pv">1,000 audio clips · 30 s each · 10 genres × 100 (blues, classical, country, disco, hiphop, jazz, metal, pop, reggae, rock)</span></div>
+        <div class="prov-row"><span class="pk">Topology</span>
+          <span class="pv"><code>genres_original</code> (30 s WAVs) · <code>images_original</code> (color spectrograms) · <code>features_30_sec.csv</code> + <code>features_3_sec.csv</code> (pre-computed audio features)</span></div>
+        <div class="prov-row"><span class="pk">Completeness</span>
+          <span class="pv">~99% complete; rows with empty/unusable features are skipped. Aligning spectrograms with the feature CSVs leaves a ~10% gap, so validation sets are held to ≥90% coverage.</span></div>
+        <div class="prov-row"><span class="pk">Model</span>
+          <span class="pv">B.E.A.R. D.O.W.N. — Bayesian Evaluation of Audio Representations: A Deep Optimized Waveform Network</span></div>
+        <div class="prov-note">Source: INFO 510 Fall 2025 final project report (Group 7).</div>
+      </div>
+
+      <h2>Class balance &amp; exemplars</h2>
+      <div class="hero" id="hero"></div>
+    </section>
+
+    <section id="integrity">
+      <h2>Missing / corrupt</h2>
+      <div class="panel" id="integrityPanel"></div>
+    </section>
+
+    <section id="types">
+      <h2>Type audit — expected vs actual</h2>
+      <div class="panel"><table id="typeTable"></table></div>
+    </section>
+
+    <section id="figures">
+      <h2>Numeric feature statistics</h2>
+      <div class="scope-bar">
+        <span class="scope-label">scope</span>
+        <select id="genreSelect"></select>
+        <span class="dim">combined, or a single genre</span>
+      </div>
+      <div class="cards" id="featStats"></div>
+
+      <h2>Inspect a variable</h2>
+      <div class="var-toggle">
+        <select id="varSelect"></select>
+        <span class="dim" id="varHint">pick a feature, or click a row below</span>
+      </div>
+      <div class="var-detail" id="varDetail"></div>
+      <div class="per-genre" id="perGenre"></div>
+
+      <h2>All features</h2>
+      <div class="toolbar">
+        <input id="search" placeholder="filter features…  (e.g. mfcc, tempo, rms)">
+        <span class="count" id="figCount"></span>
+      </div>
+      <div class="table-wrap"><table id="featTable"></table></div>
+    </section>
+  </main>
+
+  <div class="modal" id="modal"><img id="modalImg"><div class="cap" id="modalCap"></div></div>
+
+  <script src="/static/js/app.js"></script>
+</body>
+</html>

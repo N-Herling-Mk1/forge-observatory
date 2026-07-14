@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Inference · BEARDOWN</title>
+<link rel="icon" type="image/svg+xml" href="/static/assets/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/css/style.css">
+<style>
+  .wrap{max-width:1140px;margin:0 auto;padding:22px}
+  .ix-grid{display:grid;grid-template-columns:minmax(300px,380px) 1fr;gap:20px;align-items:start}
+  @media(max-width:840px){.ix-grid{grid-template-columns:1fr}}
+  .ix-left{display:flex;flex-direction:column;gap:16px}
+
+  .cbar{background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:12px 14px}
+  .cbar .row{display:flex;align-items:center;gap:9px}
+  .cbar .lbl{font-family:var(--disp);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--cyan-dim)}
+  .cbar a{color:var(--cyan-dim);font-size:11.5px;text-decoration:none;margin-left:auto}
+  .cbar ul{list-style:none;margin:10px 0 0;padding:0;display:flex;flex-direction:column;gap:6px}
+  .cbar li{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:12.5px;color:var(--text)}
+  .cbar .dot{width:8px;height:8px;border-radius:50%;background:var(--cyan);box-shadow:0 0 8px var(--cyan);flex:none}
+  .cbar .hint{color:var(--muted);font-size:11px;margin-top:9px;display:block}
+
+  .drop{position:relative;border:2px dashed var(--line);border-radius:10px;padding:44px 20px;text-align:center;
+    background:var(--panel);transition:.15s;cursor:pointer}
+  .drop.hot{border-color:var(--cyan);border-style:solid;
+    background:radial-gradient(circle at 50% 40%, rgba(45,226,230,.18), var(--panel2) 70%);
+    box-shadow:0 0 0 3px rgba(45,226,230,.18), 0 0 40px rgba(45,226,230,.25) inset}
+  .drop.hot h3{color:var(--cyan)}
+  .drop.busy{cursor:progress;border-color:var(--cyan-dim)}
+  .drop h3{font-family:var(--disp);letter-spacing:.14em;color:var(--cyan-dim);margin:0 0 6px;font-size:15px;transition:.15s}
+  .drop p{color:var(--muted);font-size:12px;margin:4px 0}
+
+  .ix-right{min-height:260px}
+  .ix-ph{border:1px dashed var(--line);border-radius:10px;padding:60px 24px;text-align:center;color:var(--muted);
+    font-size:13px;background:var(--panel);line-height:1.7}
+  .ix-ph b{color:var(--text)}
+
+  .prog{display:none;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:20px 20px 22px}
+  .prog.on{display:block;animation:boxPulse 1.8s ease-in-out infinite}
+  @keyframes boxPulse{0%,100%{border-color:var(--line);box-shadow:0 0 0 0 rgba(45,226,230,0)}
+    50%{border-color:var(--cyan-dim);box-shadow:0 0 26px rgba(45,226,230,.18)}}
+  .prog .ptop{display:flex;justify-content:space-between;align-items:center;font-size:12.5px;margin-bottom:10px}
+  .prog .stagewrap{display:flex;align-items:center;gap:9px}
+  .scandot{width:9px;height:9px;border-radius:50%;background:var(--cyan);animation:dotPulse 1.1s ease-in-out infinite}
+  @keyframes dotPulse{0%,100%{transform:scale(.65);opacity:.55;box-shadow:0 0 0 0 rgba(45,226,230,.55)}
+    50%{transform:scale(1.05);opacity:1;box-shadow:0 0 0 7px rgba(45,226,230,0)}}
+  .prog .stage{font-family:var(--mono);color:var(--cyan-dim);letter-spacing:.03em}
+  .prog .nums{font-variant-numeric:tabular-nums;color:var(--text)} .prog .nums .el{color:var(--muted)}
+  .prog #ppct{animation:numPulse 1.3s ease-in-out infinite}
+  @keyframes numPulse{0%,100%{opacity:.72}50%{opacity:1}}
+  .ptrack{position:relative;height:14px;background:var(--panel2);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+  .pfill{position:absolute;left:0;top:0;bottom:0;width:0%;border-radius:8px;
+    background:linear-gradient(90deg,var(--cyan-dim),var(--cyan));transition:width .12s linear;
+    animation:fillPulse 1.4s ease-in-out infinite}
+  @keyframes fillPulse{0%,100%{box-shadow:0 0 6px rgba(45,226,230,.5)}
+    50%{box-shadow:0 0 22px rgba(45,226,230,.95)}}
+  .pfill::after{content:"";position:absolute;inset:0;border-radius:8px;
+    background:linear-gradient(90deg,transparent,rgba(255,255,255,.30),transparent);
+    background-size:64px 100%;animation:shim 1s linear infinite}
+  @keyframes shim{0%{background-position:-64px 0}100%{background-position:260px 0}}
+
+  .mcard{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px 18px;margin-bottom:16px}
+  .mcard.err-card{opacity:.8}
+  .mhdr{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;border-bottom:1px solid var(--line);padding-bottom:9px;margin-bottom:10px}
+  .mhdr .mlabel{font-family:var(--disp);font-size:13px;letter-spacing:.10em;text-transform:uppercase;color:var(--cyan)}
+  .mhdr .macc{font-family:var(--mono);font-size:11.5px;color:var(--amber)}
+  .mhdr .mclip{font-family:var(--mono);font-size:11px;color:var(--muted);margin-left:auto}
+
+  .verdict{display:flex;align-items:baseline;gap:12px;margin:2px 0 6px}
+  .verdict .g{font-family:var(--disp);font-size:26px;color:var(--amber);text-shadow:0 0 14px rgba(240,165,0,.35);text-transform:uppercase;letter-spacing:.08em}
+  .verdict .p{color:var(--text);font-size:14px} .verdict .s{color:var(--muted);font-size:12px}
+  .bars{margin:12px 0 2px}
+  .bar{display:grid;grid-template-columns:84px 1fr 96px;align-items:center;gap:10px;margin:7px 0}
+  .bar .lab{color:var(--muted);font-size:12px;text-align:right;text-transform:uppercase;letter-spacing:.08em}
+  .track{position:relative;height:16px;background:var(--panel2);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+  .fill{position:absolute;left:0;top:0;bottom:0;background:linear-gradient(90deg,var(--cyan-dim),var(--cyan));border-radius:8px}
+  .whisk{position:absolute;top:50%;height:8px;transform:translateY(-50%);border-left:1px solid var(--amber);border-right:1px solid var(--amber);opacity:.85}
+  .num{font-size:12px;color:var(--text)} .num .sig{color:var(--amber);opacity:.85}
+  .meta{color:var(--muted);font-size:11.5px;margin:8px 0 0}
+  .mcard .err{color:var(--bad);font-size:12.5px;margin-top:4px}
+  .err{color:var(--bad);font-size:13px;margin-top:12px}
+  .hide{display:none}
+  table.seg{width:100%;border-collapse:collapse;margin-top:8px;font-size:12px}
+  table.seg th{color:var(--muted);font-weight:400;text-transform:uppercase;letter-spacing:.08em;font-size:10.5px;text-align:left;padding:5px 8px}
+  table.seg td{padding:5px 8px;border-top:1px solid var(--line);color:var(--text)}
+</style>
+</head>
+<body class="page">
+<div class="wrap">
+  <h2>Inference — drop a track</h2>
+
+  <div class="ix-grid">
+    <div class="ix-left">
+      <div class="cbar">
+        <div class="row">
+          <span class="lbl">comparing models</span>
+          <a href="/model" title="full registry & comparison">manage &#8599;</a>
+        </div>
+        <ul>
+          <li><span class="dot"></span>mk1 &middot; beardown</li>
+          <li><span class="dot"></span>mk2 &middot; beardown_rrm</li>
+          <li><span class="dot"></span>mk3 &middot; beardown_3sec</li>
+        </ul>
+        <span class="hint">one upload, scored by all three &mdash; a graph per model.</span>
+      </div>
+
+      <div id="drop" class="drop">
+        <h3>&#128059; DROP AUDIO HERE</h3>
+        <p>wav / mp3 / flac</p>
+        <p>scored by mk1 &middot; mk2 &middot; mk3, each with epistemic &sigma;</p>
+        <p style="color:var(--cyan-dim)">click to choose a file</p>
+        <input id="file" type="file" accept="audio/*" class="hide">
+      </div>
+    </div>
+
+    <div class="ix-right">
+      <div id="placeholder" class="ix-ph">&#128059; <b>awaiting a track</b><br>drop audio on the left &mdash; one prediction graph per model appears here.</div>
+
+      <div id="prog" class="prog">
+        <div class="ptop">
+          <span class="stagewrap"><span class="scandot"></span><span class="stage" id="pstage">scanning&hellip;</span></span>
+          <span class="nums"><span id="ppct">0%</span> &middot; <span class="el" id="pel">0.0s</span></span>
+        </div>
+        <div class="ptrack"><div class="pfill" id="pfill"></div></div>
+      </div>
+
+      <div id="err" class="err"></div>
+
+      <div id="result" class="hide">
+        <div class="meta" id="rmeta"></div>
+        <div id="cards"></div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+  const $ = s => document.querySelector(s);
+  const drop = $("#drop"), file = $("#file");
+  const esc = s => String(s == null ? "" : s).replace(/[&<>"]/g, c =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+  let dragDepth = 0;
+  drop.addEventListener("click", () => file.click());
+  drop.addEventListener("dragenter", ev => { ev.preventDefault(); dragDepth++; drop.classList.add("hot"); });
+  drop.addEventListener("dragover", ev => { ev.preventDefault(); });
+  drop.addEventListener("dragleave", ev => { ev.preventDefault(); if (--dragDepth <= 0) { dragDepth = 0; drop.classList.remove("hot"); } });
+  drop.addEventListener("drop", ev => { ev.preventDefault(); dragDepth = 0; drop.classList.remove("hot"); if (ev.dataTransfer.files[0]) send(ev.dataTransfer.files[0]); });
+  file.addEventListener("change", () => { if (file.files[0]) send(file.files[0]); });
+
+  const STAGES = ["decoding audio", "extracting mel + features", "scoring mk1 / mk2 / mk3", "MC-dropout sampling"];
+  let progTimer = null, stageTimer = null, t0 = 0, prog = 0;
+  function startProg() {
+    prog = 0; t0 = performance.now(); let si = 0;
+    $("#placeholder").classList.add("hide"); $("#result").classList.add("hide");
+    $("#prog").classList.add("on"); drop.classList.add("busy");
+    $("#pstage").textContent = STAGES[0] + " \u2026";
+    const tick = () => {
+      prog += (92 - prog) * 0.05;
+      $("#pfill").style.width = prog.toFixed(1) + "%";
+      $("#ppct").textContent = Math.round(prog) + "%";
+      $("#pel").textContent = ((performance.now() - t0) / 1000).toFixed(1) + "s";
+    };
+    progTimer = setInterval(tick, 100); tick();
+    stageTimer = setInterval(() => { si = Math.min(si + 1, STAGES.length - 1); $("#pstage").textContent = STAGES[si] + " \u2026"; }, 1100);
+  }
+  function finishProg(done = true) {
+    clearInterval(progTimer); clearInterval(stageTimer); progTimer = stageTimer = null;
+    drop.classList.remove("busy");
+    if (done) {
+      $("#pfill").style.width = "100%"; $("#ppct").textContent = "100%"; $("#pstage").textContent = "done";
+      setTimeout(() => $("#prog").classList.remove("on"), 450);
+    } else { $("#prog").classList.remove("on"); $("#placeholder").classList.remove("hide"); }
+  }
+
+  async function send(f) {
+    $("#err").textContent = ""; startProg();
+    const fd = new FormData(); fd.append("audio", f);
+    try {
+      const r = await fetch("/api/predict", { method: "POST", body: fd });
+      const d = await r.json();
+      if (!r.ok || d.error) { finishProg(false); $("#err").textContent = d.error || ("error " + r.status); return; }
+      finishProg(true);
+      setTimeout(() => render(d, f.name), 300);
+    } catch (e) { finishProg(false); $("#err").textContent = "request failed: " + e; }
+  }
+
+  function bars(per_genre) {
+    const max = Math.max(...per_genre.map(x => x.prob), 0.0001);
+    return per_genre.map(x => {
+      const w = 100 * x.prob / max, lo = Math.max(0, x.prob - x.sigma), hi = Math.min(1, x.prob + x.sigma);
+      const wl = 100 * lo / max, wh = 100 * hi / max;
+      return '<div class="bar"><span class="lab">' + esc(x.genre) + '</span>' +
+        '<span class="track"><span class="fill" style="width:' + w + '%"></span>' +
+        '<span class="whisk" style="left:' + wl + '%;width:' + Math.max(wh - wl, 1) + '%"></span></span>' +
+        '<span class="num">' + (100 * x.prob).toFixed(1) + '% <span class="sig">\u00b1' + (100 * x.sigma).toFixed(1) + '</span></span></div>';
+    }).join("");
+  }
+
+  function card(m) {
+    if (m.error) {
+      return '<div class="mcard err-card"><div class="mhdr"><span class="mlabel">' + esc(m.label || m.run) +
+        '</span></div><div class="err">' + esc(m.error) + '</div></div>';
+    }
+    const accTxt = (m.test_acc != null) ? esc(m.acc_kind || "test") + " " + (+m.test_acc).toFixed(3) : "no metrics";
+    const clipTxt = m.clip_seconds ? (m.clip_seconds + "s clips \u00b7 " + m.n_windows + " win") : "";
+    const segs = m.segments || [];
+    const segRows = segs.map(s => '<tr><td>' + s.window + '</td><td>' + esc(s.top_genre) + '</td><td>' + (100 * s.top_prob).toFixed(1) + '%</td></tr>').join("");
+    return '<div class="mcard">' +
+      '<div class="mhdr"><span class="mlabel">' + esc(m.label || m.run) + '</span>' +
+      '<span class="macc">' + accTxt + '</span><span class="mclip">' + esc(clipTxt) + '</span></div>' +
+      '<div class="verdict"><span class="g">' + esc(m.top.genre) + '</span>' +
+      '<span class="p">' + (100 * m.top.prob).toFixed(1) + '%</span>' +
+      '<span class="s">\u00b1 ' + (100 * m.top.sigma).toFixed(1) + '% epistemic</span></div>' +
+      '<div class="bars">' + bars(m.per_genre) + '</div>' +
+      '<div class="meta">\u03c3 source: ' + esc(m.sigma_source || "\u2014") + ' \u00b7 rep: ' + esc(m.representation || "\u2014") + '</div>' +
+      '<details><summary style="color:var(--muted);cursor:pointer;font-size:12px;margin-top:6px">per-window detail</summary>' +
+      '<table class="seg"><tr><th>window</th><th>top genre</th><th>confidence</th></tr>' + segRows + '</table></details></div>';
+  }
+
+  function render(d, name) {
+    $("#placeholder").classList.add("hide");
+    $("#result").classList.remove("hide");
+    const models = d.models || [];
+    const dev = d.device ? (" \u00b7 " + d.device) : "";
+    $("#rmeta").textContent = "\u201c" + (name || d.filename || "track") + "\u201d \u00b7 " + models.length + " model(s)" + dev;
+    $("#cards").innerHTML = models.map(card).join("");
+  }
+</script>
+</body>
+</html>

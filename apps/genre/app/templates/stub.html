@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>panel · BEARDOWN</title>
+<link rel="icon" type="image/svg+xml" href="/static/assets/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body class="page">
+  <div class="stub-page">
+    <div class="stub-mark"><span class="dot"></span></div>
+    <h1 class="stub-name" id="stubName">PANEL</h1>
+    <div class="stub-note" id="stubNote">stub — wire this panel to a page or a backend action when ready</div>
+    <div class="tag">stub</div>
+  </div>
+<script>
+  const map = { train:["TRAINING","model training & runs"],
+                model:["MODEL","architecture & weights"],
+                infer:["INFERENCE","predict & posterior"] };
+  const key = location.pathname.replace(/\//g,"");
+  const [name,note] = map[key] || ["PANEL","placeholder"];
+  document.getElementById("stubName").textContent = name;
+  document.getElementById("stubNote").textContent = note + " — stub";
+</script>
+</body>
+</html>

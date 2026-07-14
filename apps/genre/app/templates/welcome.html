@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Welcome · BEARDOWN</title>
+<link rel="icon" type="image/svg+xml" href="/static/assets/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body class="page">
+  <div class="welcome">
+    <div class="welcome-head">
+      <img class="welcome-logo" id="wLogo" alt="" hidden>
+      <div>
+        <div class="welcome-fk">F·O·R·G·E //</div>
+        <h1 class="welcome-title" id="wTitle">BEARDOWN</h1>
+        <div class="welcome-sub" id="wSub">genre recognition</div>
+      </div>
+    </div>
+
+    <p class="welcome-blurb">
+      BEARDOWN is the genre-recognition reproduction in the FORGE experiment suite — a
+      TensorFlow + tensorflow-probability model (custom Flipout Bayesian head) over the
+      GTZAN dataset. Use the rail on the left to move between panels. Exploratory Data
+      Analysis is live; Training, Model, and Inference are stubs wired and ready to fill in.
+    </p>
+
+    <div class="welcome-stats" id="wStats"></div>
+
+    <div class="welcome-hint">▸ open <b>EDA</b> from the rail to inspect the dataset</div>
+  </div>
+
+<script>
+  fetch("/api/config").then(r=>r.json()).then(c=>{
+    if(c.logo){ const el=document.getElementById("wLogo"); el.src=c.logo; el.hidden=false; }
+  }).catch(()=>{});
+  // a few live numbers so the landing page isn't static
+  fetch("/api/eda?phase=before").then(r=>r.json()).then(d=>{
+    const mc=(d.missing_corrupt||{}).counts||{}, n=d.nerd_stats||{};
+    const cells=[
+      ["genres", 10],
+      ["wav files", mc.wav_total ?? "—"],
+      ["numeric features", n.n_features ?? "—"],
+      ["known issues", ((d.missing_corrupt||{}).known_issues||[]).length],
+    ];
+    document.getElementById("wStats").innerHTML = cells.map(([l,v])=>
+      `<div class="wstat"><div class="wstat-n">${v}</div><div class="wstat-l">${l}</div></div>`).join("");
+  }).catch(()=>{});
+</script>
+</body>
+</html>

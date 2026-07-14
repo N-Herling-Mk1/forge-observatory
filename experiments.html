@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<!-- FORGE — the floor. Experiment selection. Splash (strike) lands here. -->
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>FORGE — the floor</title>
+<meta name="description" content="FORGE experiment selection — Beardown, Phonon DOS, Atlas LLP."/>
+<meta name="theme-color" content="#040207"/>
+
+<!-- Open Graph -->
+<meta property="og:type"        content="website">
+<meta property="og:site_name"   content="FORGE">
+<meta property="og:title"       content="FORGE — the floor">
+<meta property="og:description" content="Select an experiment: Beardown, Phonon DOS, Atlas LLP.">
+<meta property="og:url"         content="https://forge-observatory.com/experiments.html">
+<meta property="og:image"       content="https://forge-observatory.com/assets/images/og-card.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt"   content="FORGE flame trace and wordmark on black.">
+<meta property="og:locale"      content="en_US">
+<link rel="canonical" href="https://forge-observatory.com/experiments.html">
+
+<!-- Twitter / X -->
+<meta name="twitter:card"        content="summary_large_image">
+<meta name="twitter:title"       content="FORGE — the floor">
+<meta name="twitter:description" content="Select an experiment: Beardown, Phonon DOS, Atlas LLP.">
+<meta name="twitter:image"       content="https://forge-observatory.com/assets/images/og-card.png">
+
+<link rel="icon" href="assets/images/flame_icon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/images/flame_icon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="assets/images/flame_icon-192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="assets/images/flame_icon-180.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --void:#040207; --void2:#0a0610;
+    --cyan:#2DD4FF; --cyan-hot:#7ff0ff; --cyan-dim:#0e6b73;
+    --ember:#FF4D1F; --flame:#FF7A0D; --gold:#FFC857; --ignite:#FFB800;
+    --amber:#f0a92e; --muted:#3f6b66;
+    --mono:'Share Tech Mono', ui-monospace, Consolas, monospace;
+    --disp:'Orbitron', var(--mono);
+    --cut:14px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{min-height:100%;background:var(--void);font-family:var(--mono);color:var(--cyan)}
+  body{display:flex;flex-direction:column;overflow-x:hidden;
+    background:
+      radial-gradient(120% 90% at 50% 0%, rgba(45,212,255,.05), transparent 55%),
+      radial-gradient(120% 90% at 50% 110%, rgba(255,77,31,.06), transparent 55%),
+      var(--void)}
+
+  /* HUD — same vocabulary as the splash */
+  .hud{user-select:none;text-transform:uppercase;letter-spacing:.2em}
+  header{display:flex;justify-content:space-between;align-items:flex-start;padding:26px 30px 0}
+  #brand{display:flex;flex-direction:column;gap:6px}
+  #brand a{text-decoration:none}
+  #brand .word{font-family:var(--disp);font-weight:900;font-size:18px;letter-spacing:.5em;
+    color:#eafbff;text-shadow:0 0 16px rgba(45,212,255,.55)}
+  #brand .word .o{color:var(--flame);text-shadow:0 0 16px rgba(255,122,13,.6)}
+  #brand .sub{font-size:9px;color:var(--cyan-dim);letter-spacing:.32em}
+  #brand .bar{width:140px;height:1px;background:linear-gradient(90deg,var(--cyan),transparent)}
+  #status{text-align:right;font-size:9.5px;color:var(--cyan-dim);letter-spacing:.26em;line-height:2}
+  #status b{color:var(--amber);font-weight:400}
+  #status .dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--flame);
+    box-shadow:0 0 8px var(--flame);margin-right:7px;vertical-align:middle;animation:blip 1.6s infinite}
+  @keyframes blip{0%,100%{opacity:.35}50%{opacity:1}}
+
+  main{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    padding:40px 24px 30px;gap:38px}
+  #floorline{text-align:center}
+  #floorline .eye{font-size:10px;letter-spacing:.42em;color:var(--cyan-dim);text-transform:uppercase}
+  #floorline h1{font-family:var(--disp);font-weight:700;font-size:clamp(18px,3.4vw,26px);
+    letter-spacing:.34em;color:#eafbff;text-shadow:0 0 18px rgba(45,212,255,.4);
+    text-transform:uppercase;margin-top:10px}
+
+  /* selection plates — stark: name only */
+  #plates{display:grid;grid-template-columns:repeat(3,minmax(230px,300px));gap:22px;width:min(1020px,94vw)}
+  .plate{position:relative;display:flex;align-items:center;justify-content:center;
+    min-height:190px;padding:26px 18px;text-decoration:none;
+    background:linear-gradient(180deg,rgba(45,212,255,.07),rgba(45,212,255,.015));
+    border:1px solid rgba(45,212,255,.35);
+    clip-path:polygon(var(--cut) 0,100% 0,100% calc(100% - var(--cut)),calc(100% - var(--cut)) 100%,0 100%,0 var(--cut));
+    transition:transform .22s ease, border-color .22s ease, background .22s ease, filter .22s ease}
+  .plate .edge{position:absolute;top:0;left:0;height:2px;width:100%;
+    background:linear-gradient(90deg,var(--cyan),var(--gold));opacity:.35;
+    transform:scaleX(0);transform-origin:left;transition:transform .5s ease, opacity .3s}
+  .plate:hover .edge, .plate:focus-visible .edge{transform:scaleX(1);opacity:1;
+    box-shadow:0 0 10px rgba(255,200,87,.7)}
+  .plate h2{font-family:var(--disp);font-weight:900;font-size:clamp(17px,2.2vw,22px);
+    letter-spacing:.3em;color:#eafbff;text-transform:uppercase;text-align:center;
+    text-shadow:0 0 16px rgba(45,212,255,.4)}
+  .plate:hover, .plate:focus-visible{transform:translateY(-4px);outline:none;
+    border-color:rgba(255,122,13,.85);
+    background:linear-gradient(180deg,rgba(150,16,8,.28),rgba(255,122,32,.10));
+    filter:drop-shadow(0 0 24px rgba(255,77,31,.28))}
+  .plate:hover h2{text-shadow:0 0 22px rgba(255,200,87,.75)}
+
+  footer{display:flex;justify-content:center;gap:38px;padding:0 24px 34px;
+    font-size:9.5px;letter-spacing:.3em;text-transform:uppercase}
+  footer a{color:var(--cyan-dim);text-decoration:none;transition:color .2s, text-shadow .2s}
+  footer a:hover{color:var(--gold);text-shadow:0 0 10px rgba(255,200,87,.6)}
+
+  @media (max-width:900px){#plates{grid-template-columns:1fr;width:min(420px,94vw)}.plate{min-height:120px}}
+  @media (max-width:640px){header{padding:18px 16px 0}}
+  @media (prefers-reduced-motion:reduce){
+    #status .dot{animation:none}
+    .plate,.plate .edge{transition:none}
+  }
+</style>
+</head>
+<body>
+
+  <header class="hud">
+    <div id="brand">
+      <a href="index.html"><span class="word">F<span class="o">O</span>RGE</span></a>
+      <div class="sub">functional-posterior observatory</div>
+      <div class="bar"></div>
+    </div>
+    <div id="status">
+      <span class="dot"></span>floor <b>online</b><br>
+      forge-observatory.com
+    </div>
+  </header>
+
+  <main>
+    <div id="floorline" class="hud">
+      <div class="eye">the floor</div>
+      <h1>Select an experiment</h1>
+    </div>
+
+    <nav id="plates">
+      <a class="plate" href="coming-soon.html?exp=genre">
+        <span class="edge"></span><h2>Beardown</h2>
+      </a>
+      <a class="plate" href="coming-soon.html?exp=phonon">
+        <span class="edge"></span><h2>Phonon DOS</h2>
+      </a>
+      <a class="plate" href="coming-soon.html?exp=atlas">
+        <span class="edge"></span><h2>Atlas LLP</h2>
+      </a>
+    </nav>
+  </main>
+
+  <footer class="hud">
+    <a href="index.html">&#9666; splash</a>
+    <a href="index.html">documentation hub</a>
+  </footer>
+
+</body>
+</html>

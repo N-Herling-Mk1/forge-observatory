@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Glossary · BEARDOWN</title>
+<link rel="icon" type="image/svg+xml" href="/static/assets/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<link rel="stylesheet" href="/static/css/style.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+</head>
+<body class="gloss-body">
+
+  <div class="gloss-bar">
+    <span class="eda-tag"><span class="dot"></span> GLOSSARY</span>
+    <div class="gloss-filters" id="filters"></div>
+    <input id="search" class="gloss-search" placeholder="search terms…" autocomplete="off">
+    <span class="count" id="count"></span>
+  </div>
+
+  <main class="gloss-page" id="gloss">
+    <div class="gloss-empty" id="status">loading glossary…</div>
+  </main>
+
+  <script>
+  "use strict";
+  const KDELIM = [{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}];
+  let GROUPS = [], activeGroup = "all";
+
+  const esc = s => String(s);          // content is trusted (our own JSON)
+  const searchText = (t, d) => (t + " " + d).replace(/\$/g, "").toLowerCase();
+
+  function render(data){
+    const root = document.getElementById("gloss");
+    document.getElementById("status")?.remove();
+    GROUPS = data.groups || [];
+
+    // filter pills: All + one per group
+    const filters = document.getElementById("filters");
+    const pills = [["all","All"]].concat(GROUPS.map(g => [g.id, g.label]));
+    filters.innerHTML = pills.map(([id,label]) =>
+      `<button class="gloss-pill ${id==='all'?'active':''}" data-g="${id}">${label}</button>`).join("");
+    filters.querySelectorAll("button").forEach(b =>
+      b.onclick = () => { activeGroup = b.dataset.g;
+        filters.querySelectorAll("button").forEach(x => x.classList.toggle("active", x===b));
+        applyFilter(); });
+
+    // groups -> cards
+    root.innerHTML = GROUPS.map(g => `
+      <div class="gloss-group" data-group="${g.id}">
+        <h2>${esc(g.label)}</h2>
+        <div class="gloss">${g.terms.map(t => `
+          <div class="gloss-term" data-group="${g.id}" data-text="${searchText(t.term, t.def)}">
+            <div class="gloss-k">${esc(t.term)}</div>
+            <div class="gloss-v">${esc(t.def)}</div>
+            ${t.eq ? `<div class="gloss-eq">$$${t.eq}$$</div>` : ""}
+          </div>`).join("")}</div>
+      </div>`).join("");
+
+    if (window.renderMathInElement)
+      renderMathInElement(root, {delimiters: KDELIM, throwOnError: false});
+    applyFilter();
+  }
+
+  function applyFilter(){
+    const q = (document.getElementById("search").value || "").trim().toLowerCase();
+    let shown = 0, total = 0;
+    document.querySelectorAll(".gloss-group").forEach(sec => {
+      let any = false;
+      sec.querySelectorAll(".gloss-term").forEach(card => {
+        total++;
+        const okGroup = (activeGroup === "all" || activeGroup === card.dataset.group);
+        const okText  = !q || card.dataset.text.includes(q);
+        const show = okGroup && okText;
+        card.style.display = show ? "" : "none";
+        if (show){ any = true; shown++; }
+      });
+      sec.style.display = any ? "" : "none";
+    });
+    const c = document.getElementById("count");
+    c.textContent = (q || activeGroup !== "all") ? `${shown} / ${total}` : `${total} terms`;
+    let empty = document.getElementById("noresult");
+    if (!shown){
+      if (!empty){ empty = document.createElement("div"); empty.id = "noresult";
+        empty.className = "gloss-empty"; document.getElementById("gloss").appendChild(empty); }
+      empty.textContent = "no terms match “" + q + "”";
+    } else if (empty){ empty.remove(); }
+  }
+
+  document.getElementById("search").addEventListener("input", applyFilter);
+
+  fetch("/api/glossary")
+    .then(r => r.ok ? r.json() : Promise.reject(r.status))
+    .then(render)
+    .catch(err => {
+      const s = document.getElementById("status");
+      if (s) s.textContent = "could not load glossary (" + err + ") — is data/glossary.json present?";
+    });
+  </script>
+</body>
+</html>

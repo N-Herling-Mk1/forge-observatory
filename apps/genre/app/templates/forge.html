@@ -1,0 +1,861 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FORGE · BEARDOWN</title>
+<link rel="icon" type="image/svg+xml" href="/static/assets/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/css/style.css">
+<style>
+  *{box-sizing:border-box}
+  .fg-app{position:fixed;inset:0;display:flex;flex-direction:column;padding:10px;gap:8px;font-family:var(--mono);overflow:hidden}
+  code{font-family:var(--mono);color:var(--cyan);background:#0a131c;border:1px solid var(--line);border-radius:3px;padding:0 4px}
+  b{color:#eaf6f8}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:9px}
+
+  /* top bar */
+  .fg-top{flex:0 0 auto;display:flex;align-items:center;gap:14px;padding:8px 14px}
+  .fg-top .fk{font-family:var(--disp);font-weight:700;letter-spacing:.16em;color:var(--cyan);font-size:15px;text-shadow:0 0 12px rgba(45,226,230,.4)}
+  .fg-top .tag{font-family:var(--disp);letter-spacing:.16em;color:var(--cyan-dim);font-size:10px}
+  .fg-top .spacer{flex:1}
+  .fg-top .stat{color:var(--muted);font-size:11.5px} .fg-top .stat b{color:var(--text)}
+  .fg-top .rec{display:flex;align-items:center;gap:6px;color:var(--amber);font-size:10.5px;letter-spacing:.1em}
+  .fg-top .dot{width:8px;height:8px;border-radius:50%;background:var(--cyan);box-shadow:0 0 8px var(--cyan)}
+
+  /* main 3-col */
+  .fg-main{flex:1 1 auto;display:grid;grid-template-columns:1fr 220px;gap:8px;min-height:0}
+  .fg-app.collapsed .fg-main{grid-template-columns:1fr}
+  .fg-app.collapsed .master{display:none}
+  .ctrl-toggle{font-family:var(--mono);font-size:11px;background:#0a131c;border:1px solid var(--line);color:var(--cyan-dim);
+    border-radius:6px;padding:5px 11px;cursor:pointer;margin-left:10px}
+  .ctrl-toggle:hover{border-color:var(--cyan);color:var(--cyan)}
+  .ctrl-show{position:fixed;top:14px;right:14px;z-index:20;display:none;font-family:var(--disp);font-size:15px;
+    background:var(--cyan);color:#04161a;border:none;border-radius:7px;padding:6px 12px;cursor:pointer;box-shadow:0 0 14px rgba(45,226,230,.4)}
+  .fg-app.collapsed ~ .ctrl-show{display:block}
+  /* master control board */
+  .master .rl{padding:13px 14px}
+  .mc-h{font-family:var(--disp);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--cyan);margin:0 0 4px}
+  .mc-sec{padding:11px 0;border-top:1px solid var(--line)}
+  .mc-sec:first-of-type{border-top:none;padding-top:6px}
+  .mc-label{font-family:var(--disp);font-size:9.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--cyan-dim);margin-bottom:8px}
+  .mc-label .n{color:var(--text);font-family:var(--mono)}
+  .fg-col{display:flex;flex-direction:column;min-height:0;overflow:hidden}
+  .rl{padding:11px 13px;overflow:auto}
+  .rl-h{font-family:var(--disp);font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--cyan-dim);margin:0 0 7px}
+  .rl-h:not(:first-child){margin-top:14px}
+
+  /* left rail: model + metrics + example */
+  .mname{font-size:12px;color:var(--cyan);word-break:break-all;margin-bottom:8px}
+  .chips{display:flex;flex-wrap:wrap;gap:6px}
+  .chip{background:#0a131c;border:1px solid var(--line);border-radius:6px;padding:5px 8px;min-width:60px}
+  .chip .v{font-family:var(--disp);font-weight:700;font-size:13px;color:var(--text)} .chip.cyan .v{color:var(--cyan)}
+  .chip .l{color:var(--muted);font-size:8.5px;letter-spacing:.06em;text-transform:uppercase;margin-top:1px}
+  .exbtns{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:8px}
+  .xb{font-family:var(--mono);font-size:11px;background:#0a131c;border:1px solid var(--line);color:var(--text);border-radius:5px;padding:5px 6px;cursor:pointer}
+  .xb:hover{border-color:var(--cyan);color:var(--cyan)}
+  .xb.wide{grid-column:1 / -1}
+  .exinfo{color:var(--muted);font-size:11px;line-height:1.5}
+
+  /* center stage */
+  .stage-wrap{display:flex;flex-direction:column;min-height:0;overflow:hidden}
+  .tabs{flex:0 0 auto;display:flex;border-bottom:1px solid var(--line)}
+  .tabs button{flex:1;font-family:var(--mono);background:transparent;border:none;border-right:1px solid var(--line);
+    color:var(--muted);padding:8px 4px;cursor:pointer;font-size:11px;letter-spacing:.04em}
+  .tabs button:last-child{border-right:none}
+  .tabs button:hover{color:var(--text);background:#0a131c}
+  .tabs button.on{color:#04161a;background:var(--cyan);font-weight:700}
+  .stage{flex:1 1 auto;min-height:0;overflow:auto;padding:14px}
+  .stage svg{width:100%;height:auto;display:block}
+  .chh{font-family:var(--disp);font-size:9.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--cyan-dim);margin:0 0 6px}
+  .chh:not(:first-child){margin-top:14px}
+  .note{color:var(--muted);font-size:10.5px;line-height:1.55;margin-top:7px}
+
+  /* posterior bars */
+  .bars{display:grid;grid-template-columns:62px 1fr 84px;gap:4px 8px;align-items:center;font-size:11.5px}
+  .bars .g{color:var(--muted);text-align:right;text-transform:uppercase;letter-spacing:.04em;font-size:10px}
+  .bars .track{position:relative;height:14px;background:var(--panel2);border:1px solid var(--line);border-radius:7px}
+  .bars .fill{position:absolute;left:0;top:0;bottom:0;border-radius:7px}
+  .bars .whisk{position:absolute;top:50%;height:10px;transform:translateY(-50%);border-left:1.5px solid var(--amber);border-right:1.5px solid var(--amber);opacity:.9}
+  .bars .num{font-variant-numeric:tabular-nums;color:var(--text)} .bars .num .s{color:var(--amber);opacity:.85}
+  /* sampled posterior: selector + big hist + picker list */
+  .pg-sel{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+  .pg-name{font-family:var(--disp);font-weight:700;font-size:17px;letter-spacing:.06em}
+  .ridges{display:flex;flex-direction:column;gap:3px}
+  .ridges .pr{display:grid;grid-template-columns:62px 1fr 84px;gap:8px;align-items:center;font-size:11.5px;
+    padding:2px 4px;border-radius:6px;cursor:pointer;border:1px solid transparent}
+  .ridges .pr:hover{background:#0a131c} .ridges .pr.sel{border-color:var(--line);background:#0a131c}
+  .ridges .g{color:var(--muted);text-align:right;text-transform:uppercase;letter-spacing:.04em;font-size:10px}
+  .ridges .ridge{background:var(--panel2);border:1px solid var(--line);border-radius:6px;overflow:hidden;height:26px}
+  .ridges .num{font-variant-numeric:tabular-nums;color:var(--text)} .ridges .num .s{color:var(--amber);opacity:.85}
+  .chart{width:100%;background:#070d14;border:1px solid var(--line);border-radius:8px}
+  .read{display:flex;gap:7px;flex-wrap:wrap;margin-top:9px}
+
+  /* stylized model */
+  .mdl .edge{stroke:#274055;stroke-width:1.2;fill:none}
+  .mdl .flow{stroke:var(--cyan);stroke-width:1.4;fill:none;stroke-dasharray:3 9;opacity:.85;animation:flow 1.1s linear infinite}
+  @keyframes flow{to{stroke-dashoffset:-24}}
+  .mdl .node{fill:#0d1a26;stroke:#2a4458;stroke-width:1.2}
+  .mdl .node.phi{stroke:var(--cyan);fill:#06222a} .mdl .node.out{stroke:var(--amber)}
+  .mdl .pulse{animation:pulse 1.8s ease-in-out infinite}
+  @keyframes pulse{0%,100%{opacity:.55}50%{opacity:1}}
+  .mdl text{fill:#9fc7cf;font-family:var(--mono);font-size:9px}
+  .mdl .lab{fill:#6f8693;font-size:8px} .mdl .ann{fill:var(--cyan-dim);font-size:8px}
+
+  .soon{border:1px dashed var(--line);border-radius:9px;padding:15px;color:var(--muted);font-size:12px;line-height:1.65;background:#0a131c}
+  .soon b{color:var(--text)} .soon .tg{color:var(--amber);font-family:var(--mono);font-size:10.5px}
+  .hmc-ctrl{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:10px;font-size:11.5px;color:var(--muted)}
+  .hmc-ctrl label{display:flex;align-items:center;gap:5px}
+  .hmc-ctrl input{width:64px;font-family:var(--mono);font-size:12px;background:#0a131c;color:var(--text);border:1px solid var(--line);border-radius:5px;padding:4px 6px}
+  .hmc-ctrl .hmc-tau{font-family:var(--mono);color:var(--cyan-dim)}
+  .hmc-ctrl .xb{font-size:12px;padding:6px 14px}
+  .hmc-status{font-family:var(--mono);color:var(--amber);font-size:11px}
+  .hmc-prog{height:5px;background:var(--panel2);border:1px solid var(--line);border-radius:4px;overflow:hidden;margin:8px 0}
+  .hmc-bar{height:100%;width:0%;background:linear-gradient(90deg,var(--cyan-dim),var(--cyan));transition:width .05s linear}
+  .read .xb{font-family:var(--mono);font-size:11px;background:#0a131c;border:1px solid var(--line);color:var(--text);border-radius:5px;padding:6px 10px;cursor:pointer}
+  .read .xb:hover{border-color:var(--cyan);color:var(--cyan)}
+  /* epistemic / aleatoric tags + recommendations */
+  .ea-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:8px 0}
+  .ea-card{border-radius:9px;padding:11px 13px;border:1px solid var(--line);background:#0a131c}
+  .ea-card.epi{border-color:rgba(45,226,230,.5)} .ea-card.ale{border-color:rgba(240,165,0,.5)}
+  .ea-tag{font-family:var(--disp);font-size:10px;letter-spacing:.12em}
+  .ea-card.epi .ea-tag{color:var(--cyan)} .ea-card.ale .ea-tag{color:var(--amber)}
+  .ea-val{font-family:var(--disp);font-weight:700;font-size:24px;margin:3px 0} .ea-val span{font-size:12px;color:var(--muted);font-weight:400}
+  .ea-desc{color:var(--muted);font-size:11px;line-height:1.4}
+  .ea-bar{height:9px;border-radius:5px;overflow:hidden;background:var(--amber);margin-top:6px}
+  .ea-bar>div{height:100%;background:var(--cyan)}
+  .ea-barlab{display:flex;justify-content:space-between;font-size:10.5px;margin-top:3px;font-family:var(--mono)}
+  .rec{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border-radius:8px;margin:6px 0;font-size:13px;line-height:1.55;background:#0a131c;border:1px solid var(--line)}
+  .rec-good{border-left:3px solid var(--good)} .rec-amber{border-left:3px solid var(--amber)} .rec-muted{border-left:3px solid var(--muted)}
+  .rec-tag{font-family:var(--disp);font-size:9px;letter-spacing:.1em;text-transform:uppercase;padding:3px 8px;border-radius:5px;background:var(--panel2);white-space:nowrap;color:var(--cyan-dim);flex-shrink:0;margin-top:1px}
+
+  /* right knob panel */
+  .knob{margin-bottom:14px}
+  .knob .kl{font-size:10px;color:var(--cyan-dim);letter-spacing:.04em;margin-bottom:5px}
+  .knob.cal .kl{color:var(--amber)}
+  .knob input[type=range]{width:100%;accent-color:var(--cyan)}
+  .knob.cal input[type=range]{accent-color:var(--amber)}
+  .knob .kv{font-family:var(--disp);font-weight:700;font-size:15px;color:var(--text);margin-top:2px}
+  .kreset{font-family:var(--mono);font-size:10.5px;background:#0a131c;border:1px solid var(--line);color:var(--text);border-radius:5px;padding:5px 9px;cursor:pointer;width:100%}
+  .kreset:hover{border-color:var(--amber);color:var(--amber)}
+  .kdiv{height:1px;background:var(--line);margin:4px 0 13px}
+
+  /* bottom status */
+  .fg-bot{flex:0 0 auto;padding:7px 14px;display:flex;gap:16px;align-items:center;font-size:11px;color:var(--muted);flex-wrap:wrap}
+  .fg-bot b{color:var(--cyan-dim)} .fg-bot .ok{color:var(--good)}
+  .err{color:var(--bad);font-size:13px;padding:14px}
+  .full{display:flex;align-items:center;justify-content:center;height:100%;color:var(--muted);font-size:13px;text-align:center;line-height:1.7;padding:20px}
+</style>
+</head>
+<body class="page">
+<div class="fg-app">
+  <div class="panel fg-top">
+    <span class="dot"></span>
+    <span class="fk">FORGE</span><span class="tag">// BAYESIAN HEAD · LLLA</span>
+    <span class="spacer"></span>
+    <span class="stat" id="topStat"></span>
+    <button class="ctrl-toggle" id="ctrlToggle" title="show / hide the control board — hide it to give the graphs the full width">⊞ controls</button>
+    <span class="rec" id="topRec"></span>
+  </div>
+
+  <div class="fg-main" id="main">
+    <div class="panel fg-col stage-wrap">
+      <div class="tabs" id="tabs">
+        <button data-v="overview" class="on">overview</button>
+        <button data-v="post">posterior</button>
+        <button data-v="model">model</button>
+        <button data-v="sweep">τ-sweep</button>
+        <button data-v="eigen">eigenspectrum</button>
+        <button data-v="frac">data·frac</button>
+        <button data-v="report">report</button>
+        <button data-v="hmc">HMC</button>
+      </div>
+      <div class="stage" id="stage"><div class="full">loading the last-layer Laplace…</div></div>
+    </div>
+    <div class="panel fg-col master" id="master"><div class="rl" id="board"></div></div>
+  </div>
+
+  <div class="panel fg-bot" id="status"></div>
+</div>
+<button id="ctrlShow" class="ctrl-show" title="show the control board">⊞</button>
+
+<script>
+const $=(s,r=document)=>r.querySelector(s);
+const GENRE_C={blues:"#2de2e6",classical:"#39d98a",country:"#f0a500",disco:"#ff6a1a",hiphop:"#b56cff",jazz:"#5ec8ff",metal:"#ff5470",pop:"#ffd166",reggae:"#6ee7b7",rock:"#9fb3c8"};
+const PI=Math.PI;
+let META=null, PL=null, EX={muRaw:null,SA_diag:null}, curIdx=0, view="overview", startIdx=0, postGenre=null;
+
+// ---- math (mirrors llla.py: probit mean + delta σ) ------------------------
+const softmax=z=>{const m=Math.max(...z);const e=z.map(x=>Math.exp(x-m));const s=e.reduce((a,b)=>a+b,0);return e.map(x=>x/s);};
+const vtau=(c,lam,tau)=>{let s=0;for(let i=0;i<c.length;i++)s+=c[i]/(lam[i]+tau);return s;};
+function matmul(A,B){const n=A.length,k=B.length,m=B[0].length,C=Array.from({length:n},()=>new Array(m).fill(0));
+  for(let i=0;i<n;i++)for(let t=0;t<k;t++){const a=A[i][t];for(let j=0;j<m;j++)C[i][j]+=a*B[t][j];}return C;}
+const transpose=A=>A[0].map((_,j)=>A.map(r=>r[j]));
+function prepExample(){ EX={muRaw:PL.logit_mean, SA_diag:PL.output_cov.map((r,c)=>r[c])}; }
+function posteriorAt(tau,T,s){
+  T=T||1; s=(s==null?1:s);
+  const v=vtau(PL.eig.c,PL.eig.lam,tau), SA=PL.output_cov, C=EX.muRaw.length;
+  const mu=EX.muRaw.map(u=>u/T), p=softmax(mu);
+  const diag=EX.SA_diag.map(sa=>s*s*v*sa/(T*T));
+  const kappa=diag.map(dd=>1/Math.sqrt(1+(PI/8)*dd));
+  const mean=softmax(mu.map((u,c)=>u*kappa[c]));
+  const J=Array.from({length:C},(_,c)=>Array.from({length:C},(_,i)=>(c===i?p[c]:0)-p[c]*p[i]));
+  const M=matmul(matmul(J,SA),transpose(J)), scale=s*s*v/(T*T);
+  const sigma=M.map((r,c)=>Math.sqrt(Math.max(scale*r[c],0)));
+  return {mean,sigma,v,scale};
+}
+function curKnobs(){ return { tau:tauFromSlider($("#tauSlide").value), T:parseFloat($("#tempSlide").value), s:parseFloat($("#sigSlide").value) }; }
+function tauFromSlider(x){const [lo,hi]=META.tau_range;return Math.exp(Math.log(lo)+(x/1000)*(Math.log(hi)-Math.log(lo)));}
+function sliderFromTau(t){const [lo,hi]=META.tau_range;return 1000*(Math.log(t)-Math.log(lo))/(Math.log(hi)-Math.log(lo));}
+const poly=pts=>pts.map((p,i)=>(i?"L":"M")+p[0].toFixed(1)+" "+p[1].toFixed(1)).join(" ");
+
+// ---- epistemic / aleatoric decomposition (browser MC, mirrors llla.py) -----
+let SWEEP=null;                 // cached data-fraction payload for current example
+function chol(A){const n=A.length,L=Array.from({length:n},()=>new Array(n).fill(0));
+  for(let i=0;i<n;i++)for(let j=0;j<=i;j++){let s=A[i][j];for(let k=0;k<j;k++)s-=L[i][k]*L[j][k];
+    L[i][j]= i===j ? Math.sqrt(Math.max(s,1e-12)) : s/(L[j][j]||1e-9);}return L;}
+const entropy=p=>{let e=0;for(const q of p){if(q>1e-12)e-=q*Math.log(q);}return e;};
+function decompose(tau,T,s,S=1200){
+  // predictive Gaussian N(μ, Σ_f);  Σ_f = (s²v/T²)·Σ_A,  μ = logit_mean/T
+  const v=vtau(PL.eig.c,PL.eig.lam,tau), SA=PL.output_cov, C=EX.muRaw.length;
+  const mu=EX.muRaw.map(u=>u/T), scale=s*s*v/(T*T);
+  const L=chol(SA.map(r=>r.map(x=>x*scale)));
+  let seed=987654321; const rnd=()=>{seed=(1103515245*seed+12345)&0x7fffffff;return seed/0x7fffffff;};
+  const gauss=()=>{let u=0,w=0;while(!u)u=rnd();while(!w)w=rnd();return Math.sqrt(-2*Math.log(u))*Math.cos(2*PI*w);};
+  const meanP=new Array(C).fill(0); let ealea=0;
+  for(let n=0;n<S;n++){
+    const z=Array.from({length:C},gauss);
+    const f=mu.map((m,i)=>{let a=m;for(let k=0;k<=i;k++)a+=L[i][k]*z[k];return a;});
+    const p=softmax(f); for(let i=0;i<C;i++)meanP[i]+=p[i]; ealea+=entropy(p);
+  }
+  for(let i=0;i<C;i++)meanP[i]/=S; ealea/=S;
+  const total=entropy(meanP), epi=Math.max(0,total-ealea);
+  return {total, aleatoric:ealea, epistemic:epi, ef: total>1e-9?epi/total:0, meanP};
+}
+// live recompute of a data-fraction row at τ from cached λ_f, c_f
+function sweepAt(tau){
+  if(!SWEEP) return null;
+  return SWEEP.fractions.map(fr=>{
+    let trace=0,vin=0,starved=0;
+    for(let i=0;i<fr.lam.length;i++){const den=fr.lam[i]+tau; trace+=1/den; vin+=fr.c[i]/den; if(fr.lam[i]<tau)starved++;}
+    return {frac:fr.frac,n:fr.n,trace,vin,starved};
+  });
+}
+
+// ---- stage views ----------------------------------------------------------
+// draw S posterior samples of the per-genre probability vector (seeded → stable)
+function posteriorSamples(tau,T,s,S=2500){
+  const v=vtau(PL.eig.c,PL.eig.lam,tau), SA=PL.output_cov, C=EX.muRaw.length;
+  const mu=EX.muRaw.map(u=>u/T), scale=s*s*v/(T*T);
+  const L=chol(SA.map(r=>r.map(x=>x*scale)));
+  let seed=1234567; const rnd=()=>{seed=(1103515245*seed+12345)&0x7fffffff;return seed/0x7fffffff;};
+  const gauss=()=>{let u=0,w=0;while(!u)u=rnd();while(!w)w=rnd();return Math.sqrt(-2*Math.log(u))*Math.cos(2*PI*w);};
+  const cols=Array.from({length:C},()=>new Array(S));
+  for(let n=0;n<S;n++){
+    const z=Array.from({length:C},gauss);
+    const f=mu.map((m,i)=>{let a=m;for(let k=0;k<=i;k++)a+=L[i][k]*z[k];return a;});
+    const p=softmax(f); for(let c=0;c<C;c++)cols[c][n]=p[c];
+  }
+  return cols;
+}
+function viewPosterior(){
+  const {tau,T,s}=curKnobs(), G=PL.genres, C=G.length, S=2500;
+  const cols=posteriorSamples(tau,T,s,S);
+  const stats=cols.map(col=>{const mean=col.reduce((a,b)=>a+b,0)/S;
+    const varr=col.reduce((a,b)=>a+(b-mean)*(b-mean),0)/S; return {mean,sd:Math.sqrt(varr),varr};});
+  const order=stats.map((st,i)=>[st.mean,i]).sort((a,b)=>b[0]-a[0]).map(x=>x[1]);
+  if(postGenre==null||postGenre<0||postGenre>=C) postGenre=order[0];
+  const gi=postGenre, st=stats[gi], col=cols[gi], color=GENRE_C[G[gi]]||"#2de2e6";
+
+  // big auto-zoomed histogram of the selected genre
+  let lo=Math.max(0,st.mean-4*st.sd), hi=Math.min(1,st.mean+4*st.sd);
+  if(hi-lo<0.02){lo=Math.max(0,st.mean-0.012);hi=Math.min(1,st.mean+0.012);}
+  if(hi<=lo)hi=lo+0.01;
+  const BINS=46, bw=(hi-lo)/BINS, h=new Array(BINS).fill(0);
+  for(const v of col){if(v<lo||v>hi)continue;let b=Math.floor((v-lo)/bw);if(b>=BINS)b=BINS-1;if(b<0)b=0;h[b]++;}
+  const hm=Math.max(...h,1), W=600,H=150,pL=8,pR=8,pT=12,pB=22;
+  const Xi=i=>pL+(i/(BINS-1))*(W-pL-pR), Yc=c=>(H-pB)-(c/hm)*(H-pB-pT);
+  const pts=h.map((c,i)=>[Xi(i),Yc(c)]);
+  const area=`M${pL},${H-pB} `+pts.map(p=>`L${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(" ")+` L${W-pR},${H-pB} Z`;
+  const xOf=v=>pL+((v-lo)/(hi-lo))*(W-pL-pR);
+  const mx=xOf(st.mean), sLo=xOf(Math.max(lo,st.mean-st.sd)), sHi=xOf(Math.min(hi,st.mean+st.sd));
+  const ticks=[lo,(lo+hi)/2,hi].map(t=>`<text x="${xOf(t).toFixed(1)}" y="${H-6}" text-anchor="middle" fill="#5b7180" font-size="10">${(100*t).toFixed(1)}%</text>`).join("");
+  const big=`<svg viewBox="0 0 ${W} ${H}" class="chart" style="width:100%;height:auto">
+    <rect x="${sLo.toFixed(1)}" y="${pT}" width="${Math.max(sHi-sLo,1).toFixed(1)}" height="${H-pB-pT}" fill="${color}" opacity="0.13"/>
+    <path d="${area}" fill="${color}" opacity="0.42"/>
+    <path d="${pts.map((p,i)=>(i?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' ')}" fill="none" stroke="${color}" stroke-width="1.7"/>
+    <line x1="${mx.toFixed(1)}" y1="${pT}" x2="${mx.toFixed(1)}" y2="${H-pB}" stroke="#eaf6f8" stroke-dasharray="3 3"/>
+    <text x="${mx.toFixed(1)}" y="${pT-2}" text-anchor="middle" fill="#eaf6f8" font-size="9">mean</text>${ticks}</svg>`;
+
+  // small ridgeline picker (shared axis)
+  const xmax=Math.min(1,Math.max(...stats.map(z=>z.mean+3*z.sd),0.05)*1.05), RB=34, RW=300, RH=26;
+  const ridge=(c,col2)=>{const hh=new Array(RB).fill(0),w=xmax/RB;
+    for(const v of col2){let b=Math.floor(v/w);if(b<0)b=0;if(b>=RB)b=RB-1;hh[b]++;}
+    const m=Math.max(...hh,1),pp=hh.map((q,i)=>[(i/(RB-1))*RW,RH-(q/m)*(RH-2)]);
+    return `<svg viewBox="0 0 ${RW} ${RH}" preserveAspectRatio="none" style="width:100%;height:${RH}px;display:block">
+      <path d="M0,${RH} ${pp.map(p=>'L'+p[0].toFixed(1)+','+p[1].toFixed(1)).join(' ')} L${RW},${RH} Z" fill="${c}" opacity="0.5"/></svg>`;};
+  const list=order.map(i=>`<div class="pr${i===gi?' sel':''}" data-i="${i}">
+      <div class="g">${G[i]}</div><div class="ridge">${ridge(GENRE_C[G[i]]||'#2de2e6',cols[i])}</div>
+      <div class="num">${(100*stats[i].mean).toFixed(1)}% <span class="s">±${(100*stats[i].sd).toFixed(1)}</span></div></div>`).join("");
+
+  $("#stage").innerHTML=`
+    <div class="pg-sel">
+      <button class="xb" id="pgPrev" title="previous genre (by mean probability)">‹</button>
+      <div class="pg-name" style="color:${color}">${G[gi].toUpperCase()}</div>
+      <button class="xb" id="pgNext" title="next genre">›</button>
+      <span class="read" style="margin-left:auto">
+        <span class="chip cyan"><div class="v">${(100*st.mean).toFixed(1)}%</div><div class="l">mean</div></span>
+        <span class="chip"><div class="v">${(100*st.sd).toFixed(1)}</div><div class="l">σ (pts)</div></span>
+        <span class="chip"><div class="v">${(1e4*st.varr).toFixed(2)}</div><div class="l">variance ×10⁻⁴</div></span>
+      </span>
+    </div>
+    ${big}
+    <div class="chh">all genres · click to inspect</div>
+    <div class="ridges" id="pglist">${list}</div>
+    <div class="note">Top = the <b>full posterior distribution</b> of ${G[gi]}'s probability across ${S} weight-posterior draws, auto-zoomed to its own range (white dashed = mean, shaded = ±σ). A spike = confident; a wide/skewed shape = genuine model uncertainty. Step genres with ‹ ›, or click a row below (shared axis there for comparison). Drag <b>τ</b> to reshape.</div>`;
+
+  const reorder=d=>{const p=order.indexOf(gi); postGenre=order[(p+d+C)%C]; viewPosterior();};
+  $("#pgPrev").onclick=()=>reorder(-1); $("#pgNext").onclick=()=>reorder(1);
+  document.querySelectorAll("#pglist .pr").forEach(r=>r.onclick=()=>{postGenre=+r.dataset.i; viewPosterior();});
+}
+function viewModel(){
+  const a=META.arch, sc=a.spec_cnn||{}, tm=a.tab_mlp||{};
+  const conv=(sc.conv||[]).map(c=>c[0]).join("→");
+  const cols=[
+    {x:55,n:[{y:60,t:"mel 128²",l:"image"},{y:140,t:`tab ${tm.in_dim||57}`,l:"30s feats"}]},
+    {x:180,n:[{y:60,t:`CNN ${conv}`,l:"conv·pool"},{y:140,t:`MLP ${(tm.hidden||[]).join("·")}`,l:"dense"}]},
+    {x:305,n:[{y:60,t:`${sc.embed||512}`,l:"spec emb"},{y:140,t:`${tm.embed||192}`,l:"tab emb"}]},
+    {x:430,n:[{y:100,t:"fusion",l:a.fusion||"gated"}]},
+    {x:545,n:[{y:100,t:`φ ${a.phi_dim||512}`,l:"penult",phi:1}]},
+    {x:660,n:[{y:100,t:`${a.n_classes||10}`,l:"genres",out:1}]},
+  ];
+  const NW=54,NH=30; let e="",f="",nd="";
+  for(let k=0;k<cols.length-1;k++)for(const A of cols[k].n)for(const B of cols[k+1].n){
+    if(!((k>=3)||Math.abs(A.y-B.y)<55||cols[k+1].n.length===1))continue;
+    const x1=cols[k].x+NW/2,x2=cols[k+1].x-NW/2,d=`M${x1},${A.y} C${(x1+x2)/2},${A.y} ${(x1+x2)/2},${B.y} ${x2},${B.y}`;
+    e+=`<path class="edge" d="${d}"/>`; f+=`<path class="flow" d="${d}"/>`;
+  }
+  for(const c of cols)for(const n of c.n){const cls="node"+(n.phi?" phi pulse":"")+(n.out?" out":"");
+    nd+=`<g><rect class="${cls}" x="${c.x-NW/2}" y="${n.y-NH/2}" width="${NW}" height="${NH}" rx="6"/>
+      <text x="${c.x}" y="${n.y+3}" text-anchor="middle">${n.t}</text>
+      <text class="lab" x="${c.x}" y="${n.y+NH/2+10}" text-anchor="middle">${n.l}</text></g>`;}
+  $("#stage").innerHTML=`<svg class="mdl" viewBox="0 0 715 175">${e}${f}${nd}
+    <text class="ann" x="545" y="34" text-anchor="middle">↓ LLLA attaches here</text>
+    <text class="ann" x="545" y="158" text-anchor="middle">N(W·φ+b, v(φ;τ)·Σ_A)</text></svg>
+    <div class="note">Two branches (log-mel CNN ⨝ ${tm.in_dim||57}-feat MLP) → ${a.fusion||"gated"} fusion → φ(${a.phi_dim||512}) → ${a.n_classes||10} genres. The posterior lives on the final Linear only; everything left of φ is frozen. Dims are read from <code>arch.json</code>; flow is illustrative.</div>`;
+}
+function viewEigen(){
+  $("#stage").innerHTML=`<div class="chh">eigenspectrum of H = ΦᵀΦ — the weights' epistemic fingerprint</div>
+    <svg id="eigSvg" class="chart" viewBox="0 0 720 190"></svg><div class="read" id="eigRead"></div>
+    <div class="note">Each eigendirection has posterior variance <b>1/(λᵢ+τ)</b>. <b>λᵢ ≳ τ</b> (cyan) = pinned by data; <b>λᵢ ≲ τ</b> (amber) = prior-dominated, so <b>more diverse data would sharpen these</b>. Drag τ to move the front.</div>`;
+  buildEigenspectrum(curKnobs().tau);
+}
+function viewSweep(){
+  $("#stage").innerHTML=`<div class="chh">τ-sweep — epistemic σ per genre vs prior precision</div>
+    <svg id="sweepSvg" class="chart" viewBox="0 0 720 200"></svg>
+    <div class="note">Each line = one genre's σ as τ sweeps (top-2 predicted bold). Left of <b>median λ</b> data dominates; right, the prior clamps σ down — that's regularization, not learning.</div>`;
+  buildTauSweep();
+}
+async function ensureSweep(){
+  if(SWEEP && SWEEP.index===curIdx) return SWEEP;
+  SWEEP=null;
+  try{ const r=await fetch(`/api/forge/datasweep?index=${curIdx}`); const d=await r.json();
+       if(d.error) throw new Error(d.error); SWEEP={...d, index:curIdx}; }catch(e){ SWEEP={error:String(e)}; }
+  return SWEEP;
+}
+function viewFrac(){
+  $("#stage").innerHTML=`<div class="chh">data-fraction sweep — does more data still tighten the posterior?</div>
+    <svg id="fracSvg" class="chart" viewBox="0 0 720 200"></svg><div class="read" id="fracRead"></div>
+    <div class="note">H rebuilt from 10–100% of cached φ (<b>no retraining</b> — MAP weights fixed). Cyan = posterior-covariance trace tr((H+τI)⁻¹) (whole weight space); amber = this example's input-variance. A curve still dropping at 100% ⇒ more data would tighten the posterior; a flat tail ⇒ data-saturated. This is the <i>posterior</i> learning curve, a proxy for the (retraining) accuracy curve.</div>`;
+  ensureSweep().then(()=>buildFracChart());
+}
+function buildFracChart(){
+  if(!SWEEP||SWEEP.error){ $("#fracSvg").outerHTML=`<div class="err">${SWEEP?SWEEP.error:"no sweep"}</div>`; return; }
+  const tau=curKnobs().tau, rows=sweepAt(tau);
+  const W=720,H=200,padL=46,padB=24,padT=10,padR=10;
+  const X=f=>padL+f*(W-padL-padR);
+  const tmax=Math.max(...rows.map(r=>r.trace)), vmax=Math.max(...rows.map(r=>r.vin));
+  const Yt=v=>padT+(1-v/(tmax*1.05))*(H-padT-padB), Yv=v=>padT+(1-v/(vmax*1.05))*(H-padT-padB);
+  const tracePts=rows.map(r=>[X(r.frac),Yt(r.trace)]), vinPts=rows.map(r=>[X(r.frac),Yv(r.vin)]);
+  let grid=""; [0,.25,.5,.75,1].forEach(f=>{const xx=X(f);
+    grid+=`<line x1="${xx}" y1="${padT}" x2="${xx}" y2="${H-padB}" stroke="#11202e"/><text x="${xx}" y="${H-9}" text-anchor="middle" fill="#5b7180" font-size="9">${(100*f)|0}%</text>`;});
+  const dot=(pts,col)=>pts.map(p=>`<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="3" fill="${col}"/>`).join("");
+  $("#fracSvg").innerHTML=`${grid}
+    <path d="${poly(tracePts)}" fill="none" stroke="var(--cyan)" stroke-width="2"/>${dot(tracePts,"var(--cyan)")}
+    <path d="${poly(vinPts)}" fill="none" stroke="var(--amber)" stroke-width="1.6" opacity=".85"/>${dot(vinPts,"var(--amber)")}
+    <text x="${padL}" y="${padT+9}" fill="var(--cyan)" font-size="9">tr((H+τI)⁻¹) — whole weight space</text>
+    <text x="${W-padR}" y="${H-padB-4}" text-anchor="end" fill="var(--amber)" font-size="9">v(φ;τ) — this example</text>`;
+  // tail slope: relative drop over the last segment (75%→100%)
+  const a=rows[rows.length-2].trace, b=rows[rows.length-1].trace, drop=a>1e-9?(a-b)/a:0;
+  const verdict = drop>0.05 ? ["still tightening","cyan"] : ["saturated","amber"];
+  $("#fracRead").innerHTML=`<span class="chip ${verdict[1]==='cyan'?'cyan':''}"><div class="v">${(100*drop).toFixed(0)}%</div><div class="l">trace drop · last 25% data</div></span>
+    <span class="chip"><div class="v">${rows[rows.length-1].starved}</div><div class="l">starved @100% data</div></span>
+    <span class="chip"><div class="v" style="font-size:12px">${verdict[0]}</div><div class="l">posterior at 100%</div></span>`;
+}
+
+// confusion → aleatoric floor: largest off-diagonal recall per genre
+function aleatoricFloor(){
+  if(!META.confusion||!META.conf_labels) return null;
+  const C=META.confusion, L=META.conf_labels, pairs=[];
+  for(let i=0;i<C.length;i++){let bj=-1,bv=-1;for(let j=0;j<C[i].length;j++){if(j!==i&&C[i][j]>bv){bv=C[i][j];bj=j;}}
+    pairs.push({genre:L[i],into:L[bj],val:bv});}
+  pairs.sort((a,b)=>b.val-a.val); return pairs;
+}
+function viewReport(){
+  if(SWEEP && SWEEP.index===curIdx){ renderReportNow(); return; }
+  $("#stage").innerHTML=`<div class="full">synthesizing the report…</div>`;
+  const myIdx=curIdx;
+  ensureSweep().then(()=>{ if(view==="report" && curIdx===myIdx) renderReportNow(); });
+}
+function renderReportNow(){
+    const {tau,T,s}=curKnobs();
+    // angle 1 — eigenspectrum (unused weight capacity)
+    const lam=PL.eig.lam, dN=lam.length, starved=lam.reduce((a,l)=>a+(l<tau?1:0),0), starvedF=starved/dN;
+    // angle 2 — data-fraction tail slope
+    let drop=0, satTxt="—";
+    if(SWEEP&&!SWEEP.error){const rows=sweepAt(tau),a=rows[rows.length-2].trace,b=rows[rows.length-1].trace;drop=a>1e-9?(a-b)/a:0;satTxt=drop>0.05?"still tightening":"saturated";}
+    // angle 3 — epistemic / aleatoric decomposition (this example)
+    const dec=decompose(tau,T,s);
+    // angle 4 — aleatoric floor (confusion) for the predicted genre
+    const floor=aleatoricFloor(); const pred=META.genres[META.predicted[curIdx]];
+    let floorRow=floor?floor.find(p=>p.genre===pred):null; if(!floorRow&&floor)floorRow=floor[0];
+    const floorVal=floorRow?floorRow.val:null;
+    // votes
+    const votes=[
+      {room:starvedF>0.15, label:"weight capacity", read:`${(100*starvedF).toFixed(0)}% of directions prior-led`, why:starvedF>0.15?"unused capacity → room":"weight space well-used"},
+      {room:drop>0.05, label:"data-fraction curve", read:`${(100*drop).toFixed(0)}% trace drop in last 25% data`, why:drop>0.05?"still tightening → more data helps":"saturated → data won't tighten"},
+      {room:dec.ef>0.5, label:"uncertainty type", read:`${(100*dec.ef).toFixed(0)}% epistemic`, why:dec.ef>0.5?"model-limited → capacity/data helps":"aleatoric-limited → near noise floor"},
+      {room: floorVal==null?true:floorVal<0.2, label:"aleatoric floor", read: floorVal==null?"n/a (no confusion data)":`${pred}→${floorRow.into} ${(100*floorVal).toFixed(0)}%`, why: floorVal==null?"—":(floorVal<0.2?"low overlap → reducible":"high overlap → irreducible")},
+    ];
+    const room=votes.filter(v=>v.room).length, cap=votes.length-room;
+    const verdict = room>cap ? ["ROOM TO IMPROVE","var(--good)"] : cap>room ? ["NEAR DATA / NOISE CAP","var(--amber)"] : ["MIXED EVIDENCE","var(--cyan)"];
+    const rows=votes.map(v=>`<tr style="border-top:1px solid var(--line)"><td style="color:var(--muted);padding:3px 6px">${v.label}</td>
+      <td>${v.read}</td><td style="color:${v.room?'var(--good)':'var(--amber)'}">${v.room?'▲ room':'▼ cap'}</td>
+      <td style="color:var(--muted);font-size:10.5px">${v.why}</td></tr>`).join("");
+    // HMC reliability check (5th angle) — only if HMC was run for THIS example
+    let hmcBlock="";
+    if(HMC && HMC.index===curIdx){
+      const cv=hmcConverged(HMC.hmc), G=HMC.genres;
+      if(!cv.ok){
+        const fails=[];
+        if(!cv.rhatOk) fails.push(`R̂=${HMC.hmc.rhat==null?'—':HMC.hmc.rhat.toFixed(3)} (&gt;1.05)`);
+        if(cv.essGrade===0) fails.push(`ESS=${Math.round(HMC.hmc.ess)} (&lt;50)`);
+        if(!cv.divOk) fails.push(`${HMC.hmc.n_divergences} divergences`);
+        hmcBlock=`<div class="chh" style="margin-top:14px">reliability · HMC convergence</div>
+          <div class="note" style="font-size:12.5px"><b style="color:var(--amber)">⚠ HMC has not converged</b> — ${fails.join(', ')}. A comparison would be untrustworthy, so the report makes <b>no LLLA-vs-HMC claim</b>. Increase samples/warmup, or adjust τ, then re-run.</div>`;
+      } else {
+        const ord=HMC.llla.mean.map((m,i)=>[m,i]).sort((a,b)=>b[0]-a[0]).map(x=>x[1]);  // by LLLA μ desc
+        const gaps=HMC.llla.mean.map((m,i)=>m-HMC.hmc.mean[i]);   // +ve ⇒ LLLA higher (over-states)
+        const absg=gaps.map(g=>Math.abs(g));
+        const wi=absg.map((g,i)=>[g,i]).sort((a,b)=>b[0]-a[0])[0][1], wgap=gaps[wi], maxGap=absg[wi];
+        const isMode = wi===ord[0], dir = wgap>0?"over":"under", agree = maxGap<0.05;
+        let story;
+        if(agree) story=`<b style="color:var(--good)">✓ Laplace is faithful here</b> — worst mean gap ${(100*maxGap).toFixed(1)}% (${G[wi]}). Trust the epistemic angles above.`;
+        else if(dir==="over"&&isMode) story=`<b style="color:var(--amber)">Laplace is over-confident at the mode</b> — ${(100*HMC.llla.mean[wi]).toFixed(1)}% on ${G[wi]} vs HMC ${(100*HMC.hmc.mean[wi]).toFixed(1)}%. The Gaussian is too sharp at the peak, so it <i>under</i>-states total uncertainty.`;
+        else if(dir==="under"&&!isMode) story=`<b style="color:var(--amber)">Laplace collapses a tail class</b> — ${G[wi]} ${(100*HMC.llla.mean[wi]).toFixed(1)}% vs HMC ${(100*HMC.hmc.mean[wi]).toFixed(1)}%. Gaussian-then-softmax pins low-probability classes near 0; epistemic is a <b>lower bound</b>.`;
+        else story=`<b style="color:var(--amber)">Laplace ${dir}-states ${G[wi]}</b> — ${(100*HMC.llla.mean[wi]).toFixed(1)}% vs HMC ${(100*HMC.hmc.mean[wi]).toFixed(1)}%.`;
+        const trows=ord.slice(0,5).map(i=>{const dm=HMC.hmc.mean[i]-HMC.llla.mean[i];
+          return `<tr style="border-top:1px solid var(--line)"><td style="padding:3px 6px">${G[i]}</td>
+            <td>${(100*HMC.llla.mean[i]).toFixed(1)}%</td><td>${(100*HMC.hmc.mean[i]).toFixed(1)}%</td>
+            <td style="color:${Math.abs(dm)>0.05?'var(--amber)':'var(--muted)'}">${dm>=0?'+':''}${(100*dm).toFixed(1)}</td>
+            <td>${(100*HMC.llla.sigma[i]).toFixed(1)}</td><td>${(100*HMC.hmc.sigma[i]).toFixed(1)}</td></tr>`;}).join("");
+        const mapTop = HMC.map_pred ? HMC.map_pred.map((m,i)=>[m,i]).sort((a,b)=>b[0]-a[0])[0] : null;
+        const mapNote = mapTop ? `MAP predicts ${G[mapTop[1]]} ${(100*mapTop[0]).toFixed(1)}%; HMC mean there ${(100*HMC.hmc.mean[mapTop[1]]).toFixed(1)}%.` : "";
+        const tauCaveat = (!agree && isMode && dir==="over")
+          ? ` <span style="color:var(--muted)">At large τ the prior pulls the head down — some of this gap is the prior, not a Laplace defect; re-run at smaller τ to separate them.</span>` : "";
+        hmcBlock=`<div class="chh" style="margin-top:14px">reliability · HMC (converged: R̂ ${HMC.hmc.rhat==null?'—':HMC.hmc.rhat.toFixed(3)}, ESS ${Math.round(HMC.hmc.ess)}, ${HMC.hmc.n_divergences} div) vs LLLA</div>
+          <table style="width:100%;border-collapse:collapse;font-size:11px">
+            <tr style="color:var(--cyan-dim);text-transform:uppercase;font-size:9px;letter-spacing:.06em"><td style="padding:3px 6px">genre</td><td>LLLA μ</td><td>HMC μ</td><td>Δμ</td><td>LLLA σ</td><td>HMC σ</td></tr>
+            ${trows}
+          </table>
+          <div class="note" style="font-size:12.5px;margin-top:8px">${story} ${mapNote}${tauCaveat}</div>`;
+      }
+    } else {
+      hmcBlock=`<div class="note" style="margin-top:12px;color:var(--muted)">Run <b>HMC</b> on this example (HMC tab) to add the reliability check: convergence diagnostics (R̂ · ESS · divergences) + a per-genre HMC-vs-LLLA comparison.</div>`;
+    }
+    // ---- recommendations engine -------------------------------------------
+    const recs=[];
+    const hmcCv = (HMC && HMC.index===curIdx) ? hmcConverged(HMC.hmc) : null;
+    if(hmcCv && !hmcCv.ok){
+      if(!hmcCv.divOk) recs.push(["fix sampler","amber",`<b>${HMC.hmc.n_divergences} divergences</b> — the leapfrog step is too large for the posterior's curvature. Raise <b>leapfrog steps to 25–30</b> (or lower τ) and re-run; divergences should drop to 0.`]);
+      if(hmcCv.essGrade===0) recs.push(["fix sampler","amber",`<b>ESS ${Math.round(HMC.hmc.ess)}</b> — the chain mixes slowly. <b>Increase samples to 600–800</b> (warmup ≥ 400); effective samples scale ~linearly.`]);
+      if(!hmcCv.rhatOk) recs.push(["fix sampler","amber",`<b>R̂ ${HMC.hmc.rhat==null?'—':HMC.hmc.rhat.toFixed(2)}</b> — the chain halves disagree; it hasn't settled. <b>Increase warmup.</b>`]);
+    }
+    if(dec.ef>0.5){
+      const nstarved=Math.round(starvedF*dN);
+      if(starvedF>0.15 && drop>0.05)
+        recs.push(["reduce epistemic","good",`Uncertainty here is <b>${(100*dec.ef).toFixed(0)}% epistemic</b> and the data-fraction curve is still dropping → <b>add more / more diverse training data</b>. The ${nstarved} prior-led weight-directions are exactly what new data would constrain. You are <b>data-limited, not capacity-limited</b>.`]);
+      else if(starvedF>0.15)
+        recs.push(["reduce epistemic","good",`<b>${(100*dec.ef).toFixed(0)}% epistemic</b> with ${(100*starvedF).toFixed(0)}% starved directions, but the data curve has flattened → more <i>samples</i> won't help much; reach for <b>more model capacity or richer features</b>.`]);
+      else
+        recs.push(["reduce epistemic","good",`Mostly epistemic (${(100*dec.ef).toFixed(0)}%) but the weight space is already well-used → the model is unsure here; <b>more data or capacity</b> should still help.`]);
+    } else {
+      const floorTxt = (floorVal!=null && floorRow) ? ` — ${pred} overlaps with <b>${floorRow.into}</b> at ${(100*floorVal).toFixed(0)}%` : "";
+      recs.push(["aleatoric floor","muted",`Uncertainty here is mostly <b>aleatoric</b> (${(100*(1-dec.ef)).toFixed(0)}%) — irreducible overlap in the audio${floorTxt}. <b>More data will not help</b>; this is your ceiling for this example. Only different / richer features could move it.`]);
+    }
+    const recsHTML = recs.map(r=>`<div class="rec rec-${r[1]}"><span class="rec-tag">${r[0]}</span><span>${r[2]}</span></div>`).join("");
+    const efPct=Math.round(100*dec.ef);
+
+    $("#stage").innerHTML=`
+      <div class="chh">hypothesis · can we go further, or are we data/noise-capped?</div>
+      <div style="display:flex;align-items:baseline;gap:14px;margin:6px 0 14px;flex-wrap:wrap">
+        <div style="font-family:var(--disp);font-weight:700;font-size:26px;color:${verdict[1]}">${verdict[0]}</div>
+        <div style="color:var(--muted);font-size:12.5px">${room}/4 angles point to head-room · example #${curIdx} (${pred}) · τ=${tau.toExponential(1)}</div>
+      </div>
+      <table style="width:100%;border-collapse:collapse;font-size:12.5px;line-height:1.5">
+        <tr style="color:var(--cyan-dim);text-transform:uppercase;font-size:10px;letter-spacing:.08em"><td style="padding:5px 6px">angle</td><td>reading</td><td>verdict</td><td>interpretation</td></tr>
+        ${rows}
+      </table>
+
+      <div class="chh" style="margin-top:18px">uncertainty type · epistemic vs aleatoric</div>
+      <div class="ea-grid">
+        <div class="ea-card epi"><div class="ea-tag">EPISTEMIC · reducible</div><div class="ea-val">${dec.epistemic.toFixed(2)}<span> nats</span></div><div class="ea-desc">model ignorance — shrinks with more data or capacity</div></div>
+        <div class="ea-card ale"><div class="ea-tag">ALEATORIC · irreducible</div><div class="ea-val">${dec.aleatoric.toFixed(2)}<span> nats</span></div><div class="ea-desc">genuine data overlap — the noise floor; no fix</div></div>
+      </div>
+      <div class="ea-bar"><div style="width:${efPct}%"></div></div>
+      <div class="ea-barlab"><span style="color:var(--cyan)">${efPct}% epistemic (actionable)</span><span style="color:var(--amber)">${100-efPct}% aleatoric (floor)</span></div>
+
+      ${hmcBlock}
+
+      <div class="chh" style="margin-top:18px">recommendations · what to do</div>
+      ${recsHTML}
+
+      <div class="note" style="font-size:12.5px;margin-top:12px">Four independent angles plus an HMC reliability check, read for the <i>current example</i> at the <i>current τ</i>. Only <b style="color:var(--cyan)">epistemic</b> error is actionable (more data / capacity); <b style="color:var(--amber)">aleatoric</b> is the irreducible floor. Browse examples and drag τ to test robustness. The decomposition is MC (≈); everything else is closed-form.</div>`;
+}
+// ---- HMC: gold-standard sampler vs the LLLA approximation -----------------
+let HMC=null, hmcGenre=null, hmcTimer=null;
+function viewHMC(){
+  const k=curKnobs();
+  const stale = HMC && Math.abs(Math.log(HMC.tau)-Math.log(k.tau))>1e-3;
+  $("#stage").innerHTML=`
+    <div class="chh">HMC — gold-standard sampler vs the Laplace approximation</div>
+    <div class="hmc-ctrl">
+      <label>samples <input id="hmcS" type="number" min="50" max="1500" step="50" value="250"></label>
+      <label>leapfrog <input id="hmcL" type="number" min="5" max="60" step="5" value="15"></label>
+      <span class="hmc-tau">τ = ${k.tau.toExponential(2)}</span>
+      <button class="xb" id="hmcRun" title="run the HMC sampler server-side (~10–20s) at the current τ">▶ run HMC</button>
+      <span id="hmcStatus" class="hmc-status"></span>
+    </div>
+    <div id="hmcOut"></div>`;
+  $("#hmcRun").onclick=runHMC;
+  if(HMC && !stale){ renderHMC(false); }
+  else $("#hmcOut").innerHTML = `<div class="note">${stale?'<b style="color:var(--amber)">τ changed since the last run — press run to resample.</b><br>':''}Samples the <b>true</b> last-layer posterior and overlays it on the LLLA Gaussian — showing where the approximation is honest and where it isn't. Runs server-side (~10–20s); the chain is cached and reused across examples & genres. Press <b>run HMC</b>.</div>`;
+}
+async function runHMC(){
+  const S=+$("#hmcS").value||250, L=+$("#hmcL").value||15, tau=curKnobs().tau;
+  $("#hmcStatus").textContent="sampling… (~10–20s)"; $("#hmcRun").disabled=true;
+  try{
+    const r=await fetch(`/api/forge/hmc?index=${curIdx}&tau=${tau}&samples=${S}&leapfrog=${L}`);
+    const d=await r.json();
+    if(d.error){
+      $("#hmcOut").innerHTML = d.needs_y_train
+        ? `<div class="soon"><span class="tg">y_train not cached</span><br><br>HMC needs the training labels. Backfill once (on your machine):<br><br><code>python -m projects.genre.src.bayes.backfill_y_train --bundle projects\\genre\\models\\beardown --config projects\\genre\\configs\\beardown.yaml</code><br><br>then press <b>run HMC</b> again.</div>`
+        : `<div class="err">${d.error}</div>`;
+      $("#hmcStatus").textContent=""; return;
+    }
+    HMC=d; hmcGenre=null;
+    $("#hmcStatus").textContent=`accept ${(100*d.hmc.accept).toFixed(0)}% · step ${d.hmc.step.toExponential(1)}`;
+    renderHMC(true);
+  }catch(e){ $("#hmcOut").innerHTML=`<div class="err">HMC request failed: ${e}</div>`; $("#hmcStatus").textContent=""; }
+  finally{ $("#hmcRun").disabled=false; }
+}
+function hmcOrder(){ return HMC.hmc.mean.map((m,i)=>[m,i]).sort((a,b)=>b[0]-a[0]).map(x=>x[1]); }
+// convergence verdict from the four diagnostics
+function hmcConverged(h){
+  const rhatOk = (h.rhat==null) || (h.rhat<1.05);
+  const essGrade = h.ess>=200?2 : h.ess>=50?1 : 0;   // good / marginal / poor
+  const divOk = h.n_divergences===0;
+  return {ok: rhatOk && essGrade>=1 && divOk, rhatOk, essGrade, divOk};
+}
+function drawTrace(){
+  const t=HMC.hmc.lp_trace; if(!t||t.length<2||!$("#hmcTrace")) return;
+  const W=600,H=86,pL=8,pR=8,pT=8,pB=13, lo=Math.min(...t), hi=Math.max(...t), rng=(hi-lo)||1;
+  const X=i=>pL+(i/(t.length-1))*(W-pL-pR), Y=v=>pT+(1-(v-lo)/rng)*(H-pT-pB);
+  const pts=t.map((v,i)=>[X(i),Y(v)]), wx=pL+(HMC.hmc.warmup_frac||0)*(W-pL-pR);
+  $("#hmcTrace").innerHTML=`
+    <rect x="${pL}" y="${pT}" width="${Math.max(wx-pL,0).toFixed(1)}" height="${H-pT-pB}" fill="rgba(240,165,0,.06)"/>
+    <line x1="${wx.toFixed(1)}" y1="${pT}" x2="${wx.toFixed(1)}" y2="${H-pB}" stroke="var(--amber)" stroke-dasharray="3 3"/>
+    <text x="${(pL+2)}" y="${pT+9}" fill="var(--amber)" font-size="8">← warmup (burn-in)</text>
+    <text x="${wx+4}" y="${pT+9}" fill="var(--cyan-dim)" font-size="8">sampling →</text>
+    <path d="${pts.map((p,i)=>(i?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' ')}" fill="none" stroke="var(--cyan)" stroke-width="1"/>`;
+}
+function renderHMC(animate){
+  const G=HMC.genres, C=G.length;
+  if(hmcGenre==null) hmcGenre=hmcOrder()[0];
+  const gi=hmcGenre, color=GENRE_C[G[gi]]||"#2de2e6";
+  const cv=hmcConverged(HMC.hmc);
+  $("#hmcOut").innerHTML=`
+    <div class="pg-sel">
+      <button class="xb" id="hmcPrev" title="previous genre">‹</button>
+      <div class="pg-name" style="color:${color}">${G[gi].toUpperCase()}</div>
+      <button class="xb" id="hmcNext" title="next genre">›</button>
+      <span class="read" style="margin-left:auto">
+        <span class="chip cyan"><div class="v">${(100*HMC.hmc.mean[gi]).toFixed(1)}%</div><div class="l">HMC mean</div></span>
+        <span class="chip"><div class="v">${(100*HMC.hmc.sigma[gi]).toFixed(1)}</div><div class="l">HMC σ</div></span>
+        <span class="chip" style="border-color:var(--amber)"><div class="v" style="color:var(--amber)">${(100*HMC.llla.mean[gi]).toFixed(1)}%</div><div class="l">LLLA mean</div></span>
+        <span class="chip" style="border-color:var(--amber)"><div class="v" style="color:var(--amber)">${(100*HMC.llla.sigma[gi]).toFixed(1)}</div><div class="l">LLLA σ</div></span>
+      </span>
+    </div>
+    <svg id="hmcSvg" class="chart" viewBox="0 0 600 170" style="width:100%;height:auto"></svg>
+    <div class="hmc-prog"><div id="hmcBar" class="hmc-bar"></div></div>
+    <div class="chh" style="margin-top:10px">convergence — have we reached the stable state?</div>
+    <div class="read">
+      <span class="chip" style="border-color:${cv.ok?'var(--good)':'var(--amber)'}"><div class="v" style="color:${cv.ok?'var(--good)':'var(--amber)'};font-size:12px">${cv.ok?'● converged':'▲ not yet'}</div><div class="l">verdict</div></span>
+      <span class="chip"><div class="v" style="color:${cv.rhatOk?'var(--good)':'var(--bad)'}">${HMC.hmc.rhat==null?'—':HMC.hmc.rhat.toFixed(3)}</div><div class="l">R̂ (&lt;1.05)</div></span>
+      <span class="chip"><div class="v" style="color:${['var(--bad)','var(--amber)','var(--good)'][cv.essGrade]}">${Math.round(HMC.hmc.ess)}</div><div class="l">ESS (&gt;200)</div></span>
+      <span class="chip"><div class="v" style="color:${cv.divOk?'var(--good)':'var(--bad)'}">${HMC.hmc.n_divergences}</div><div class="l">divergences</div></span>
+      <span class="chip"><div class="v">${(100*HMC.hmc.accept).toFixed(0)}%</div><div class="l">accept</div></span>
+    </div>
+    <svg id="hmcTrace" class="chart" viewBox="0 0 600 86" style="width:100%;height:auto;margin-top:8px"></svg>
+    <div class="read" style="margin-top:8px"><button class="xb" id="hmcReplay" title="replay the sample-by-sample animation">↻ replay</button>
+      <span class="chip"><div class="v">${HMC.hmc.n_samples}</div><div class="l">samples</div></span>
+      <span class="chip"><div class="v">${HMC.hmc.n_leapfrog}</div><div class="l">leapfrog</div></span>
+      <span class="chip"><div class="v">${HMC.hmc.n_warmup}</div><div class="l">warmup</div></span></div>
+    <div class="note">Filled histogram = <b>HMC</b> (the true posterior, sampled); amber dashed curve = <b>LLLA</b> Gaussian (the approximation). Overlap ⇒ Laplace is honest; a skewed or shifted histogram ⇒ it over/under-states uncertainty. Step genres with ‹ ›, ↻ to replay.</div>`;
+  $("#hmcPrev").onclick=()=>{const o=hmcOrder();hmcGenre=o[(o.indexOf(gi)-1+C)%C];renderHMC(true);};
+  $("#hmcNext").onclick=()=>{const o=hmcOrder();hmcGenre=o[(o.indexOf(gi)+1)%C];renderHMC(true);};
+  $("#hmcReplay").onclick=()=>animateHMC(gi,color);
+  if(animate) animateHMC(gi,color); else drawHMCFrame(gi,color,HMC.hmc.pred.length);
+  drawTrace();
+}
+function drawHMCFrame(gi,color,n){
+  const col=HMC.hmc.pred.map(p=>p[gi]);
+  let lo=Math.min(...col), hi=Math.max(...col); const pad=(hi-lo)*0.15||0.02;
+  lo=Math.max(0,lo-pad); hi=Math.min(1,hi+pad); if(hi<=lo)hi=lo+0.02;
+  const sub=col.slice(0,n), BINS=34, bw=(hi-lo)/BINS, h=new Array(BINS).fill(0);
+  for(const v of sub){if(v<lo||v>hi)continue;let b=Math.floor((v-lo)/bw);if(b>=BINS)b=BINS-1;if(b<0)b=0;h[b]++;}
+  const hm=Math.max(...h,1), W=600,H=170,pL=8,pR=8,pT=12,pB=22;
+  const Xi=i=>pL+(i/(BINS-1))*(W-pL-pR), Yc=c=>(H-pB)-(c/hm)*(H-pB-pT);
+  const pts=h.map((c,i)=>[Xi(i),Yc(c)]);
+  const area=`M${pL},${H-pB} `+pts.map(p=>`L${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(" ")+` L${W-pR},${H-pB} Z`;
+  const xOf=v=>pL+((v-lo)/(hi-lo))*(W-pL-pR);
+  const mu=HMC.llla.mean[gi], sd=Math.max(HMC.llla.sigma[gi],1e-4), NB=60, g=[];
+  for(let i=0;i<NB;i++){const x=lo+(i/(NB-1))*(hi-lo);g.push([xOf(x),Math.exp(-0.5*((x-mu)/sd)**2)]);}
+  const gm=Math.max(...g.map(p=>p[1]),1e-9);
+  const gline=g.map((p,i)=>(i?'L':'M')+p[0].toFixed(1)+','+((H-pB)-(p[1]/gm)*(H-pB-pT)).toFixed(1)).join(' ');
+  const ticks=[lo,(lo+hi)/2,hi].map(t=>`<text x="${xOf(t).toFixed(1)}" y="${H-6}" text-anchor="middle" fill="#5b7180" font-size="10">${(100*t).toFixed(1)}%</text>`).join("");
+  $("#hmcSvg").innerHTML=`
+    <path d="${area}" fill="${color}" opacity="0.4"/>
+    <path d="${pts.map((p,i)=>(i?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' ')}" fill="none" stroke="${color}" stroke-width="1.5"/>
+    <path d="${gline}" fill="none" stroke="var(--amber)" stroke-width="1.8" stroke-dasharray="4 3"/>
+    <line x1="${xOf(HMC.hmc.mean[gi]).toFixed(1)}" y1="${pT}" x2="${xOf(HMC.hmc.mean[gi]).toFixed(1)}" y2="${H-pB}" stroke="${color}" stroke-dasharray="2 2"/>
+    <line x1="${xOf(mu).toFixed(1)}" y1="${pT}" x2="${xOf(mu).toFixed(1)}" y2="${H-pB}" stroke="var(--amber)" stroke-dasharray="2 2" opacity=".7"/>
+    ${ticks}`;
+  if($("#hmcBar")) $("#hmcBar").style.width=(100*n/col.length).toFixed(0)+"%";
+}
+function animateHMC(gi,color){
+  if(hmcTimer){clearInterval(hmcTimer);hmcTimer=null;}
+  const total=HMC.hmc.pred.length; let n=Math.max(2,Math.floor(total*0.04));
+  hmcTimer=setInterval(()=>{
+    n+=Math.max(1,Math.floor(total/55));
+    if(n>=total){n=total;clearInterval(hmcTimer);hmcTimer=null;}
+    drawHMCFrame(gi,color,n);
+  },40);
+  drawHMCFrame(gi,color,n);
+}
+function renderView(){
+  if(hmcTimer && view!=="hmc"){clearInterval(hmcTimer);hmcTimer=null;}
+  if(!PL && view!=="model"){ return; }
+  ({overview:viewOverview,post:viewPosterior,model:viewModel,eigen:viewEigen,sweep:viewSweep,
+    frac:viewFrac,report:viewReport,hmc:viewHMC}[view]||viewOverview)();
+}
+
+// ---- overview: the headline LLLA read (global) + quick reference ----------
+function viewOverview(){
+  const lam=[...PL.eig.lam], d=lam.length, lmax=Math.max(...lam), tau=curKnobs().tau;
+  const starved=lam.reduce((a,l)=>a+(l<tau?1:0),0), starvedF=starved/d;
+  const active=lam.reduce((a,l)=>a+(l>0.01*lmax?1:0),0), capUsed=active/d;
+  const dataLimited = starvedF>0.5;
+  const verdict = dataLimited ? ["DATA-LIMITED · NOT CAPACITY-LIMITED","var(--good)"]
+                              : ["APPROACHING CAPACITY USE","var(--amber)"];
+  const c=META.card||{}, cv=c.cv||{}, test=c.test||{};
+  const pct=x=>x==null?"—":(100*x).toFixed(1)+"%", f=(x,nd=3)=>x==null?"—":(+x).toFixed(nd);
+  // current example strip
+  const k=curKnobs();
+  const {mean,sigma}=posteriorAt(k.tau,k.T,k.s);
+  const top=mean.map((m,i)=>[m,i]).sort((a,b)=>b[0]-a[0])[0][1];
+  const pred=META.genres[top];
+  $("#stage").innerHTML=`
+    <div style="margin:2px 0 12px">
+      <div style="font-family:var(--disp);font-size:11px;letter-spacing:.18em;color:var(--cyan-dim);margin-bottom:3px">FORGE READ</div>
+      <div style="font-family:var(--disp);font-weight:700;font-size:30px;line-height:1.08;color:${verdict[1]}">${verdict[0]}</div>
+    </div>
+    <div class="read" style="margin-bottom:12px">
+      <span class="chip cyan"><div class="v">${starved}<span style="font-size:11px;color:var(--muted)"> / ${d}</span></div><div class="l">data-starved directions</div></span>
+      <span class="chip"><div class="v">${(100*starvedF).toFixed(0)}%</div><div class="l">weight space prior-led</div></span>
+      <span class="chip"><div class="v">${active}<span style="font-size:11px;color:var(--muted)"> / ${d}</span></div><div class="l">active dims (λ&gt;1% λmax)</div></span>
+      <span class="chip"><div class="v">${(100*capUsed).toFixed(1)}%</div><div class="l">feature capacity used</div></span>
+    </div>
+    <div class="note" style="font-size:13.5px;line-height:1.65;color:#cfe2e6">
+      The last layer has <b>${d}</b> weight-directions. At the current τ only <b>${d-starved}</b> are pinned down by the training
+      data; the other <b>${starved}</b> (${(100*starvedF).toFixed(0)}%) are prior-led — directions GTZAN never constrained.
+      The eigenspectrum cliff (only <b>${active}</b> dims carry real signal) means the feature space is used at
+      <b>~${(100*capUsed).toFixed(1)}%</b> of capacity. ${dataLimited
+        ? "<b style='color:var(--good)'>More (diverse) training data would sharpen those starved directions — you are not near a model-capacity ceiling.</b>"
+        : "<b style='color:var(--amber)'>Most directions are data-pinned — you are near the useful capacity of this feature space.</b>"}
+    </div>
+
+    <div class="chh">active model</div>
+    <div class="read">
+      <span class="chip cyan"><div class="v">${f(cv.mean)}</div><div class="l">cv mean</div></span>
+      <span class="chip"><div class="v">${pct(test.accuracy)}</div><div class="l">test acc</div></span>
+      <span class="chip"><div class="v">${f(test.macro_f1)}</div><div class="l">macro-F1</div></span>
+      <span class="chip"><div class="v">${c.test_ece!=null?f(c.test_ece):"—"}</div><div class="l">test ECE</div></span>
+    </div>
+
+    <div class="chh">current example</div>
+    <div class="note" style="font-size:12px">#${curIdx} · model predicts <b>${pred}</b> at <b>${(100*mean[top]).toFixed(1)}%</b>
+      with epistemic <b>±${(100*sigma[top]).toFixed(1)}%</b> · input-variance v(φ;τ) = <b>${META.input_var[curIdx]!=null?(+META.input_var[curIdx]).toExponential(2):"—"}</b>
+      <span style="color:var(--muted)"> — browse examples in the left rail; open <b>posterior</b> for the full per-genre view.</span></div>
+
+    <div class="chh">quick reference · what the LLLA stats mean</div>
+    <div class="note" style="font-size:11.5px;line-height:1.7">
+      <b style="color:var(--cyan-dim)">τ (prior precision)</b> — how hard the prior pulls weights toward 0. ↑τ tightens the posterior; it's a prior knob, not data.<br>
+      <b style="color:var(--cyan-dim)">eigenspectrum λᵢ</b> — eigenvalues of H = ΦᵀΦ; how much the training data constrains each weight-direction. Big λ = well-constrained.<br>
+      <b style="color:var(--cyan-dim)">data-starved direction</b> — a direction with λᵢ ≲ τ: the data barely constrained it, so the prior decides it. Many starved ⇒ more data would help.<br>
+      <b style="color:var(--cyan-dim)">v(φ;τ) input-variance</b> — Σ(uᵢᵀφ)²/(λᵢ+τ): how far this input sits from the training feature manifold. High ⇒ out-of-distribution ⇒ wide bands.<br>
+      <b style="color:var(--cyan-dim)">epistemic σ</b> — per-genre model-ignorance from the posterior; shrinks with data/capacity (vs aleatoric, the irreducible data overlap).
+    </div>`;
+}
+
+// eigenspectrum + sweep builders (write into the IDs the views inject)
+function buildEigenspectrum(tau){
+  const lam=[...PL.eig.lam].sort((a,b)=>b-a), d=lam.length;
+  const W=720,H=190,padL=44,padB=20,padT=8,padR=10;
+  const x=i=>padL+(i/(d-1))*(W-padL-padR), lg=v=>Math.log10(Math.max(v,1e-8));
+  const ymax=lg(lam[0]*1.3), ymin=lg(Math.min(lam[d-1],tau)*0.5), y=v=>padT+(1-(lg(v)-ymin)/(ymax-ymin))*(H-padT-padB);
+  let xo=d; for(let i=0;i<d;i++){if(lam[i]<tau){xo=i;break;}}
+  const hi=[],lo=[]; for(let i=0;i<d;i++){const p=[x(i),y(lam[i])];(i<xo?hi:lo).push(p);}
+  if(lo.length&&hi.length)lo.unshift(hi[hi.length-1]);
+  const tauY=y(tau), starved=d-xo;
+  let ticks=""; for(let ee=Math.ceil(ymin);ee<=Math.floor(ymax);ee++){const yy=y(Math.pow(10,ee));
+    ticks+=`<line x1="${padL}" y1="${yy}" x2="${W-padR}" y2="${yy}" stroke="#11202e"/><text x="${padL-5}" y="${yy+3}" text-anchor="end" fill="#5b7180" font-size="8.5">1e${ee}</text>`;}
+  $("#eigSvg").innerHTML=`${ticks}
+    <rect x="${x(xo)}" y="${padT}" width="${(W-padR)-x(xo)}" height="${H-padT-padB}" fill="rgba(240,165,0,.07)"/>
+    <path d="${poly(hi)}" fill="none" stroke="var(--cyan)" stroke-width="1.7"/>
+    <path d="${poly(lo)}" fill="none" stroke="var(--amber)" stroke-width="1.7"/>
+    <line x1="${padL}" y1="${tauY}" x2="${W-padR}" y2="${tauY}" stroke="#cfe8ec" stroke-dasharray="5 4"/>
+    <text x="${W-padR}" y="${tauY-4}" text-anchor="end" fill="#cfe8ec" font-size="9.5">τ=${tau.toExponential(1)}</text>`;
+  $("#eigRead").innerHTML=`<span class="chip cyan"><div class="v">${starved}<span style="font-size:10px;color:var(--muted)"> / ${d}</span></div><div class="l">data-starved dirs</div></span>
+    <span class="chip"><div class="v">${(100*starved/d).toFixed(0)}%</div><div class="l">prior-led</div></span>`;
+}
+function buildTauSweep(){
+  const {T,s}=curKnobs(), tauNow=curKnobs().tau, [lo,hi]=META.tau_range, N=80, G=PL.genres, C=G.length;
+  const taus=[], sig=Array.from({length:C},()=>[]);
+  for(let k=0;k<N;k++){const t=Math.exp(Math.log(lo)+(k/(N-1))*(Math.log(hi)-Math.log(lo)));taus.push(t);
+    const {sigma}=posteriorAt(t,T,s); for(let c=0;c<C;c++)sig[c].push(sigma[c]);}
+  const smax=Math.max(...sig.flat(),1e-6), W=720,H=200,padL=42,padB=22,padT=8,padR=10;
+  const X=t=>padL+((Math.log(t)-Math.log(lo))/(Math.log(hi)-Math.log(lo)))*(W-padL-padR), Y=v=>padT+(1-v/(smax*1.05))*(H-padT-padB);
+  const {mean}=posteriorAt(tauNow,T,s), ord=mean.map((m,i)=>[m,i]).sort((a,b)=>b[0]-a[0]).map(x=>x[1]), bold=new Set(ord.slice(0,2));
+  let lines=""; for(let c=0;c<C;c++){const col=GENRE_C[G[c]]||"#7aa", pts=taus.map((t,k)=>[X(t),Y(sig[c][k])]);
+    lines+=`<path d="${poly(pts)}" fill="none" stroke="${col}" stroke-width="${bold.has(c)?2:1}" opacity="${bold.has(c)?1:.4}"/>`;}
+  const medLam=[...PL.eig.lam].sort((a,b)=>a-b)[Math.floor(PL.eig.lam.length/2)];
+  let grid=""; for(let ee=Math.ceil(Math.log10(lo));ee<=Math.floor(Math.log10(hi));ee++){const xx=X(Math.pow(10,ee));
+    grid+=`<line x1="${xx}" y1="${padT}" x2="${xx}" y2="${H-padB}" stroke="#11202e"/><text x="${xx}" y="${H-8}" text-anchor="middle" fill="#5b7180" font-size="8.5">1e${ee}</text>`;}
+  const mx=X(Math.min(Math.max(medLam,lo),hi)), tx=X(tauNow);
+  $("#sweepSvg").innerHTML=`${grid}
+    <line x1="${mx}" y1="${padT}" x2="${mx}" y2="${H-padB}" stroke="var(--amber)" stroke-dasharray="3 3" opacity=".6"/>
+    <text x="${mx+3}" y="${padT+9}" fill="var(--amber)" font-size="8.5">median λ</text>${lines}
+    <line x1="${tx}" y1="${padT}" x2="${tx}" y2="${H-padB}" stroke="#cfe8ec" stroke-width="1.2"/>
+    <text x="${tx}" y="${padT+9}" text-anchor="middle" fill="#cfe8ec" font-size="8.5">τ now</text>
+    <text x="${padL-5}" y="${Y(smax)+3}" text-anchor="end" fill="#5b7180" font-size="8.5">${(100*smax).toFixed(0)}%</text>
+    <text x="${padL-5}" y="${Y(0)+3}" text-anchor="end" fill="#5b7180" font-size="8.5">0</text>`;
+}
+
+// ---- status + knob labels -------------------------------------------------
+function refresh(){
+  if(PL){
+    const {tau,T,s}=curKnobs(), v=vtau(PL.eig.c,PL.eig.lam,tau);
+    const lam=PL.eig.lam, starved=lam.reduce((a,l)=>a+(l<tau?1:0),0);
+    $("#tauKV").textContent=tau.toExponential(2);
+    $("#tempKV").textContent=T.toFixed(2);
+    $("#sigKV").textContent=s.toFixed(2)+"×";
+    $("#status").innerHTML=`<span><b>τ</b> ${tau.toExponential(2)}</span><span><b>v(φ;τ)</b> ${v.toExponential(2)}</span>
+      <span><b>data-starved</b> ${starved}/${lam.length}</span><span><b>example</b> #${curIdx}</span>
+      <span class="ok">posterior live · matches Python core</span>`;
+  }
+  renderView();
+}
+
+// ---- example loading ------------------------------------------------------
+async function loadExample(idx){
+  HMC=null; if(hmcTimer){clearInterval(hmcTimer);hmcTimer=null;}
+  try{
+    PL=await (await fetch(`/api/forge/posterior?index=${idx}`)).json();
+    if(PL.error){ $("#stage").innerHTML=`<div class="err">${PL.error}</div>`; return; }
+    curIdx=PL.index; prepExample();
+    const pred=META.genres[META.predicted[curIdx]]||"?", iv=META.input_var[curIdx];
+    $("#exinfo").innerHTML=`predicts <b>${pred}</b> · input-var ${iv!=null?(+iv).toExponential(2):"—"}`;
+    if($("#exNum")) $("#exNum").textContent=`#${curIdx}`;
+    $("#topStat").innerHTML=`active <b>${META.bundle}</b> · example <b>#${curIdx}</b> → <b>${pred}</b>`;
+    refresh();
+  }catch(e){ $("#stage").innerHTML=`<div class="err">posterior load failed: ${e}</div>`; }
+}
+
+// ---- boot -----------------------------------------------------------------
+async function boot(){
+  try{
+    META=await (await fetch("/api/forge/meta")).json();
+    if(META.error){
+      $("#stage").innerHTML=`<div class="full">FORGE needs an active model with cached φ + GGN.<br>Select one in the <a href="/model" style="color:var(--cyan-dim)">Model panel</a>, or train one.<br><br><span style="color:var(--bad)">${META.error}</span></div>`;
+      $("#board").innerHTML=""; return;
+    }
+    $("#topRec").innerHTML=`<span class="dot" style="background:var(--amber);box-shadow:0 0 8px var(--amber)"></span>LLLA · CLOSED-FORM`;
+
+    // ---- single master control board -------------------------------------
+    $("#board").innerHTML=`
+      <div class="mc-h">master control</div>
+
+      <div class="mc-sec">
+        <div class="mc-label">example <span class="n" id="exNum"></span></div>
+        <div class="exbtns">
+          <button class="xb" id="prev" title="previous example (by index)">‹ prev</button>
+          <button class="xb" id="next" title="next example (by index)">next ›</button>
+          <button class="xb" id="rand" title="jump to a random training example">random</button>
+          <button class="xb" id="maxu" title="jump to the most epistemically uncertain example (largest input-variance)">uncertain</button>
+        </div>
+        <div class="exinfo" id="exinfo"></div>
+      </div>
+
+      <div class="mc-sec">
+        <div class="mc-label">posterior · model knob</div>
+        <div class="knob"><div class="kl" title="Prior precision. Higher τ = stronger prior, tighter posterior; lower τ = data-driven, wider. This reshapes the actual posterior.">τ · prior precision</div><input type="range" id="tauSlide" min="0" max="1000" step="1"><div class="kv" id="tauKV">—</div></div>
+      </div>
+
+      <div class="mc-sec">
+        <div class="mc-label">calibration · readout only</div>
+        <div class="knob cal"><div class="kl" title="Softens (T>1) or sharpens (T<1) the predictions. A display transform — does not change the posterior.">temperature</div><input type="range" id="tempSlide" min="0.25" max="4" step="0.05" value="1"><div class="kv" id="tempKV">1.00</div></div>
+        <div class="knob cal"><div class="kl" title="Multiplies the predictive σ post-hoc (honesty dial). A display transform — does not change the posterior.">σ inflation</div><input type="range" id="sigSlide" min="0.5" max="3" step="0.05" value="1"><div class="kv" id="sigKV">1.00×</div></div>
+        <button class="kreset" id="kreset" title="reset temperature and σ to 1, and τ to its default">reset calibration</button>
+      </div>`;
+
+    // start at most-uncertain example
+    startIdx=0; if(META.input_var&&META.input_var.length) startIdx=META.input_var.map((v,i)=>[v,i]).sort((a,b)=>b[0]-a[0])[0][1];
+    $("#tauSlide").value=sliderFromTau(META.tau_default);
+
+    const reRender=()=>refresh();
+    $("#tauSlide").addEventListener("input",reRender);
+    $("#tempSlide").addEventListener("input",reRender);
+    $("#sigSlide").addEventListener("input",reRender);
+    $("#kreset").onclick=()=>{ $("#tempSlide").value=1; $("#sigSlide").value=1; $("#tauSlide").value=sliderFromTau(META.tau_default); refresh(); };
+    $("#prev").onclick=()=>loadExample(Math.max(0,curIdx-1));
+    $("#next").onclick=()=>loadExample(Math.min(META.n_examples-1,curIdx+1));
+    $("#rand").onclick=()=>loadExample(Math.floor(Math.random()*META.n_examples));
+    $("#maxu").onclick=()=>loadExample(startIdx);
+    document.querySelectorAll("#tabs button").forEach(b=>b.onclick=()=>{
+      document.querySelectorAll("#tabs button").forEach(x=>x.classList.remove("on"));
+      b.classList.add("on"); view=b.dataset.v; renderView();
+    });
+    const app=document.querySelector(".fg-app");
+    const setCtrl=hide=>{ app.classList.toggle("collapsed",hide);
+      $("#ctrlToggle").textContent = hide?"⊞ show controls":"⊞ controls"; };
+    $("#ctrlToggle").onclick=()=>setCtrl(!app.classList.contains("collapsed"));
+    $("#ctrlShow").onclick=()=>setCtrl(false);
+    loadExample(startIdx);
+  }catch(e){ $("#stage").innerHTML=`<div class="err">FORGE failed to load: ${e}</div>`; }
+}
+boot();
+</script>
+</body>
+</html>

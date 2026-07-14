@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Data · PHONON</title>
+<link rel="icon" href="/static/assets/favicon.ico" sizes="any">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/css/style.css">
+<style>
+  :root{ --ink:#0b2530; --dim:#5b7a86; --line:#cfe0e6; --cyan:#00b8d4; --cyan2:#00e5ff; --orange:#ff7a33; }
+  .dp{ padding:18px 22px 48px; max-width:1100px; margin:0 auto; }
+  .dp-head h1{ font-family:Orbitron,sans-serif; font-size:26px; letter-spacing:.06em; margin:0; color:var(--ink); }
+  .dp-sub{ font-family:"Share Tech Mono",monospace; font-size:12px; color:var(--dim); margin-top:3px; }
+  .dp-rule{ height:2px; background:linear-gradient(90deg,var(--cyan),transparent); margin:10px 0 20px; }
+
+  h2.sec{ font-family:Orbitron,sans-serif; font-size:15px; letter-spacing:.05em; color:var(--ink); margin:26px 0 10px; }
+  .panel{ border:1px solid var(--line); border-radius:11px; background:#fff; padding:4px 18px; }
+  .row{ display:grid; grid-template-columns:160px 1fr; gap:14px; padding:12px 0; border-bottom:1px solid #eef4f6; }
+  .row:last-child{ border-bottom:none; }
+  .k{ font-family:"Share Tech Mono",monospace; font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--dim); padding-top:2px; }
+  .v{ font-size:13.5px; color:var(--ink); line-height:1.6; }
+  .v a{ color:#0090b0; text-decoration:none; border-bottom:1px solid rgba(0,150,180,.3); }
+  .v a:hover{ color:var(--cyan); }
+  code{ font-family:"Share Tech Mono",monospace; font-size:12px; background:rgba(0,229,255,.08);
+        border:1px solid var(--line); border-radius:4px; padding:1px 6px; color:#0b4a58; }
+
+  table.tbl{ width:100%; border-collapse:collapse; font-family:"Share Tech Mono",monospace; font-size:12px; }
+  table.tbl th{ text-align:left; color:var(--dim); font-weight:400; border-bottom:1px solid var(--line); padding:8px 10px; letter-spacing:.04em; }
+  table.tbl td{ border-bottom:1px solid #eef4f6; padding:8px 10px; color:var(--ink); vertical-align:top; }
+  .mono{ font-family:"Share Tech Mono",monospace; }
+  .sha{ font-size:10px; color:var(--dim); word-break:break-all; }
+  .pill{ display:inline-block; font-size:10px; padding:1px 8px; border-radius:9px; border:1px solid var(--line); color:var(--dim); }
+  .pill.sha{ border-color:#3ac26b; color:#1f8c46; background:rgba(58,194,107,.08); font-size:10px; }
+  .pill.size{ border-color:var(--line); }
+
+  .flow{ display:flex; align-items:stretch; gap:0; flex-wrap:wrap; margin-top:6px; }
+  .stage{ flex:1; min-width:150px; border:1px solid var(--line); border-radius:9px; background:#fff; padding:12px 14px; position:relative; }
+  .stage + .stage{ margin-left:26px; }
+  .stage + .stage::before{ content:"→"; position:absolute; left:-22px; top:50%; transform:translateY(-50%); color:var(--cyan); font-size:18px; }
+  .stage .st{ font-family:Orbitron,sans-serif; font-size:12px; color:var(--ink); }
+  .stage .sd{ font-family:"Share Tech Mono",monospace; font-size:10.5px; color:var(--dim); margin-top:4px; line-height:1.5; }
+  @media(max-width:780px){ .stage+.stage{ margin-left:0; margin-top:24px; } .stage+.stage::before{ left:50%; top:-20px; transform:translateX(-50%) rotate(90deg); } }
+
+  pre.curl{ font-family:"Share Tech Mono",monospace; font-size:11px; color:#0b4a58; background:#f3f8fa;
+            border:1px solid var(--line); border-radius:8px; padding:12px 14px; overflow-x:auto; line-height:1.7; }
+  .foot{ font-family:"Share Tech Mono",monospace; font-size:11px; color:var(--dim); margin-top:18px; }
+</style>
+</head>
+<body class="page">
+<div class="dp">
+  <div class="dp-head">
+    <h1>DATA PROVENANCE</h1>
+    <div class="dp-sub">where the phonon dataset came from, how it was found, and how to reproduce the pull</div>
+  </div>
+  <div class="dp-rule"></div>
+
+  <h2 class="sec">Origin</h2>
+  <div class="panel">
+    <div class="row"><div class="k">Dataset</div><div class="v">Chen et al. (2021) DFPT phonon density of states — 1,524 inorganic crystals, each with a phonon DOS spectrum computed from density-functional perturbation theory.</div></div>
+    <div class="row"><div class="k">Underlying source</div><div class="v">The DFPT spectra trace to Petretto et al.'s high-throughput phonon database (<span class="mono">Sci. Data 5, 180065, 2018</span>); Chen et al. curated the 1,524-material learning subset.</div></div>
+    <div class="row"><div class="k">Obtained from</div><div class="v"><a href="https://github.com/zhantaochen/phonondos_e3nn" target="_blank" rel="noopener">github.com/zhantaochen/phonondos_e3nn</a> &nbsp;·&nbsp; branch <code>main</code> &nbsp;·&nbsp; the authors' own reproduction repository.</div></div>
+    <div class="row"><div class="k">How we found it</div><div class="v">Via the paper itself — the Chen et al. data-availability statement links to this GitHub repo, which hosts both the curated <code>.pkl</code> and the train/test/val split file.</div></div>
+    <div class="row"><div class="k">Date pulled</div><div class="v"><b>2026-06-24</b> &nbsp;(re-verified byte-for-byte 2026-06-25). The two core files were checked against recorded sizes and SHA-256 on re-pull.</div></div>
+    <div class="row"><div class="k">License</div><div class="v">See the upstream repository terms.</div></div>
+  </div>
+
+  <h2 class="sec">The paper</h2>
+  <div class="panel">
+    <div class="row"><div class="k">Citation</div><div class="v">Chen, Andrejevic, Smidt, Ding, Xu, Chuang, Lou, Cheng, Owens, Li. <i>Direct Prediction of Phonon Density of States with Euclidean Neural Networks.</i> Adv. Sci. <b>8</b>, 2004214 (2021).</div></div>
+    <div class="row"><div class="k">Identifiers</div><div class="v">arXiv:<a href="https://arxiv.org/abs/2009.05163" target="_blank" rel="noopener">2009.05163</a> &nbsp;·&nbsp; DOI <a href="https://onlinelibrary.wiley.com/doi/10.1002/advs.202004214" target="_blank" rel="noopener">10.1002/advs.202004214</a></div></div>
+    <div class="row"><div class="k">What we reproduce</div><div class="v">The E(3)-equivariant network (<code>gate_points_2101</code>) that maps a crystal structure to its 51-bin phonon DOS — our mk1 backbone, and the substrate for the FORGE Bayesian last-layer extension.</div></div>
+  </div>
+
+  <h2 class="sec">Composition</h2>
+  <div class="panel">
+    <div class="row"><div class="k">Materials</div><div class="v">1,524 crystals · split <b>1,220 train / 152 val / 152 test</b> (disjoint, covering all 1,524).</div></div>
+    <div class="row"><div class="k">Target grid</div><div class="v">51 DOS bins on a <b>shared</b> 0–1000 cm⁻¹ axis (20 cm⁻¹ step) — identical for every material. Targets are peak-normalized to [0,1].</div></div>
+    <div class="row"><div class="k">High-res truth</div><div class="v">A 4,404-point DFPT spectrum per material is also retained (Savitzky–Golay smoothed, window 101, order 3) for reference; the 51-bin learning target is the binned, clipped version.</div></div>
+    <div class="row"><div class="k">Representations</div><div class="v"><code>periodic_crystal_graph</code> (max_radius 5 Å) · <code>mass_onehot_118</code> · <code>dos_51bin_0_1000cm</code></div></div>
+  </div>
+
+  <h2 class="sec">File manifest</h2>
+  <div class="panel" style="padding:6px 12px">
+    <table class="tbl">
+      <thead><tr><th>file</th><th>bytes</th><th>role</th><th>verified</th></tr></thead>
+      <tbody id="manifest"></tbody>
+    </table>
+  </div>
+
+  <h2 class="sec">Pipeline — structure to spectrum</h2>
+  <div class="flow">
+    <div class="stage"><div class="st">CIF</div><div class="sd">pymatgen-generated crystal structure (list of CIF lines per material)</div></div>
+    <div class="stage"><div class="st">periodic graph</div><div class="sd">atoms → nodes, neighbors within 5 Å → edges with relative position vectors</div></div>
+    <div class="stage"><div class="st">mass one-hot</div><div class="sd">each atom tagged by Z in a 118-d one-hot (the only node feature)</div></div>
+    <div class="stage"><div class="st">51-bin DOS</div><div class="sd">E(3)NN regresses the phonon density of states on the shared 0–1000 cm⁻¹ grid</div></div>
+  </div>
+
+  <h2 class="sec">Reproduce the pull</h2>
+  <pre class="curl" id="curls"></pre>
+  <div class="foot" id="foot">provenance/1.0 · canonical record at <code>data/provenance.json</code></div>
+</div>
+
+<script>
+// Self-sufficient: bakes the canonical record, but hydrates from /api/provenance if present.
+const BAKED = {
+  files: [
+    {name:"phdos_e3nn_len51max1000_fwin101ord3.pkl", bytes:56003399, role:"training data — material_id[1524], cif[1524], phfre(51), phdos(1524,51), phfre_gt(4404), phdos_gt(1524,4404)", sha256:"e9f23703c06e09a68562ef0f5501c88e01b182c0d3d4b7b45350ad3ff2fd4410", verified:"sha256"},
+    {name:"200801_trteva_indices.pkl", bytes:12434, role:"train/test/val split indices (1220/152/152, disjoint)", sha256:"ea8d82da6bfdadfdd60d980625b179ccebeebdd10e45d045b7667837bb9d3cb3", verified:"sha256"},
+    {name:"reference_model.torch", bytes:16846038, role:"authors' trained e3nn model — sanity-check reference, not data", sha256:null, verified:"size"},
+    {name:"mp_screening.csv (mp_data.csv)", bytes:77343, role:"4347 (mp-id, formula) rows for the downstream high-Cv demo; no DoS", sha256:null, verified:"size"},
+    {name:"phdos_dataset.zip", bytes:7389955, role:"archive the .pkl was extracted from (kept for re-extract)", sha256:null, verified:"size"}
+  ],
+  repull_curls: [
+    "curl -L -o phdos_dataset.zip https://raw.githubusercontent.com/zhantaochen/phonondos_e3nn/main/models/phdos_e3nn_len51max1000_fwin101ord3.zip",
+    "curl -L -o 200801_trteva_indices.pkl https://raw.githubusercontent.com/zhantaochen/phonondos_e3nn/main/models/200801_trteva_indices.pkl",
+    "curl -L -o reference_model.torch https://raw.githubusercontent.com/zhantaochen/phonondos_e3nn/main/models/200803-1018_len51max1000_fwin101ord3_trial_run_full_data.torch",
+    "curl -L -o mp_data.csv https://raw.githubusercontent.com/zhantaochen/phonondos_e3nn/main/data/mp_data.csv"
+  ]
+};
+const grp = n => n.toLocaleString();
+function paint(p){
+  document.getElementById("manifest").innerHTML = (p.files||[]).map(f=>{
+    const tag = f.verified==="sha256"
+      ? `<span class="pill sha">sha256</span><div class="sha">${f.sha256||""}</div>`
+      : `<span class="pill size">size only</span>`;
+    return `<tr><td class="mono"><b>${f.name}</b></td><td class="mono">${grp(f.bytes)}</td><td>${f.role}</td><td>${tag}</td></tr>`;
+  }).join("");
+  document.getElementById("curls").textContent = (p.repull_curls||[]).join("\n");
+}
+fetch("/api/provenance").then(r=> r.ok ? r.json() : Promise.reject()).then(paint).catch(()=> paint(BAKED));
+</script>
+</body>
+</html>

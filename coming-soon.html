@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<!-- FORGE — coming soon interstitial. Reached from the floor: coming-soon.html?exp=genre -->
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>FORGE — coming soon</title>
+<meta name="robots" content="noindex"/>
+<meta name="theme-color" content="#040207"/>
+<link rel="icon" href="assets/images/flame_icon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/images/flame_icon-32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="assets/images/flame_icon-180.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --void:#040207; --cyan:#2DD4FF; --cyan-dim:#0e6b73;
+    --ember:#FF4D1F; --flame:#FF7A0D; --gold:#FFC857; --amber:#f0a92e;
+    --mono:'Share Tech Mono', ui-monospace, Consolas, monospace;
+    --disp:'Orbitron', var(--mono);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;background:var(--void);font-family:var(--mono);color:var(--cyan)}
+  body{display:flex;flex-direction:column;
+    background:
+      radial-gradient(120% 90% at 50% 0%, rgba(45,212,255,.05), transparent 55%),
+      radial-gradient(120% 90% at 50% 110%, rgba(255,77,31,.06), transparent 55%),
+      var(--void)}
+  .hud{user-select:none;text-transform:uppercase;letter-spacing:.2em}
+  header{display:flex;justify-content:space-between;align-items:flex-start;padding:26px 30px 0}
+  #brand{display:flex;flex-direction:column;gap:6px}
+  #brand a{text-decoration:none}
+  #brand .word{font-family:var(--disp);font-weight:900;font-size:18px;letter-spacing:.5em;
+    color:#eafbff;text-shadow:0 0 16px rgba(45,212,255,.55)}
+  #brand .word .o{color:var(--flame);text-shadow:0 0 16px rgba(255,122,13,.6)}
+  #brand .sub{font-size:9px;color:var(--cyan-dim);letter-spacing:.32em}
+  #brand .bar{width:140px;height:1px;background:linear-gradient(90deg,var(--cyan),transparent)}
+  #status{text-align:right;font-size:9.5px;color:var(--cyan-dim);letter-spacing:.26em;line-height:2}
+  #status b{color:var(--amber);font-weight:400}
+
+  main{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:26px;padding:24px;text-align:center}
+  #expname{font-family:var(--disp);font-weight:900;letter-spacing:.4em;text-transform:uppercase;
+    font-size:clamp(24px,5vw,44px);color:#eafbff;text-shadow:0 0 24px rgba(45,212,255,.45)}
+  #soon{font-family:var(--disp);font-weight:700;font-size:clamp(13px,2.2vw,18px);
+    letter-spacing:.52em;text-transform:uppercase;color:var(--gold);
+    text-shadow:0 0 18px rgba(255,200,87,.55);animation:breathe 2.4s ease-in-out infinite}
+  @keyframes breathe{0%,100%{opacity:.55}50%{opacity:1}}
+  #sub{font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:var(--cyan-dim)}
+
+  #back{margin-top:18px;display:inline-flex;align-items:center;gap:12px;
+    font-family:var(--disp);font-weight:700;font-size:12px;letter-spacing:.3em;
+    text-transform:uppercase;color:#eafbff;text-decoration:none;cursor:pointer;
+    padding:12px 24px;border:1px solid rgba(45,212,255,.45);
+    background:linear-gradient(180deg,rgba(45,212,255,.10),rgba(45,212,255,.02));
+    clip-path:polygon(12px 0,100% 0,100% calc(100% - 12px),calc(100% - 12px) 100%,0 100%,0 12px);
+    transition:transform .22s ease, border-color .22s ease, background .22s ease, color .22s}
+  #back:hover{color:#fff;border-color:rgba(255,96,32,.95);transform:scale(1.05);
+    background:linear-gradient(180deg,rgba(150,16,8,.5),rgba(255,122,32,.8))}
+
+  footer{padding:0 24px 30px;text-align:center;font-size:9.5px;letter-spacing:.3em;text-transform:uppercase}
+  footer a{color:var(--cyan-dim);text-decoration:none}
+  footer a:hover{color:var(--gold)}
+  @media (prefers-reduced-motion:reduce){#soon{animation:none}#back{transition:none}}
+</style>
+</head>
+<body>
+  <header class="hud">
+    <div id="brand">
+      <a href="index.html"><span class="word">F<span class="o">O</span>RGE</span></a>
+      <div class="sub">functional-posterior observatory</div>
+      <div class="bar"></div>
+    </div>
+    <div id="status">forge-observatory.com</div>
+  </header>
+
+  <main>
+    <div id="expname" class="hud">experiment</div>
+    <div id="soon" class="hud">&#9670; coming soon &#9670;</div>
+    <div id="sub" class="hud"></div>
+    <a id="back" href="experiments.html">&#9666; back to experiment select</a>
+  </main>
+
+  <footer class="hud"><a href="index.html">splash</a></footer>
+
+<script>
+"use strict";
+const EXPS = {
+  genre:  { name: "Beardown",   sub: "genre.forge-observatory.com"  },
+  phonon: { name: "Phonon DOS", sub: "phonon.forge-observatory.com" },
+  atlas:  { name: "Atlas LLP",  sub: "atlas.forge-observatory.com"  },
+};
+const key = new URLSearchParams(location.search).get("exp");
+const e = EXPS[key];
+if (e) {
+  document.getElementById("expname").textContent = e.name;
+  document.getElementById("sub").textContent = e.sub + " — tunnel pending";
+  document.title = "FORGE — " + e.name + " — coming soon";
+}
+</script>
+</body>
+</html>

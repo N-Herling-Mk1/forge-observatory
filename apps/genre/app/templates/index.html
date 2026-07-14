@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BEARDOWN · FORGE</title>
+<link rel="icon" type="image/svg+xml" href="/static/assets/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body class="shell-body">
+<div class="shell">
+
+  <!-- top frame -->
+  <header class="topframe">
+    <img class="shell-logo" id="shellLogo" alt="" hidden>
+    <div class="shell-brand">
+      <span class="shell-fk">F·O·R·G·E //</span>
+      <span class="shell-title" id="shellTitle">BEARDOWN</span>
+    </div>
+    <span class="top-spacer"></span>
+    <!-- inert top button slots (functionality TBD) -->
+    <div class="top-slots">
+      <button class="top-btn" title="reserved — refresh">⟳</button>
+      <button class="top-btn" title="reserved — settings">⚙</button>
+      <button class="top-btn" title="reserved — help">?</button>
+    </div>
+    <span class="flash" id="flash"></span>
+  </header>
+
+  <!-- left rail -->
+  <nav class="rail" id="rail"></nav>
+
+  <!-- main viewport: one iframe, src swaps -->
+  <div class="viewport">
+    <iframe id="view" src="/welcome" title="panel"></iframe>
+    <div class="fyi" id="fyi"></div>
+  </div>
+
+</div>
+
+<script>
+  // Each rail item is a descriptor. type drives behaviour:
+  //   nav    -> swap the iframe src
+  //   action -> POST to a backend endpoint, flash status, leave the iframe
+  //   both   -> do the action AND point the iframe at a result
+  // Today everything is 'nav'; flip a type + add src/action to wire a backend later.
+  const PANELS = [
+    { id:"welcome",   label:"Welcome",   type:"nav", src:"/welcome",
+      fyi:"Project landing — overview of BEARDOWN and a live snapshot of the GTZAN dataset." },
+    { id:"experiment",label:"Experiment",type:"nav", src:"/experiment",
+      fyi:"The original experiment — B.E.A.R. D.O.W.N.: the multimodal architecture and the epistemic / reliability metrics it was built to explore." },
+    { id:"eda",       label:"EDA",       type:"nav", src:"/eda",
+      fyi:"Exploratory Data Analysis — integrity checks, type audit, and per-feature / per-genre distributions over the GTZAN features." },
+    { id:"data",      label:"Data",      type:"nav", src:"/data",
+      fyi:"Data handling — the representations and loader, the track-level leakage guard (and the segment-shuffle leakage it prevents), and the split-invariant tests." },
+    { id:"training",  label:"Training",  type:"nav", src:"/train",
+      fyi:"Training & runs — the kitchen-sink metrics observatory. Every run.json / compute.json rendered: config, per-epoch curve, headline + per-genre metrics, the acceptance scorecard, compute (params/FLOPs/throughput/peak mem), and the energy/carbon/cost ledger." },
+    { id:"model",     label:"Model",     type:"nav", src:"/model",
+      fyi:"Model registry — every saved run-bundle, compared side by side (val/test acc, macro-F1, CV mean±σ, ECE, gate). Select the sticky active model that song drop-in and FORGE both use." },
+    { id:"inference", label:"Inference", type:"nav", src:"/infer",
+      fyi:"Predict — drop a track, get per-genre scores with epistemic σ from the selected model." },
+    { id:"forge",     label:"FORGE",     type:"nav", src:"/forge",
+      fyi:"FORGE — the Bayesian head. A last-layer Laplace posterior over the frozen model's final layer; drag τ (prior precision) to reshape the per-genre posterior live. Real math from the bundle's cached GGN + φ." },
+    { id:"glossary",  label:"Glossary",  type:"nav", src:"/glossary",
+      fyi:"Glossary — every term and symbol used across the experiment, grouped and searchable, with equations rendered in KaTeX." },
+  ];
+
+  const view  = document.getElementById("view");
+  const rail  = document.getElementById("rail");
+  const flash = document.getElementById("flash");
+  const fyiBox = document.getElementById("fyi");
+  let active = "welcome";
+
+  function setFYI(p){
+    if(!fyiBox || !p) return;
+    fyiBox.innerHTML = `<span class="fyi-tag">FYI</span><span class="fyi-text">${p.fyi || ""}</span>`;
+  }
+
+  function showFlash(msg, kind){
+    flash.textContent = msg || "";
+    flash.className = "flash " + (kind || "");
+    if(msg) setTimeout(()=>{ flash.textContent=""; flash.className="flash"; }, 3500);
+  }
+
+  async function fire(p){
+    if(p.type === "nav" || p.type === "both"){
+      if(p.src){ view.src = p.src; active = p.id; paint(); setFYI(p); }
+    }
+    if(p.type === "action" || p.type === "both"){
+      if(p.action){
+        showFlash("running " + p.label + "…", "run");
+        try{
+          const r = await fetch(p.action, { method:"POST" });
+          showFlash(p.label + (r.ok ? " ✓" : " failed"), r.ok ? "ok" : "err");
+        }catch(e){ showFlash(p.label + " failed", "err"); }
+      }
+    }
+  }
+
+  function paint(){
+    rail.innerHTML = PANELS.map(p =>
+      `<button class="rail-btn ${p.id===active?'active':''}" data-id="${p.id}">
+         <span class="rail-dot"></span><span>${p.label}</span>
+       </button>`).join("");
+    rail.querySelectorAll("button").forEach(b =>
+      b.onclick = () => fire(PANELS.find(x => x.id === b.dataset.id)));
+  }
+  paint();
+  setFYI(PANELS.find(p => p.id === active));
+
+  // logo + title from the same config the panels use
+  fetch("/api/config").then(r=>r.json()).then(c=>{
+    if(c.logo){ const el=document.getElementById("shellLogo"); el.src=c.logo; el.hidden=false; }
+    const DISPLAY={genre:"BEARDOWN · genre recognition",phonon:"phonon · DOS reproduction",atlas:"atlas · Run 3"};
+    document.getElementById("shellTitle").textContent = DISPLAY[c.experiment] || c.experiment || "FORGE";
+  }).catch(()=>{});
+</script>
+</body>
+</html>

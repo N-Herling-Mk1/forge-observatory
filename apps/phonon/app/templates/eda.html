@@ -1,0 +1,358 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EDA · PHONON</title>
+<link rel="icon" href="/static/assets/favicon.ico" sizes="any">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/css/style.css">
+<style>
+  :root{ --ink:#e6f6fa; --dim:#93acb9; --line:#22344a; --cyan:#2de2e6; --cyan2:#6ff4f7; --orange:#ff8a3c; --amber:#f0a500; --panel:#0e1622; }
+  .ex{ padding:18px 22px 48px; max-width:1180px; margin:0 auto; }
+  .ex-head{ display:flex; align-items:flex-end; justify-content:space-between; gap:16px; flex-wrap:wrap; }
+  .ex-head h1{ font-family:Orbitron,sans-serif; font-size:28px; letter-spacing:.06em; margin:0; color:var(--ink); text-shadow:0 0 18px rgba(45,226,230,.25); }
+  .ex-sub{ font-family:"Share Tech Mono",monospace; font-size:13px; color:var(--dim); margin-top:5px; }
+  .ex-gen{ font-family:"Share Tech Mono",monospace; font-size:12px; color:var(--cyan2);
+           border:1px solid var(--line); border-radius:6px; padding:6px 11px; background:rgba(45,226,230,.06); }
+  .ex-rule{ height:2px; background:linear-gradient(90deg,var(--cyan),transparent); margin:10px 0 18px; }
+
+  .tabs{ display:flex; gap:6px; flex-wrap:wrap; margin-bottom:16px; }
+  .tab{ font-family:"Share Tech Mono",monospace; font-size:13px; letter-spacing:.05em; color:var(--dim);
+        border:1px solid var(--line); border-radius:7px; padding:8px 16px; background:var(--panel); cursor:pointer; transition:color .12s,border-color .12s; }
+  .tab:hover{ color:var(--ink); border-color:#1fb6c1; }
+  .tab.on{ color:#04161a; border-color:var(--cyan); background:var(--cyan); font-weight:700; box-shadow:0 0 14px rgba(45,226,230,.35); }
+  section.pane{ display:none; } section.pane.on{ display:block; }
+
+  .cards{ display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin:6px 0 18px; }
+  .card{ border:1px solid var(--line); border-radius:9px; padding:14px 16px; background:var(--panel);
+         box-shadow:inset 0 0 0 1px rgba(45,226,230,.03); }
+  .card .k{ font-family:"Share Tech Mono",monospace; font-size:11px; letter-spacing:.1em; color:var(--dim); text-transform:uppercase; }
+  .card .v{ font-family:Orbitron,sans-serif; font-size:24px; color:var(--cyan2); margin-top:5px; text-shadow:0 0 12px rgba(45,226,230,.22); }
+  .card .v.long{ font-size:16px; letter-spacing:0; white-space:nowrap; }
+  /* the heatmap + exemplars row: pin both images to the heatmap's aspect so they match height */
+  #ovSpectra figure.fig img{ aspect-ratio:824 / 494; object-fit:contain; background:#fff; }
+  /* the split-balance + element-coverage row: pin both to split_balance's aspect */
+  #ovCoverage figure.fig img{ aspect-ratio:539 / 347; object-fit:contain; background:#fff; }
+  .card .s{ font-family:"Share Tech Mono",monospace; font-size:12px; color:var(--dim); margin-top:3px; }
+
+  h2.sec{ font-family:Orbitron,sans-serif; font-size:15px; letter-spacing:.08em; color:var(--cyan); margin:26px 0 12px; text-transform:uppercase; border-left:3px solid var(--cyan); padding-left:11px; }
+  .gallery{ display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:14px; }
+  .gallery.wide{ grid-template-columns:1fr; }
+  figure.fig{ margin:0; border:1px solid var(--line); border-radius:9px; overflow:hidden; background:var(--panel); cursor:zoom-in; }
+  figure.fig img{ width:100%; display:block; }
+  figure.fig figcaption{ font-family:"Share Tech Mono",monospace; font-size:12px; color:var(--dim); padding:8px 12px; border-top:1px solid var(--line); }
+
+  table.tbl{ width:100%; border-collapse:collapse; font-family:"Share Tech Mono",monospace; font-size:12.5px; }
+  table.tbl th{ text-align:left; color:var(--dim); font-weight:400; border-bottom:1px solid var(--line); padding:8px 9px; letter-spacing:.05em; text-transform:uppercase; }
+  table.tbl td{ border-bottom:1px solid #182532; padding:7px 9px; color:var(--ink); }
+  table.tbl tr.click{ cursor:pointer; } table.tbl tr.click:hover{ background:rgba(45,226,230,.07); }
+  .pill{ display:inline-block; font-size:11px; padding:1px 8px; border-radius:9px; border:1px solid var(--line); color:var(--dim); }
+  .pill.warn{ border-color:var(--orange); color:#ffb184; background:rgba(255,138,60,.12); }
+  .pill.ok{ border-color:#39d98a; color:#6fe7ac; background:rgba(57,217,138,.12); }
+  .num{ text-align:right; }
+
+  .integ{ display:grid; grid-template-columns:repeat(auto-fit,minmax(270px,1fr)); gap:16px; }
+  .ibox{ border:1px solid var(--line); border-radius:10px; padding:18px 20px 20px; background:var(--panel); }
+  .ibox .it{ font-family:"Share Tech Mono",monospace; font-size:13px; letter-spacing:.04em; color:var(--dim); }
+  .ibox .iv{ display:flex; align-items:center; justify-content:space-between; gap:16px;
+             font-family:Orbitron,sans-serif; font-size:26px; color:var(--ink); margin-top:14px; }
+  .ibox .iv .ivn{ line-height:1; }
+  .ibox .pill{ border-radius:3px; font-size:12px; letter-spacing:.1em; padding:5px 13px; text-transform:uppercase; }
+  .note{ font-family:"Share Tech Mono",monospace; font-size:12.5px; color:var(--dim); margin-top:6px; line-height:1.6; }
+  .issue{ border-left:3px solid var(--orange); background:rgba(255,138,60,.08); padding:10px 13px; border-radius:0 7px 7px 0;
+          font-family:"Share Tech Mono",monospace; font-size:12.5px; color:#ffcea8; margin-top:10px; line-height:1.6; }
+
+  .modal{ position:fixed; inset:0; background:rgba(4,14,18,.86); display:none; align-items:center; justify-content:center; z-index:50; padding:24px; }
+  .modal.on{ display:flex; } .modal img{ max-width:94vw; max-height:84vh; border-radius:8px; box-shadow:0 0 40px rgba(0,229,255,.25); }
+  .modal .cap{ position:absolute; bottom:18px; font-family:"Share Tech Mono",monospace; font-size:12px; color:#bfe9f2; }
+  .loading{ font-family:"Share Tech Mono",monospace; color:var(--dim); padding:40px 0; }
+
+  /* Distributions: horizontal filmstrip + vertical detail list */
+  .striphint{ font-family:"Share Tech Mono",monospace; font-size:11px; color:var(--dim); margin:2px 0 4px; }
+  .strip{ display:flex; gap:10px; overflow-x:auto; padding:6px 2px 14px; scroll-snap-type:x proximity; }
+  .strip::-webkit-scrollbar{ height:9px; }
+  .strip::-webkit-scrollbar-track{ background:transparent; }
+  .strip::-webkit-scrollbar-thumb{ background:#1f3346; border-radius:5px; }
+  .thumb{ flex:0 0 auto; width:190px; scroll-snap-align:start; border:1px solid var(--line);
+          border-radius:8px; overflow:hidden; background:var(--panel); cursor:pointer;
+          transition:border-color .12s, transform .12s; }
+  .thumb:hover{ border-color:var(--cyan); transform:translateY(-2px); }
+  .thumb img{ width:100%; display:block; }
+  .thumb .tl{ display:flex; align-items:center; gap:7px; padding:6px 9px; border-top:1px solid var(--line);
+              font-family:"Share Tech Mono",monospace; font-size:11px; color:var(--ink); }
+  .dot{ width:7px; height:7px; border-radius:50%; flex:0 0 auto; }
+  .dot.clean{ background:#39d98a; } .dot.minor{ background:var(--amber); } .dot.flag{ background:var(--orange); }
+
+  .distList{ display:flex; flex-direction:column; gap:14px; }
+  .distRow{ display:grid; grid-template-columns:minmax(0,1.7fr) minmax(220px,1fr); gap:14px; align-items:stretch;
+            border:1px solid var(--line); border-radius:10px; background:var(--panel); padding:12px; scroll-margin-top:16px;
+            transition:border-color .15s, box-shadow .15s; }
+  .distRow.flash{ border-color:var(--cyan); box-shadow:0 0 0 1px var(--cyan), 0 0 18px rgba(45,226,230,.22); }
+  .distRow figure.fig{ border:none; background:transparent; border-radius:7px; }
+  .distRow figure.fig figcaption{ border-top:1px solid var(--line); }
+  .miss{ display:flex; align-items:center; justify-content:center; min-height:150px; padding:18px; text-align:center;
+         font-family:"Share Tech Mono",monospace; font-size:12px; color:var(--dim); line-height:1.6; }
+  .blurb{ display:flex; flex-direction:column; gap:9px; }
+  .vbadge{ display:inline-flex; align-items:center; gap:6px; align-self:flex-start; font-family:"Share Tech Mono",monospace;
+           font-size:11px; letter-spacing:.07em; padding:3px 10px; border-radius:9px; border:1px solid var(--line); text-transform:uppercase; }
+  .vbadge.clean{ color:#6fe7ac; border-color:#39d98a; background:rgba(57,217,138,.10); }
+  .vbadge.minor{ color:var(--amber); border-color:var(--amber); background:rgba(240,165,0,.10); }
+  .vbadge.flag{ color:#ffb184; border-color:var(--orange); background:rgba(255,138,60,.12); }
+  .blurb .vh{ font-family:Orbitron,sans-serif; font-size:14px; color:var(--cyan2); letter-spacing:.03em; }
+  .blurb .vsub{ font-family:"Share Tech Mono",monospace; font-size:11px; color:var(--dim); margin-top:-4px; }
+  .blurb .bt{ font-family:"Share Tech Mono",monospace; font-size:13px; line-height:1.6; color:var(--ink); }
+  .chips{ display:flex; flex-wrap:wrap; gap:6px; margin-top:auto; }
+  .chip{ font-family:"Share Tech Mono",monospace; font-size:10.5px; color:var(--dim); border:1px solid var(--line);
+         border-radius:6px; padding:2px 8px; }
+  .chip b{ color:var(--cyan2); font-weight:400; }
+  @media (max-width:680px){ .distRow{ grid-template-columns:1fr; } }
+</style>
+</head>
+<body class="page">
+<div class="ex">
+  <div class="ex-head">
+    <div>
+      <h1>EXPLORATORY DATA ANALYSIS</h1>
+      <div class="ex-sub">Chen et al. (2021) DFPT phonon density of states · 1,524 crystals · 51-bin DOS on a shared 0–1000 cm⁻¹ grid</div>
+    </div>
+    <div class="ex-gen" id="gen">—</div>
+  </div>
+  <div class="ex-rule"></div>
+
+  <div class="tabs" id="tabs">
+    <div class="tab on" data-p="overview">Overview</div>
+    <div class="tab" data-p="integrity">Integrity</div>
+    <div class="tab" data-p="types">Types</div>
+    <div class="tab" data-p="vars">Variables</div>
+    <div class="tab" data-p="dist">Distributions</div>
+  </div>
+
+  <section class="pane on" id="overview">
+    <div class="cards" id="snap"></div>
+    <h2 class="sec">The 1,524 spectra</h2>
+    <div class="gallery" id="ovSpectra">
+      <figure class="fig" data-f="dos_heatmap.png"><img src="/figures/after/dos_heatmap.png"><figcaption>every spectrum, sorted by ⟨ω⟩ — the dataset's spectral fingerprint</figcaption></figure>
+      <figure class="fig" data-f="dos_exemplars.png"><img src="/figures/after/dos_exemplars.png"><figcaption>exemplars across the ⟨ω⟩ / spread / entropy extremes</figcaption></figure>
+    </div>
+    <h2 class="sec">Coverage</h2>
+    <div class="gallery" id="ovCoverage">
+      <figure class="fig" data-f="split_balance.png"><img src="/figures/after/split_balance.png"><figcaption>train / val / test split balance</figcaption></figure>
+      <figure class="fig" data-f="element_coverage.png"><img src="/figures/after/element_coverage.png"><figcaption>element coverage across the periodic table</figcaption></figure>
+    </div>
+    <div class="gallery wide">
+      <figure class="fig" data-f="element_ptable.png"><img src="/figures/after/element_ptable.png"><figcaption>periodic-table heatmap — materials containing each element (magma = count · grey = absent)</figcaption></figure>
+    </div>
+  </section>
+
+  <section class="pane" id="integrity">
+    <h2 class="sec">Missing / corrupt — reported, not fixed</h2>
+    <div class="integ" id="integ"></div>
+    <div id="issues"></div>
+  </section>
+
+  <section class="pane" id="types">
+    <h2 class="sec">Type audit — logical vs stored</h2>
+    <div class="note" id="homog"></div>
+    <table class="tbl" id="typeTbl"><thead><tr><th>column</th><th>logical role</th><th>dtype</th><th>shape</th><th>note</th></tr></thead><tbody></tbody></table>
+  </section>
+
+  <section class="pane" id="vars">
+    <h2 class="sec">Derived variables — per-variable statistics</h2>
+    <div class="note">Each spectrum (51-D) and its composition reduce to these scalars. Click a row to view its histogram + box plot. IQR-rule outliers (1.5×IQR fences).</div>
+    <table class="tbl" id="statTbl"><thead><tr>
+      <th>variable</th><th class="num">median</th><th class="num">mean</th><th class="num">std</th>
+      <th class="num">min</th><th class="num">max</th><th class="num">IQR</th><th class="num">skew</th><th class="num">outliers</th>
+    </tr></thead><tbody></tbody></table>
+    <h2 class="sec">Relationships</h2>
+    <div class="gallery">
+      <figure class="fig" data-f="scatter_relations.png"><img src="/figures/after/scatter_relations.png"><figcaption>mass↔⟨ω⟩ (ω∝√(k/m)), atoms↔entropy, ⟨ω⟩↔spread</figcaption></figure>
+      <figure class="fig" data-f="feature_corr.png"><img src="/figures/after/feature_corr.png"><figcaption>derived-variable correlation matrix</figcaption></figure>
+    </div>
+    <h2 class="sec">DOS value distribution per frequency bin</h2>
+    <div class="gallery wide">
+      <figure class="fig" data-f="dos_bin_box.png"><img src="/figures/after/dos_bin_box.png"><figcaption>box plot of the DOS value across all 1,524 materials, one box per 20 cm⁻¹ bin</figcaption></figure>
+    </div>
+  </section>
+
+  <section class="pane" id="dist">
+    <h2 class="sec">All variable distributions</h2>
+    <div class="striphint">scroll the strip &rarr; click any tile to jump to its detail · click a chart to zoom</div>
+    <div class="strip" id="distStrip"></div>
+    <div class="distList" id="distList"></div>
+  </section>
+
+  <div class="loading" id="loading">loading EDA…</div>
+</div>
+
+<div class="modal" id="modal"><img id="modalImg"><div class="cap" id="modalCap"></div></div>
+
+<script>
+const F = n => "/figures/after/" + n;
+const fmt = (x) => (x==null||Number.isNaN(x)) ? "—" :
+  (Math.abs(x)>=1000 ? x.toFixed(0) : Math.abs(x)>=10 ? x.toFixed(1) : x.toFixed(3));
+
+fetch("/api/eda").then(r=>r.json()).then(render).catch(e=>{
+  document.getElementById("loading").textContent = "EDA unavailable — run  python eda/run_eda.py --phase after   ("+e+")";
+});
+
+function render(d){
+  document.getElementById("loading").style.display="none";
+  document.getElementById("gen").textContent = "generated " + (d.generated||"") ;
+  const ex=d.expectations||{}, mc=d.missing_corrupt||{}, ns=d.nerd_stats||{};
+
+  // snapshot
+  const sp = ex.splits||{};
+  document.getElementById("snap").innerHTML = [
+    ["materials", ex.n_materials, (mc.counts? mc.counts.total+" loaded":"")],
+    ["DOS bins", ex.n_freq_bins, (ex.freq_range_cm? ex.freq_range_cm[0]+"–"+ex.freq_range_cm[1]+" cm⁻¹":"")],
+    ["grid step", (ex.freq_step_cm? ex.freq_step_cm+" cm⁻¹":"—"), ex.grid_shared? "shared by all":""],
+    ["splits", (sp.train||"?")+"/"+(sp.val||"?")+"/"+(sp.test||"?"), "train / val / test"],
+    ["variables", ns.n_features, "derived scalars"],
+    ["elements", (d.elements? d.elements.n_present:"—"), (d.elements? d.elements.n_absent+" absent":"")],
+  ].map(([k,v,s])=>{ const vs=(v??"—"); const lng=String(vs).length>7?" long":""; return `<div class="card"><div class="k">${k}</div><div class="v${lng}">${vs}</div><div class="s">${s||""}</div></div>`;}).join("");
+
+  // integrity
+  const ni=mc.nan_inf||{}, em=mc.empty_spectra||{}, ng=mc.negative_dos||{};
+  const okp = (b)=>`<span class="pill ${b?'ok':'warn'}">${b?'clean':'check'}</span>`;
+  document.getElementById("integ").innerHTML = [
+    ["NaN / inf (phdos)", (ni.phdos_nan||0)+(ni.phdos_inf||0), okp((ni.phdos_nan||0)+(ni.phdos_inf||0)===0)],
+    ["NaN / inf (phdos_gt)", (ni.phdos_gt_nan||0)+(ni.phdos_gt_inf||0), okp((ni.phdos_gt_nan||0)+(ni.phdos_gt_inf||0)===0)],
+    ["empty spectra", em.n||0, okp((em.n||0)===0)],
+    ["rows with negative DOS", ng.n_rows||0, okp((ng.n_rows||0)===0)],
+    ["duplicate ids", mc.duplicate_ids||0, okp((mc.duplicate_ids||0)===0)],
+    ["frequency grid monotonic", mc.grid_monotonic? "yes":"no", okp(!!mc.grid_monotonic)],
+  ].map(([t,v,p])=>`<div class="ibox"><div class="it">${t}</div><div class="iv"><span class="ivn">${v}</span>${p}</div></div>`).join("");
+  let issuesHtml = "";
+  if(ng && (ng.phdos_gt_min!=null))
+    issuesHtml += `<div class="note">phdos min = ${fmt(ng.phdos_min)} · phdos_gt min = ${fmt(ng.phdos_gt_min)} — ${ng.note||""}</div>`;
+  (mc.known_issues||[]).forEach(s=> issuesHtml += `<div class="issue">⚠ ${s}</div>`);
+  document.getElementById("issues").innerHTML = issuesHtml;
+
+  // types
+  const ta=d.type_audit||{};
+  document.getElementById("homog").textContent = (ta.homogeneity||"") + "   ·   " + (ta.n_mismatch_or_note||0) + " column(s) carry a note.";
+  document.querySelector("#typeTbl tbody").innerHTML = (ta.columns||[]).map(c=>{
+    const warn = c.note && /negative|non-numeric/.test(c.note);
+    return `<tr><td><b>${c.name}</b></td><td>${c.logical||""}</td><td>${c.dtype||""}</td>
+      <td>${(c.shape||[]).join("×")}</td><td><span class="pill ${warn?'warn':''}">${c.note||""}</span></td></tr>`;
+  }).join("");
+
+  // variable stats
+  const pf=ns.per_feature||{}, labels=ns.feature_labels||{};
+  const order = Object.keys(labels).length ? Object.keys(labels) : Object.keys(pf);
+  const idxFor = {}; let fi=1; order.forEach(k=> idxFor[k]=String(fi++).padStart(2,"0"));
+  document.querySelector("#statTbl tbody").innerHTML = order.map(k=>{
+    const s=pf[k]; if(!s) return "";
+    const fig = `dist_${k}.png`;
+    const ow = s.n_outliers>0 ? `<span class="pill warn">${s.n_outliers}</span>` : `<span class="pill ok">0</span>`;
+    return `<tr class="click" data-f="${fig}" title="${labels[k]||k}">
+      <td><b>${k}</b><div style="color:var(--dim);font-size:11px">${labels[k]||""}</div></td>
+      <td class="num">${fmt(s.median)}</td><td class="num">${fmt(s.mean)}</td><td class="num">${fmt(s.std)}</td>
+      <td class="num">${fmt(s.min)}</td><td class="num">${fmt(s.max)}</td><td class="num">${fmt(s.iqr)}</td>
+      <td class="num">${fmt(s.skew)}</td><td class="num">${ow}</td></tr>`;
+  }).join("");
+
+  // distributions: filmstrip + detailed list w/ quality blurbs
+  renderDistributions(order, pf, labels);
+
+  bind();
+}
+
+// ---- Distributions tab: horizontal filmstrip + vertical detail list --------
+function distMiss(img){
+  const fig = img.closest("figure");
+  if(fig) fig.innerHTML = '<div class="miss">figure not generated yet — run<br>'
+                        + 'python eda/make_dist_figures.py --phase after</div>';
+}
+function deriveQuality(k, s, label){
+  // fallback verdict/blurb from eda_stats per_feature when dist_quality.json absent
+  if(!s) return {verdict:"flag", blurb:"All values missing/non-finite — cannot profile.", label};
+  let verdict="clean", flags=[];
+  const uniformish = (s.std===0) || (s.iqr===0 && s.n_outliers===0 && s.min===s.max);
+  if(k==="dos_peak" || s.std===0){
+    return {verdict:"flag", label,
+      blurb:(k==="dos_peak"
+        ? "Peak-normalized target pins every spectrum at 1.0 — zero variance; not informative as a feature (expected, not an error)."
+        : "No variance (degenerate).")};
+  }
+  if((s.outlier_frac||0)>0.05){ verdict="minor"; }
+  if(Math.abs(s.skew||0)>1.5){ verdict="minor"; }
+  const sk=s.skew||0;
+  const shape = Math.abs(sk)<0.5 ? "near-symmetric" : (sk>0?"right-skewed":"left-skewed");
+  const ol = (s.n_outliers>0) ? `${s.n_outliers} IQR-outlier(s) (${((s.outlier_frac||0)*100).toFixed(1)}%)` : "no IQR-outliers";
+  const tail = verdict==="clean" ? "Clean, well-behaved." : "Usable — watch the noted tail.";
+  return {verdict, label, blurb:`median ${fmt(s.median)}, IQR [${fmt(s.q1)}, ${fmt(s.q3)}]; ${shape} (skew ${sk>=0?'+':''}${sk.toFixed(2)}); ${ol}. ${tail}`};
+}
+
+function renderDistributions(order, pf, labels){
+  const strip = document.getElementById("distStrip");
+  const list  = document.getElementById("distList");
+
+  // pull authoritative quality (figure-generator output); fall back to per_feature
+  fetch("/figures/after/dist_quality.json").then(r=> r.ok ? r.json() : null).catch(()=>null)
+  .then(q=>{
+    const qv = (q && q.vars) || {};
+    const ord = (q && q.order && q.order.length) ? q.order.filter(k=>order.includes(k)) : order;
+
+    // filmstrip (thumbnails)
+    strip.innerHTML = ord.map(k=>{
+      const info = qv[k] || deriveQuality(k, pf[k], labels[k]);
+      const v = info.verdict || "clean";
+      return `<div class="thumb" data-jump="row_${k}" title="${labels[k]||k}">
+        <img loading="lazy" src="${F('dist_'+k+'.png')}" onerror="this.style.display='none'">
+        <div class="tl"><span class="dot ${v}"></span>${k}</div></div>`;
+    }).join("");
+
+    // detailed list
+    list.innerHTML = ord.map(k=>{
+      const s = pf[k] || (qv[k] && qv[k].stats) || null;
+      const info = qv[k] || deriveQuality(k, s, labels[k]);
+      const v = info.verdict || "clean";
+      const blurb = info.blurb || "";
+      const chips = s ? [
+        ["median", fmt(s.median)], ["mean", fmt(s.mean)], ["std", fmt(s.std)],
+        ["skew", (s.skew>=0?'+':'')+Number(s.skew).toFixed(2)],
+        ["outliers", s.n_outliers ?? "—"],
+        (s.n_nan ? ["NaN", s.n_nan] : null),
+      ].filter(Boolean).map(([a,b])=>`<span class="chip">${a} <b>${b}</b></span>`).join("") : "";
+      const fig = `dist_${k}.png`;
+      return `<div class="distRow" id="row_${k}">
+        <figure class="fig" data-f="${fig}"><img loading="lazy" src="${F(fig)}" onerror="distMiss(this)">
+          <figcaption>${k} — ${(labels[k]||"")}</figcaption></figure>
+        <div class="blurb">
+          <span class="vbadge ${v}"><span class="dot ${v}"></span>${v}</span>
+          <div><div class="vh">${k}</div><div class="vsub">${labels[k]||""}</div></div>
+          <div class="bt">${blurb}</div>
+          <div class="chips">${chips}</div>
+        </div></div>`;
+    }).join("");
+
+    // filmstrip → scroll-to-row
+    strip.querySelectorAll(".thumb").forEach(t=> t.onclick=()=>{
+      const row = document.getElementById(t.dataset.jump);
+      if(!row) return;
+      row.scrollIntoView({behavior:"smooth", block:"center"});
+      row.classList.add("flash"); setTimeout(()=>row.classList.remove("flash"), 1200);
+    });
+  });
+}
+
+function bind(){
+  document.querySelectorAll(".tab").forEach(t=> t.onclick=()=>{
+    document.querySelectorAll(".tab").forEach(x=>x.classList.remove("on"));
+    document.querySelectorAll(".pane").forEach(x=>x.classList.remove("on"));
+    t.classList.add("on"); document.getElementById(t.dataset.p).classList.add("on");
+  });
+  const modal=document.getElementById("modal"), mi=document.getElementById("modalImg"), mc=document.getElementById("modalCap");
+  document.body.addEventListener("click", e=>{
+    const f = e.target.closest("[data-f]");
+    if(f){ mi.src=F(f.dataset.f); mc.textContent=f.dataset.f; modal.classList.add("on"); }
+  });
+  modal.onclick=()=> modal.classList.remove("on");
+  document.addEventListener("keydown", e=>{ if(e.key==="Escape") modal.classList.remove("on"); });
+}
+</script>
+</body>
+</html>

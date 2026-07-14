@@ -1,0 +1,24 @@
+[project]
+name = "forge-experiments"
+version = "0.2.0"
+requires-python = ">=3.10"
+
+# Training tier (genre = BEARDOWN) is TensorFlow + tensorflow-probability, NOT torch:
+# a custom Flipout Bayesian head with explicit KL + a BayesianRidge latent pass.
+# Exact versions are pinned by the lockfile (`uv lock` -> commit uv.lock).
+dependencies = [
+  "numpy", "pandas", "scikit-learn", "pyyaml",
+  "tensorflow>=2.16",                 # models  (py3.12 needs >=2.16)
+  "tensorflow-probability>=0.24",     # Bayesian head (pairs with TF 2.16)
+  "librosa", "soundfile",             # audio regen (needs libsndfile1+ffmpeg system libs)
+  "psutil", "tqdm",
+]
+
+[project.optional-dependencies]
+# EDA generator (eda/run_eda.py) — light, no DL stack required
+eda = ["matplotlib>=3.7", "seaborn>=0.13", "scipy>=1.10", "pillow>=10.0"]
+# Dashboard (app/server.py) — light
+app = ["flask>=3.0"]
+
+[tool.uv]
+# pin once stable: `uv lock` -> commit uv.lock (the lockfile IS the experiment)

@@ -1,0 +1,28 @@
+# Usage/cost assumptions — OVERRIDE these with your real values before quoting any number.
+# Anything omitted falls back to the dataclass defaults in usage.py.
+# Used by:  python _shared/usage.py --runs projects/genre/runs --assumptions _shared/usage_assumptions.yaml
+
+# Device active power (watts) when energy isn't metered. Match keys against the run's
+# `device` string (substring, most-specific wins). Set "cpu" to YOUR chip's package TDP.
+tdp_watts:
+  cpu: 65.0        # <- your desktop CPU TDP (e.g. 65 / 105 / 125)
+  cuda: 250.0
+  a100: 400.0
+  t4: 70.0
+  rtx4090: 450.0
+
+utilization: 0.70  # fraction of TDP actually drawn during mixed train/inference (0.5-0.9 typical)
+pue: 1.0           # 1.0 for a local desktop; 1.1-1.5 for datacenter overhead
+
+# REGIONAL — replace for where you actually run.
+grid_intensity_kg_per_kwh: 0.40    # kg CO2e per kWh (your grid / eGRID subregion)
+electricity_rate_usd_per_kwh: 0.15 # your $/kWh from the utility bill
+
+# Example cloud LIST prices ($/device-hour) — replace with your provider/contract rates.
+cloud_rate_usd_per_hour:
+  cpu: 0.05
+  t4: 0.35
+  a100: 3.00
+  rtx4090: 0.70
+
+notes: "Edit before reporting. Modeled energy = TDP x utilization x time; metered supersedes it."

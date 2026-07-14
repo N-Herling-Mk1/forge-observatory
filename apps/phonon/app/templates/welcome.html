@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Welcome · PHONON</title>
+<link rel="icon" href="/static/assets/favicon.ico" sizes="any">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body class="page">
+  <div class="welcome">
+    <div class="welcome-head">
+      <img class="welcome-logo" id="wLogo" alt="" hidden>
+      <div>
+        <div class="welcome-fk">F·O·R·G·E //</div>
+        <h1 class="welcome-title" id="wTitle">PHONON</h1>
+        <div class="welcome-sub" id="wSub">phonon density-of-states reproduction</div>
+      </div>
+    </div>
+
+    <p class="welcome-blurb">
+      Project Phonon reproduces Chen et al. (2021): an E(3)-equivariant graph network that
+      predicts a crystal's <b>phonon density of states</b> &mdash; the spectrum of its lattice
+      vibrations &mdash; from atomic structure alone. mk1 is the faithful deterministic baseline,
+      verified against the authors' own checkpoint. mk2 wraps it in a Bayesian last-layer head
+      for calibrated uncertainty; mk3 adds information-theory metrics and architecture sweeps.
+      Use the rail on the left to move between panels.
+    </p>
+
+    <div class="welcome-stats" id="wStats"></div>
+
+    <div class="welcome-hint">&#9656; open <b>Experiment</b> for the architecture, or <b>Training</b> for the mk1 scorecard</div>
+  </div>
+
+<script>
+  fetch("/api/config").then(r=>r.json()).then(c=>{
+    if(c.logo){ const el=document.getElementById("wLogo"); el.src=c.logo; el.hidden=false; }
+  }).catch(()=>{});
+
+  // locked project facts as the live snapshot
+  const cells = [
+    ["crystals", "1,524"],
+    ["elements seen", "64 / 118"],
+    ["DOS bins", "51"],
+    ["mk1 within 10%", "0.724"],
+  ];
+  document.getElementById("wStats").innerHTML = cells.map(([l,v])=>
+    `<div class="wstat"><div class="wstat-n">${v}</div><div class="wstat-l">${l}</div></div>`).join("");
+</script>
+</body>
+</html>

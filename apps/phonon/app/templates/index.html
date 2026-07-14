@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PHONON · FORGE</title>
+<link rel="icon" href="/static/assets/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="/static/assets/favicon-32.png">
+<link rel="apple-touch-icon" href="/static/assets/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body class="shell-body">
+<div class="shell">
+
+  <header class="topframe">
+    <img class="shell-logo" id="shellLogo" alt="" hidden>
+    <div class="shell-brand">
+      <span class="shell-fk">F·O·R·G·E //</span>
+      <span class="shell-title" id="shellTitle">PHONON</span>
+    </div>
+    <span class="top-spacer"></span>
+    <div class="top-slots">
+      <button class="top-btn" title="reserved — refresh">&#10227;</button>
+      <button class="top-btn" title="reserved — settings">&#9881;</button>
+      <button class="top-btn" title="reserved — help">?</button>
+    </div>
+    <span class="flash" id="flash"></span>
+  </header>
+
+  <nav class="rail" id="rail"></nav>
+
+  <div class="viewport">
+    <iframe id="view" src="/welcome" title="panel"></iframe>
+    <div class="fyi" id="fyi"></div>
+  </div>
+
+</div>
+
+<script>
+  const PANELS = [
+    { id:"welcome",   label:"Welcome",   type:"nav", src:"/welcome",
+      fyi:"Project landing — what Project Phonon reproduces, and a live snapshot of the crystal dataset." },
+    { id:"experiment",label:"Experiment",type:"nav", src:"/experiment",
+      fyi:"The reproduction target — Chen et al. 2021: an E(3)-equivariant network that predicts a crystal's phonon density of states from structure alone. The architecture, the 70%-within-10% benchmark, and where mk1 landed (0.724)." },
+    { id:"eda",       label:"EDA",       type:"nav", src:"/eda",
+      fyi:"The dataset up close — 1,524 crystals, the 64 elements that appear (and the 54 that never do), the spread of spectral entropy, and example DOS curves at both resolutions." },
+    { id:"data",      label:"Data",      type:"nav", src:"/data",
+      fyi:"How a crystal becomes model input — CIF to periodic graph, the mass-weighted atom encoding, the 5 angstrom neighbor cutoff, and the 1220 / 152 / 152 split." },
+    { id:"training",  label:"Training",  type:"nav", src:"/train",
+      fyi:"Runs observatory — each training run's loss curve and the reproduction scorecard (mean-frequency within 10%, MSE, JS divergence, EMD), and how mk1 tracked the authors' reference checkpoint." },
+    { id:"model",     label:"Model",     type:"nav", src:"/model",
+      fyi:"Model registry — the genealogy from mk1 (deterministic) through mk2 (Bayesian LLLA) to mk3 (info-theory + sweeps), compared side by side." },
+    { id:"predict",   label:"Predict",   type:"nav", src:"/infer",
+      fyi:"DOS Explorer — pick or paste a crystal structure and get its predicted phonon density of states. mk2 adds the credible-interval band." },
+    { id:"derived",   label:"Derived",   type:"nav", src:"/derived",
+      fyi:"Thermodynamics from the spectrum — heat capacity Cv(T), vibrational entropy S(T), and an effective Debye temperature, all integrated from the predicted DOS." },
+    { id:"alloy",     label:"Alloy",     type:"nav", src:"/alloy",
+      fyi:"Alloy sweep — drag the composition p for A-p B-(1 minus p) and watch the DOS interpolate, predicted with no extra training (the two-hot encoding trick)." },
+    { id:"forge",     label:"FORGE",     type:"nav", src:"/forge",
+      fyi:"FORGE — the Bayesian head. A last-layer Laplace posterior over the frozen model; drag tau (prior precision) to reshape the per-bin uncertainty live. Lights up at mk2." },
+    { id:"glossary",  label:"Glossary",  type:"nav", src:"/glossary",
+      fyi:"Glossary — every term and symbol across the phonon work, grouped and searchable, with equations rendered in KaTeX." },
+  ];
+
+  const view  = document.getElementById("view");
+  const rail  = document.getElementById("rail");
+  const flash = document.getElementById("flash");
+  const fyiBox = document.getElementById("fyi");
+  let active = "welcome";
+
+  function setFYI(p){
+    if(!fyiBox || !p) return;
+    fyiBox.innerHTML = `<span class="fyi-tag">FYI</span><span class="fyi-text">${p.fyi || ""}</span>`;
+  }
+  function showFlash(msg, kind){
+    flash.textContent = msg || "";
+    flash.className = "flash " + (kind || "");
+    if(msg) setTimeout(()=>{ flash.textContent=""; flash.className="flash"; }, 3500);
+  }
+  async function fire(p){
+    if(p.type === "nav" || p.type === "both"){
+      if(p.src){ view.src = p.src; active = p.id; paint(); setFYI(p); }
+    }
+    if(p.type === "action" || p.type === "both"){
+      if(p.action){
+        showFlash("running " + p.label + "...", "run");
+        try{
+          const r = await fetch(p.action, { method:"POST" });
+          showFlash(p.label + (r.ok ? " ok" : " failed"), r.ok ? "ok" : "err");
+        }catch(e){ showFlash(p.label + " failed", "err"); }
+      }
+    }
+  }
+  function paint(){
+    rail.innerHTML = PANELS.map(p =>
+      `<button class="rail-btn ${p.id===active?'active':''}" data-id="${p.id}">
+         <span class="rail-dot"></span><span>${p.label}</span>
+       </button>`).join("");
+    rail.querySelectorAll("button").forEach(b =>
+      b.onclick = () => fire(PANELS.find(x => x.id === b.dataset.id)));
+  }
+  paint();
+  setFYI(PANELS.find(p => p.id === active));
+
+  fetch("/api/config").then(r=>r.json()).then(c=>{
+    if(c.logo){ const el=document.getElementById("shellLogo"); el.src=c.logo; el.hidden=false; }
+    const DISPLAY={genre:"BEARDOWN · genre recognition",phonon:"PHONON · DOS reproduction",atlas:"atlas · Run 3"};
+    document.getElementById("shellTitle").textContent = DISPLAY[c.experiment] || c.experiment || "FORGE";
+  }).catch(()=>{});
+</script>
+</body>
+</html>

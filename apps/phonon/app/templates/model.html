@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Model · PHONON</title>
+<link rel="icon" href="/static/assets/favicon.ico" sizes="any">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/css/style.css">
+<style>
+  .mdl{ padding:18px 22px 48px; max-width:1000px; margin:0 auto; }
+  .mdl h1{ font-family:Orbitron,sans-serif; font-size:26px; letter-spacing:.06em; margin:0; color:#0b2530; }
+  .mdl-sub{ font-family:"Share Tech Mono",monospace; font-size:12px; color:#5b7a86; margin:3px 0 0; }
+  .mdl-rule{ height:2px; background:linear-gradient(90deg,#00b8d4,transparent); margin:12px 0 18px; }
+  .mdl-grid{ display:grid; grid-template-columns:1fr 300px; gap:22px; align-items:start; }
+  @media(max-width:760px){ .mdl-grid{ grid-template-columns:1fr; } }
+  .mdl-fig{ border:1px solid #d3e2e8; border-radius:10px; background:#fbfdfe; padding:8px 6px; }
+  .mdl-fig svg{ width:100%; height:auto; display:block; }
+  .spec{ font-family:"Share Tech Mono",monospace; }
+  .spec h2{ font-family:Orbitron,sans-serif; font-size:13px; letter-spacing:.05em; color:#0b2530; margin:0 0 10px; }
+  .spec .row{ display:flex; justify-content:space-between; gap:10px; padding:7px 0; border-bottom:1px solid #eef3f5; font-size:12px; }
+  .spec .k{ color:#5b7a86; } .spec .v{ color:#0b2530; font-weight:700; text-align:right; }
+  .spec .v.ok{ color:#1d7a44; }
+  .tag{ display:inline-block; font-size:10px; padding:2px 7px; border-radius:5px; background:rgba(0,229,255,.1); color:#0f6e7a; border:1px solid #b6e3ec; margin-top:2px;}
+  .fig-cap{ font-family:"Share Tech Mono",monospace; font-size:11px; color:#7a949e; text-align:center; padding:4px 0 8px; }
+</style>
+</head>
+<body class="page">
+<div class="mdl">
+  <h1>Model — mk1 · E(3)NN</h1>
+  <p class="mdl-sub">faithful replication of Chen et&nbsp;al. 2021 · the deterministic base the FORGE posterior sits on</p>
+  <div class="mdl-rule"></div>
+
+  <div class="mdl-grid">
+    <div>
+      <div class="mdl-fig">
+        <svg viewBox="0 0 680 840" xmlns="http://www.w3.org/2000/svg" role="img" font-family="'Share Tech Mono',monospace">
+          <defs>
+            <marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="#5b7a86" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker>
+          </defs>
+
+          <rect x="200" y="30" width="280" height="56" rx="8" fill="#e8eef0" stroke="#b8c8ce" stroke-width="0.8"/>
+          <text x="340" y="52" text-anchor="middle" font-family="Orbitron,sans-serif" font-weight="700" font-size="14" fill="#2a3f47">Crystal structure</text>
+          <text x="340" y="70" text-anchor="middle" font-size="11" fill="#5e7480">atoms, positions, lattice</text>
+          <line x1="340" y1="86" x2="340" y2="138" stroke="#5b7a86" stroke-width="1.5" marker-end="url(#ar)"/>
+
+          <rect x="200" y="146" width="280" height="56" rx="8" fill="#e8eef0" stroke="#b8c8ce" stroke-width="0.8"/>
+          <text x="340" y="168" text-anchor="middle" font-family="Orbitron,sans-serif" font-weight="700" font-size="14" fill="#2a3f47">Periodic graph</text>
+          <text x="340" y="186" text-anchor="middle" font-size="11" fill="#5e7480">neighbours within 5 Å</text>
+          <line x1="340" y1="202" x2="340" y2="254" stroke="#5b7a86" stroke-width="1.5" marker-end="url(#ar)"/>
+
+          <rect x="200" y="262" width="280" height="56" rx="8" fill="#d4f0ea" stroke="#5dcaa5" stroke-width="0.8"/>
+          <text x="340" y="284" text-anchor="middle" font-family="Orbitron,sans-serif" font-weight="700" font-size="14" fill="#0f5e48">Encode + embed</text>
+          <text x="340" y="302" text-anchor="middle" font-size="11" fill="#1d7a5c">mass one-hot · 118 → 64</text>
+          <line x1="340" y1="318" x2="340" y2="370" stroke="#5b7a86" stroke-width="1.5" marker-end="url(#ar)"/>
+
+          <rect x="200" y="378" width="280" height="56" rx="8" fill="#e6e2fb" stroke="#7f77dd" stroke-width="0.8"/>
+          <text x="340" y="400" text-anchor="middle" font-family="Orbitron,sans-serif" font-weight="700" font-size="14" fill="#3c3489">2× conv + gated block</text>
+          <text x="340" y="418" text-anchor="middle" font-size="11" fill="#534ab7">32×(0e + 1o + 1e)</text>
+          <line x1="340" y1="434" x2="340" y2="486" stroke="#5b7a86" stroke-width="1.5" marker-end="url(#ar)"/>
+
+          <line x1="480" y1="406" x2="496" y2="406" stroke="#9aa7ad" stroke-width="0.7" stroke-dasharray="3 3"/><circle cx="480" cy="406" r="2.4" fill="#b128c8"/>
+          <text x="500" y="402" font-size="11" fill="#9c1fae">mk2 taps φ here</text>
+          <text x="500" y="417" font-size="11" fill="#9c1fae">32 pooled scalars</text>
+
+          <rect x="200" y="494" width="280" height="56" rx="8" fill="#e6e2fb" stroke="#7f77dd" stroke-width="0.8"/>
+          <text x="340" y="516" text-anchor="middle" font-family="Orbitron,sans-serif" font-weight="700" font-size="14" fill="#3c3489">Final convolution</text>
+          <text x="340" y="534" text-anchor="middle" font-size="11" fill="#534ab7">→ 51 scalars / atom</text>
+          <line x1="340" y1="550" x2="340" y2="602" stroke="#5b7a86" stroke-width="1.5" marker-end="url(#ar)"/>
+
+          <rect x="200" y="610" width="280" height="56" rx="8" fill="#d4f0ea" stroke="#5dcaa5" stroke-width="0.8"/>
+          <text x="340" y="632" text-anchor="middle" font-family="Orbitron,sans-serif" font-weight="700" font-size="14" fill="#0f5e48">Aggregate + normalize</text>
+          <text x="340" y="650" text-anchor="middle" font-size="11" fill="#1d7a5c">ReLU · mean-pool · ÷ max</text>
+          <line x1="340" y1="666" x2="340" y2="718" stroke="#5b7a86" stroke-width="1.5" marker-end="url(#ar)"/>
+
+          <rect x="200" y="726" width="280" height="56" rx="8" fill="#fbeeda" stroke="#ef9f27" stroke-width="0.8"/>
+          <text x="340" y="748" text-anchor="middle" font-family="Orbitron,sans-serif" font-weight="700" font-size="14" fill="#6b4309">Phonon DOS g(ω)</text>
+          <text x="340" y="766" text-anchor="middle" font-size="11" fill="#92590a">51 bins · 0–1000 cm⁻¹</text>
+
+          <line x1="480" y1="754" x2="496" y2="754" stroke="#9aa7ad" stroke-width="0.7" stroke-dasharray="3 3"/><circle cx="480" cy="754" r="2.4" fill="#c0392b"/>
+          <text x="500" y="750" font-size="11" fill="#a32d2d">loss = MSE</text>
+          <text x="500" y="765" font-size="11" fill="#a32d2d">vs DFPT truth</text>
+
+          <rect x="60" y="804" width="12" height="12" rx="3" fill="#e8eef0" stroke="#b8c8ce"/><text x="78" y="814" font-size="11" fill="#5b7a86">input</text>
+          <rect x="150" y="804" width="12" height="12" rx="3" fill="#d4f0ea" stroke="#5dcaa5"/><text x="168" y="814" font-size="11" fill="#5b7a86">featurize / pool</text>
+          <rect x="320" y="804" width="12" height="12" rx="3" fill="#e6e2fb" stroke="#7f77dd"/><text x="338" y="814" font-size="11" fill="#5b7a86">E(3)NN learned</text>
+          <rect x="500" y="804" width="12" height="12" rx="3" fill="#fbeeda" stroke="#ef9f27"/><text x="518" y="814" font-size="11" fill="#5b7a86">output</text>
+        </svg>
+      </div>
+      <div class="fig-cap">forward pipeline · irreps flow 64×0e → 32×(0e+1o+1e) → 51×0e</div>
+    </div>
+
+    <div class="spec">
+      <h2>SPECIFICATION</h2>
+      <div class="row"><span class="k">architecture</span><span class="v">E(3)NN · L1Net</span></div>
+      <div class="row"><span class="k">parameters</span><span class="v">2,456,312</span></div>
+      <div class="row"><span class="k">layers</span><span class="v">2 conv+gated → conv</span></div>
+      <div class="row"><span class="k">mul · l_max</span><span class="v">32 · 1</span></div>
+      <div class="row"><span class="k">radial cutoff</span><span class="v">5 Å · 10 basis</span></div>
+      <div class="row"><span class="k">output</span><span class="v">51 bins · 0–1000 cm⁻¹</span></div>
+      <div class="row"><span class="k">loss · optimizer</span><span class="v">MSE · AdamW</span></div>
+      <div class="row"><span class="k">train set</span><span class="v">1220 crystals</span></div>
+      <div class="row"><span class="k">ω̄ within 10%</span><span class="v ok">0.724 ✓</span></div>
+      <div class="row"><span class="k">valid MSE</span><span class="v">0.0241</span></div>
+      <div class="row"><span class="k">JS · EMD-1</span><span class="v">0.059 · 26.3</span></div>
+      <div style="margin-top:10px"><span class="tag">reproduced · target 0.70</span></div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

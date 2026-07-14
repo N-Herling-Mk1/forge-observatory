@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<!-- FORGE — splash / threshold. Strike ENTER to ignite the forge and cross into the floor. -->
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<title>FORGE — strike to ignite</title>
+<meta name="description" content="FORGE — functional-posterior observatory. Strike to ignite."/>
+<meta name="theme-color" content="#040207"/>
+<link rel="icon" href="assets/images/flame_icon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/images/flame_icon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="assets/images/flame_icon-192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="assets/images/flame_icon-180.png">
+<link rel="canonical" href="https://forge-observatory.com/">
+<!-- Open Graph -->
+<meta property="og:type"        content="website">
+<meta property="og:site_name"   content="FORGE">
+<meta property="og:title"       content="FORGE — functional-posterior observatory">
+<meta property="og:description" content="From data, a posterior — struck into shape. Strike to ignite."/>
+<meta property="og:url"         content="https://forge-observatory.com/">
+<meta property="og:image"       content="https://forge-observatory.com/assets/images/og-card.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt"   content="FORGE flame trace and wordmark on black.">
+<meta property="og:image"       content="https://forge-observatory.com/assets/images/og-square.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="1200">
+<meta property="og:locale"      content="en_US">
+<!-- Twitter / X -->
+<meta name="twitter:card"        content="summary_large_image">
+<meta name="twitter:title"       content="FORGE — functional-posterior observatory">
+<meta name="twitter:description" content="From data, a posterior — struck into shape.">
+<meta name="twitter:image"       content="https://forge-observatory.com/assets/images/og-card.png">
+<meta name="twitter:image:alt"   content="FORGE flame trace and wordmark on black.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --void:#040207; --void2:#0a0610;
+    --cyan:#2DD4FF; --cyan-hot:#7ff0ff; --cyan-dim:#0e6b73;
+    --ember:#FF4D1F; --flame:#FF7A0D; --gold:#FFC857; --ignite:#FFB800;
+    --amber:#f0a92e; --muted:#3f6b66;
+    --mono:'Share Tech Mono', ui-monospace, Consolas, monospace;
+    --disp:'Orbitron', var(--mono);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;background:var(--void);overflow:hidden;font-family:var(--mono);color:var(--cyan);cursor:pointer}
+  #fx{position:fixed;inset:0;display:block;touch-action:none}
+  #fx2{position:fixed;inset:0;z-index:6;pointer-events:none}  /* posterior layer, in front of the logo */
+
+  /* logo: black background keyed out by screen blend, so the live flame shows through */
+  #logo{position:fixed;left:50%;top:46%;transform:translate(-50%,-50%);
+    width:min(300px,46vw);height:auto;mix-blend-mode:screen;pointer-events:none;z-index:5;
+    filter:drop-shadow(0 0 22px rgba(45,212,255,.40)) drop-shadow(0 0 30px rgba(255,77,31,.34));
+    transition:filter .25s, transform .25s, opacity .5s;}
+
+  /* HUD */
+  .hud{position:fixed;pointer-events:none;user-select:none;text-transform:uppercase;letter-spacing:.2em;z-index:6}
+  #brand{top:26px;left:30px;display:flex;align-items:center;gap:14px}
+  #brand .word{font-family:var(--disp);font-weight:900;font-size:18px;letter-spacing:.5em;
+    color:#eafbff;text-shadow:0 0 16px rgba(45,212,255,.55)}
+  #brand .word .o{color:var(--flame);text-shadow:0 0 16px rgba(255,122,13,.6)}
+  #brand .stack{display:flex;flex-direction:column;gap:6px}
+  #brand .sub{font-size:9px;color:var(--cyan-dim);letter-spacing:.32em}
+  #brand .bar{width:140px;height:1px;background:linear-gradient(90deg,var(--cyan),transparent)}
+
+  #status{top:26px;right:30px;text-align:right;font-size:9.5px;color:var(--cyan-dim);letter-spacing:.26em;line-height:2}
+  #status b{color:var(--amber);font-weight:400}
+  #status .dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--flame);
+    box-shadow:0 0 8px var(--flame);margin-right:7px;vertical-align:middle;animation:blip 1.6s infinite}
+  @keyframes blip{0%,100%{opacity:.35}50%{opacity:1}}
+
+  #tagline{bottom:118px;left:0;right:0;text-align:center;font-family:var(--disp);font-weight:500;
+    font-size:12px;letter-spacing:.42em;color:rgba(180,210,225,.55)}
+
+  /* phase rail (centred, under the plate) — a light progress stepper for the pipeline */
+  #rail{position:fixed;bottom:152px;left:50%;z-index:8;pointer-events:none;width:min(440px,86vw);
+    opacity:0;transform:translateX(-50%) translateY(8px);transition:opacity .45s ease, transform .45s ease;
+    font-family:var(--mono)}
+  #rail.on{opacity:1;transform:translateX(-50%) translateY(0)}
+  #rail .rtrack{position:relative;height:2px;background:rgba(45,212,255,.16);margin:0 10px}
+  #rail .rfill{position:absolute;left:0;top:0;height:100%;width:0;
+    background:linear-gradient(90deg,var(--cyan),var(--gold));
+    box-shadow:0 0 8px rgba(127,240,255,.55);transition:width .28s linear}
+  #rail .rnode{position:absolute;top:50%;width:9px;height:9px;border-radius:50%;
+    transform:translate(-50%,-50%);background:#0a1016;border:1.5px solid rgba(45,212,255,.34);
+    transition:background .3s, border-color .3s, box-shadow .3s}
+  #rail .rnode .rl{position:absolute;top:13px;left:50%;transform:translateX(-50%);
+    font-size:7.5px;letter-spacing:.1em;white-space:nowrap;color:var(--cyan-dim);transition:color .3s}
+  #rail .rnode.done{background:var(--cyan);border-color:var(--cyan);box-shadow:0 0 8px rgba(45,212,255,.7)}
+  #rail .rnode.done .rl{color:#9fdcea}
+  #rail .rnode.active{background:var(--gold);border-color:var(--gold);box-shadow:0 0 12px rgba(255,200,87,.9)}
+  #rail .rnode.active .rl{color:var(--gold)}
+  #rail .rnode.active::after{content:"";position:absolute;inset:-5px;border-radius:50%;
+    border:1px solid rgba(255,200,87,.6);animation:rpulse 1.1s ease-out infinite}
+  @keyframes rpulse{0%{transform:scale(.6);opacity:.9}100%{transform:scale(1.8);opacity:0}}
+
+  /* instruction / strike */
+  #strike{position:fixed;bottom:60px;left:0;right:0;text-align:center;z-index:6;pointer-events:none}
+  #strike .key{display:inline-flex;align-items:center;gap:14px;font-family:var(--disp);font-weight:700;
+    font-size:15px;letter-spacing:.34em;color:#eafbff;pointer-events:auto;cursor:pointer;
+    padding:13px 26px;border:1px solid rgba(45,212,255,.45);
+    background:linear-gradient(180deg,rgba(45,212,255,.10),rgba(45,212,255,.02));
+    clip-path:polygon(12px 0,100% 0,100% calc(100% - 12px),calc(100% - 12px) 100%,0 100%,0 12px);
+    animation:breathe 2.4s ease-in-out infinite;text-shadow:0 0 14px rgba(45,212,255,.55);
+    transition:transform .22s ease, filter .22s ease, background .22s ease, border-color .22s ease, color .22s, text-shadow .22s}
+  #strike .key:hover{animation:none;color:#fff;
+    border-color:rgba(255,96,32,.95);
+    background:linear-gradient(180deg, rgba(150,16,8,.55) 0%, rgba(255,122,32,.88) 100%);
+    transform:scale(1.07);text-shadow:0 0 30px rgba(255,96,30,.9);
+    filter:saturate(2.4) brightness(1.5)
+      drop-shadow(0 0 44px rgba(255,58,18,.70)) drop-shadow(0 0 16px rgba(255,180,60,.6))}
+  #strike .key:hover .glyph{color:#ffd27a}
+  #strike .glyph{font-size:18px;color:var(--cyan)}
+  @keyframes breathe{0%,100%{opacity:.62;border-color:rgba(45,212,255,.32)}
+    50%{opacity:1;border-color:rgba(45,212,255,.72);box-shadow:0 0 24px rgba(45,212,255,.20)}}
+
+  /* overlays */
+  #grain{position:fixed;inset:0;pointer-events:none;z-index:7;mix-blend-mode:screen;opacity:.5;
+    background:
+      radial-gradient(130% 100% at 50% 44%, transparent 52%, rgba(2,1,6,.9) 100%),
+      repeating-linear-gradient(0deg, rgba(45,212,255,.02) 0 1px, transparent 1px 3px);}
+  #flash{position:fixed;inset:0;pointer-events:none;z-index:20;background:#fff;opacity:0;
+    transition:opacity .75s ease-out}
+
+  /* standalone landing stub (only when ENTER_TARGET is empty) */
+  #floor{position:fixed;inset:0;z-index:30;display:none;flex-direction:column;align-items:center;justify-content:center;
+    background:#fff;color:#0F1F3D;font-family:Georgia,serif;text-align:center;opacity:0;transition:opacity .6s .2s;gap:10px}
+  #floor.show{display:flex;opacity:1}
+  #floor .eye{font-family:var(--mono);font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:#C67D3E}
+  #floor h1{font-size:30px;font-weight:400;letter-spacing:.02em;margin:0}
+  #floor p{color:#5C657A;font-family:system-ui,sans-serif;max-width:440px}
+  #floor button{margin-top:14px;font:inherit;font-family:var(--mono);font-size:12px;letter-spacing:.18em;
+    text-transform:uppercase;padding:9px 20px;border:1px solid #D9DCE3;background:#fff;color:#0F1F3D;cursor:pointer;border-radius:4px}
+  #floor button:hover{border-color:#FF7A0D;color:#b5560a}
+
+  @media (max-width:640px){
+    #brand{left:16px;top:18px} #status{right:16px;top:18px} #brand .bar{width:90px}
+    #tagline{bottom:104px;font-size:10px;letter-spacing:.3em} #strike{bottom:46px}
+  }
+  @media (prefers-reduced-motion:reduce){ #strike .key,#status .dot{animation:none} }
+</style>
+</head>
+<body>
+  <canvas id="fx"></canvas>
+  <canvas id="fx2"></canvas>
+  <img id="logo" src="data:image/png;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1BST0ZJTEUAAQEAAAHIAAAAAAQwAABtbnRyUkdCIFhZWiAH4AABAAEAAAAAAABhY3NwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAA9tYAAQAAAADTLQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAlkZXNjAAAA8AAAACRyWFlaAAABFAAAABRnWFlaAAABKAAAABRiWFlaAAABPAAAABR3dHB0AAABUAAAABRyVFJDAAABZAAAAChnVFJDAAABZAAAAChiVFJDAAABZAAAAChjcHJ0AAABjAAAADxtbHVjAAAAAAAAAAEAAAAMZW5VUwAAAAgAAAAcAHMAUgBHAEJYWVogAAAAAAAAb6IAADj1AAADkFhZWiAAAAAAAABimQAAt4UAABjaWFlaIAAAAAAAACSgAAAPhAAAts9YWVogAAAAAAAA9tYAAQAAAADTLXBhcmEAAAAAAAQAAAACZmYAAPKnAAANWQAAE9AAAApbAAAAAAAAAABtbHVjAAAAAAAAAAEAAAAMZW5VUwAAACAAAAAcAEcAbwBvAGcAbABlACAASQBuAGMALgAgADIAMAAxADb/2wBDAAUDBAQEAwUEBAQFBQUGBwwIBwcHBw8LCwkMEQ8SEhEPERETFhwXExQaFRERGCEYGh0dHx8fExciJCIeJBweHx7/2wBDAQUFBQcGBw4ICA4eFBEUHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh7/wAARCAC+AMgDASIAAhEBAxEB/8QAHAABAAICAwEAAAAAAAAAAAAAAAQGBQcBAwgC/8QASBAAAQMDAgMDCQQHBQYHAAAAAQIDBAAFEQYSByExE0FRFBUiNWFxc4GxIzKRoQgWM0JiwdEkUmNy4RdDgrLw8URTVGSSwtL/xAAcAQABBQEBAQAAAAAAAAAAAAAAAQIEBQYDBwj/xAA3EQABAwIDBAgGAQQDAQAAAAABAAIDBBEFITESMkFRBhMUImFxkcGBobHR4fDxIzNCQxUkUoL/2gAMAwEAAhEDEQA/APHM8YnSB/iq+tdFSLj6wk/FV9TUeldqmt3QlKUpE5KUpQhKUpQhK5FcUoQrDo7TEjU7sqJBebTNaa7VtpfIOgHBAPceYrE3S3TLXMXDnxnYz6PvIcTg/wDb21YeE10Nr15bXlL2tuudg57lcvrivRGqtMWfUsIx7pFS4QPQdTyWj2g1ocPwduIUpfEbPafgeXksni3SF2E1zY5m3jcL3GoPHzXkulXnXvDm7aaUuUyFTbcD+3Qnmgfxju9/SqQRiqWoppaZ5jlbYrR0lZDWRCWB200/vwXzSlK4KSlKUoQlKUoQlKUoQlKUoQlKUoQpFy9YyfjL+pqPUi5esZPxl/U1HpXalNZuhKUpSJyUpShCUpShCUpShC7I7imX23UnCkKCgfaK9XR7i/cNHoucJQTIehB5o4zhZRnp768nCvTHCJ1T/Dq1FZyQhaOfgFqFavopIetki5j6fysP04hHUQzW3XW9R+FB0JxFt2pALfcUtxLiRtLaj9m93Hbnv9n1rA8RuFzUsO3PTbaWnuanInRK/wDJ4H2dPCtS3GM8m+zGI7bi1tPrA2AkjCvZWz+HXEeRGcas+qCtIOAzKcGCPAL8R/F+NdqbEoa9nZcQHgHeKZVYPUYY/tmFnLUs8PDn9RwWopDDsd5bL7a23UKKVIUMEEdxFdRr0TxG0LD1RFM+F2bNzCcocH3Xh3BX8jXn64Q5EGY9EltKZfaWULQocwRVFimFS4fJZ2bToea0eD4zDicW0zJw1HL8KPSlKq1cJSlKEJSlKEJSlKEJSlKEKRcvWMn4y/qaj1IuXrGT8Zf1NR6V2pTWboSlKUiclKUoQlKUoQlKUFCFyOtem+E8dUXh5aULGCWlOfJSlEfka822uG7OuMeGwkqcecS2kDvJOK9Q3l1jTmiX1JO1uFC7Nv3hO1P54rWdFWbDpah2jR+fZYbptJtxw0rd5zr+3utBWS5CLrC5TEx35AcU7hLQyRlec1B1xO8vuqHvJ34+GgNroweprs0MzNlXl0Qmm3XSypRDi9oxkZOcGs47YFXLUrkW8JLCkRQ4kMOA59LHUj31AjjlqKXq28XcsvVaB74aep23ahvPO3ks/wADdWvrlfq3PeLiCgqiKWeaSOqPdjp7qj/pAWHsLhHv7CPQkjsn8DotI5H5jl/w1S7mj9V9XtLgLcPkq23UFZ5nkDg4rfWqYUfV2g3UxsL8pjh+MfBeNyf6VbUjX11BLRSG748x9vZZvEHNwzFIa+LKOXJ3x/QfMLzGetcV9OJKVlKhgg4INfNYxb1KUpQhKUpQhKUpQhKUpQhSLl6xk/GX9TUepFy9YyfjL+pqPSu1KazdCUpSkTkpSlCEpSuRQhACeldj7DzCwh5tTaikKAUMHBGQfmK2bwm4f+cVtXu8tYhj0mGFj9sfE/w/WsNf7ZL1XxRuEGCkY8pU2V49FtCPRyfYAKs3YXM2BkpGbzZo4nxVS3GKd9S+FpyYLuPAeH3WY4DacVMu679Ib/s8T0Wcjkpwju9w+orP/pAX8MWmPYmXPtZSu1eAPRCegPvPP/hq6MptWjtLbEkNQ4TWST1UfH2kn61oJ6Y5rDW5kXBSgmU4RtSfuIAO1I9wArR1rRhlA2iYf6kmvv8AZZTDy7GMUdiEg/px7vw0+/opfCdma/qN1uC+yy75Mo7nWysYynlgEVmdXWC43HWIiSLgyl5MJLm9topBG4jGMnxqwcN9FQ1a7Zgxp8+KlyC84pxpad3oqQMcx051C4vWm62DXzcOzXCZJeXb0rU5IWkq2lZGOgGMgVWMh6mARStJs7Ox/KvXzddVdbE4C7crj6la21LbXLVdVw3X+2UlIO/HXIrdHAa8+XaVXbHVZdguEJB/8tXMfnuFagn26+3G5qTKT2srswokrSPR6VZeFUmVprXMeHNAaROb7IjcCMk+ieXtH50YTK6lrxIGkMJtn4803HaYVuGOjLgXtG1l4fi6xXFmzeZ9bTUIRtZkq8oawOWFcyB7jkfKqmlC1AlKSQkZVjuFbu/SCtHlFlh3htJK4q+ycIH7iuh+RH51Q+DzMeXrJFvltJdjy47rLqCOo2k/yFcMSw4sxIwDLaOXx/bLphOKiTCRUuzLBn/8/cZqlkYpVk4haYkaXvq4i9y4zmVx3cfeT4e8d9VuqiaF8LzG8WIV5Tzx1EbZYzdpzCUpSuS7JSlKEJSlKEKRcvWMn4y/qaj1IuXrGT8Zf1NR6V2pTWboSlKUiclKV9JoQuBWzOFugTcVt3i8tkQwdzLBHN4+J/h+vuqFwy0b5zdTdbo3/YkHLTav96f/AMj862FrfWEXTFvDTIQ7OWjDLI6JHTcfYPCtThOFRRx9trcmDQHj+8BxWTxrFppJOw0ObzkSOH7xPBXdtSUJCUAAJAAA5D3VgNNWSDpyLKkrUgyZC1PypCuXMknGe5I/1rD8Obwt3RXna7SwCp11x11w4AG7/rlWu+I+vXr8tVutyltW4Kwo9FPY7z4D2Vpa3FaWGCOpcO8R3Rxz+nmslQYJVzVElI11mA2ceGX18l3cQtWK1bfWLNCdU1bEuhAVj9qrON5Hh4D+tdNu0M0dQ2yA7cHdkt1SCptASpOEk8uvhUS3aZZRcbefLHh2sltBKAARk9QfGtizNHxot9sKU3m8KL0wt7zJAUgdks5SQOR5VlzFLUF81S27rjjoOS2gkhomx09M6zbHhqeamaR4ZWuLr6Fb3LpdlMyYEhwrbklpaShTYACk4OPSPL2CsLxasMjTfEJqHp6LcrspdtC1pedXIWkdoRnJycch+NXIaVZZ1/aInn/URS7ClK7TzgoOJKS1ySoDkDnmO/A8KjTEr03xZUI7OoL7vsvQu+UvJy6O9RGE8vxNDoQx2Q2e8MxnZNbOXWJdtd05HIFadlTr7EvfayLK61ILG3sltqB27vvY69axF8uU166sy32DFfaSnaMEHkSQedbR1nPnT9eF9rTt2Q4LclJYdbQlYG8+lgKIx3dapt7sN4v+pOwZgKiPIjBZbkKCSU5Izyz31wqIpHRkMeXHa0t81Lp54w8GRoaNnW+nh5LckVyNrLQmVbds+LtUB+453/goflWnOFcZ638VIkN9JS6yt5tYPiG1irZwonytO3h/R93WhC3MPR8KyAojJSD7Rg/I+NWC4ab7LibbNSxW/s3Q43JA/dX2aglXzHL5e2tBJEcQbT1QHfY4Bw46/vqsjFI3DH1VGT/Tka5zDw0NvUZeYWY4g6dY1Np92GramSgb4zh/dWP5Hoa80Toz0SS5FkIU260soWk9QQcEV6Vm6iZi6vi2F4hPlUYuNqJ/fBPL5gH8K1xxy06EPtahit4S4Q3JA/vdyvn0rn0koo6hjqmHeYbO/fBduiVdLSPbST7rxdv74/XzWqqV9HpXzWEXoiUpShCUpShCkXL1jJ+Mv6mo9SLl6xk/GX9TUeldqU1m6EpSlInJVn0BpxV+ueXgUw2CFOq/veCR76rsdpbzyGm0lS1qCUgd5NbuskSLpvTiWlqASyguPL8Vd5/l+FXeCYe2qmL5NxuZ+ypsbr3UsOxHvuyH3XbqrUUTTFnT2aUF4p2RmByHLv8AYBWkrnOk3Ga7MluqdecOVKNTtQ3KVfbq7OeJ9I4bRn7ie4VnWNHMOaVN3L7wcDCnNmBjIz/SumIVkuKSlsW4wZDw5rnhtBFhcQdJvvOZ8eSrj11uT9oYtnbLENkkpbSORJOcnxNZuNbrIrTgkrW2JfYFWC9g7sHHLNfViv0K32UQn2XlO+lzCBjn86qvZqVnrUIyxwtDiQ8kWsf8VYCJ8hLQNgA8OKu8SNAXOt6ES3FqXKaSQmSc4J7sHl762DcbJbUXmxJ7SaQ5N2r3THTgdks8ju5dOorR9uVJhzGZcf8AasrC0EjIyDy5VmtQaivt7iIjT1oU2he8bG9pzgjr867NxODYdtMzNrKNLhk75Glrshe/xW7pVgtA11ZmAZqm3IcpS/7e8VAgtYwd+R1PSokmQnS3FQrtVtfnByz7VIdnKyMujnuXu8AMe2tD2y4XS1TPKrfMfjP7Sne2og4PUVlYGr9QsXRVyflKmySz2O6SSrCc5wOfiKVuJQlwJbY3vkubsLnAsHbQtaxvmVtC66luL2vnZqrBscVbUt9l5Yk4AcJ3Z2/LFVu+Xy+HWPlVvgx40gwghSHnO0BTvJzkYqtr1heV3RVyLEUulkM42HGM58etQ5mo7o9cfL1NsId7LsuSDjbnPj7a7nFIS3Z23b1+Hr5rkzCJA7adG3dtqfTyXxqefeHdS+XTC23OQEEFjIAwBgit08O9XM6jtoQ8Ut3FhID7XTd/GB4H8q03Zb8G7u9PuKFLUtrs/skjxHia6Zl5fZ1KbzanHWFgpKCRg8gAQR0INOoMVFFKZmuuHHMcbc/NMxPBhiEIgLdktGR4X5eSs/Gec9H13FfjuFLsaO2pCh1B3E1sSO/D1bo8KcA7KaxhQx9xfQ/goflWj9YXxzUN485ONBpZaQhSQcjIGDirtwWu32Uu0OK+6Q80PyV/Kp+GYiyTEZWHNkt/x8lW4nhb4sMheMnxW/PzzWt7lEegzn4chO11lwoUPaDio1XrjJbhHv7VwbThEtv0j/GnkfyxVFrMV1MaaofEeB/hamhqRVU7JhxHz4pSlKiqWlKUoQpFy9YyfjL+pqPUi5esZPxl/U1HpXalNZuhKUpSJys/DaGmVqVp1YBTHSXTnx6D8zVt4mz1N2pmEhWDJcO7n+6nu/EisNwoQAuc937UJ+p/lXxxFcK7/GbzySwCPmo1qGO7NgrnN1cfe3ss45naMZaHaNH79VYeHGl4N3sUzyoYWpwJSsJBKQADyJqwJ0HbHmlRY18fyARsCgoD3gV98IxixvEd73/1FZe22B5i8Cc5IQEJWVYTnJznlXlVVXziVw27W0X0FhuBUjqGnf2YPL943It468lqPVulpFjuJivbVpUNza09FCs/pnStp/US4326x1OODcmLhZSM9B06+kfyrKcU7lDm3SPGYcS4Y6SFqScjJI5fLFTte4tWj7RZWvuqAW4R0UQOf5nNdzVTSRxtJsXH5BUJwykpqqqkYA5kYsL55uyHob+iq/DvRSdRXBwPuKaisAF1SRzJPQD8KvrWiNBT5LtoirfRMbBBWHFZyOuM8jUrg2lA03JWOpkEHH+VNdmm16XOoI/kQn+VlZ2Ff3c4Oc8/fVdV1cz5X2cRs6W91ZUGG0sNLCXMaTJrta25Baj1VpR2x39y3PemEqBQvGAtJ6H/AK76yvFTS1rseoo0S1MKZZXEQ4pJWVekSoE5PuFXHjQ2jz9AXy3FjB924/1NQuNSQdVxD/7FH/MqpkFbLK6Ik6g3+SpazDYacVDGjRzbeAN1krRwi08uwxLnNvEiMl1htxZVsCUlQHLJ9pxSfwUgzYanrFfkPqx6IcSClR/zJ6fhVp1cccHUEf8ApY31RVF4P3CZH1rEYZUrspGUOoB5KG0nJHsxVbFUVskT5my7pOVhbJTqiloYpY4DFvAZ3N81rS7WCTZrw5BuUVTbzC8ONnv+Y7iO8Vd+MOiLJabBY7/pyOtqFOb+0SpxS8KKQpPMk9278Ks36R8VhF6tkpKUh52OpLntCVcvqfwrvs6RqX9Hy5Qnhhy0LUtpaumE4X9FKT+FTziMr44Kq9hexHDPL5FU7sOijknprXIFweOWfzC01pCXZoHlYuyGiVFPZ9ozv8c9xx3VH0tcWomuGZTBSlhyQUYxgbVHHT51e9QcLof+y2NrOHcnW3hED78dxIUlZzj0SMEfPNajaUUOoWnkUkEVr8OxtlUxvU/63W0sbg8VkK/CHQOd1n+xvPK1uC2zxXjCVpoPgZVHdCgfAHkf5VqMitz6jV5ZpaX3lcYr/LNaZNaLpKwdpbIP8gs90bcRTGM/4lfNKUrOLQpSlKEKRcvWMn4y/qaj1IuXrGT8Zf1NR6V2pTWboSlKUicrvwve2qmtZ5kJV9a6uIIIvsd3uUwB+CjWN0JLEa9pQogJeSUc/HqPzrO6/YLsBqUnmWF8/cf+wrTM/wCxgxYNWn3v7qiI6nFA/g4K8cLpDUGxPGe81GCnQU9qsJyNo8aoepdQyly5LaJjymu0UAA4SkjNYWdqFcq2oidjs249LdnoMeFYZx1TiuZrGPw2GOodIw3B5rez9Ip56GKlLdnYvmDrdZOPOUt7JVW2ro5594VRLiPSfgEJXjrgeifywa0kyrarNWmxaxn2mzTLUwhhyNLBDiXUkkZGDjBGOVcK2kc/ZdHqD/KMIxJkHWxz7r2kfHUH1WwOEeqYdukv224PpZZfIU2tRwlK+hBPdkY/CrtbLRZLTe3r45doojjK2UlxICCevPPPvx7680mWpKshVfarg6RjdUKowYyvLmuttaqwo+kwghZFJGHbBu03tb7rZmv9TM37VBejKzGa2tNEjG4A8z8yT8sVluODgb1VEJP/AIFv/mVWo4Mza8la1cgoVdOL+qLZf77Hl2l9TrKIiG1EoKcKBUSMEe0UGhMU0TWDIA+y5f8AJ9fTzySHvOc029dPJbtak6evWg4dpl32FHDkVgLxJQFJKQk4wT4iodmXw80QV3Dz01KlbCAoOBxePBISMDPia8yC4OJPJRrh2etf7xqOOjxsWdYdkm5C6v6TAkO6obQFgc1fuI2sF6s1GudsLUdCQ1HbJ5pQM9faSSa2BqhY0pwCg20Ybl3hYW7jkSk+mT/8QhPzrz/GllDqVkBWDnCuh99WfXevbvq4QxcUx20RGyhlthBSkA4ycEnnyH4VKnws7UMbB3Gm5+GnzVfFiY2ZZHnvuFh8dVCvWr9RzbLHsblyf82R2w2iO36KCB/ex9755qDYrMq7QZZZViQyUlAPRQOcj8qsmitaWuyaclW6ZbnJD7y1KS4EpITlIHfz7qjcO8huY73KUkfWtDgcDJKkwuj2W555Z5aqmxk7FMyaOXacRmM+7Y6eitCVKTpdLbgIUIYSoHrkIxWojW1bzICLTMUCPRaVnn34/wBa1Ue+tF0iI2o2jgFncFYWtkceJXFKUrNq7SlKUIUi5esZPxl/U1HqRcvWMn4y/qaj0rtSms3QlKUpE5djDimnkOoUUrQQoHwIrY7Ehi7WlKjgoeRhY8D3j8a1rWa0vdfIpBYeV9g6efgk+NWmGVgp3Fjt12qi1FMJrHiFCmx37XcShQG5CtyFYyCO41lrEydSTlMz3ilLTRUktoSO8eyrBc7fHuTAQ6OY5oWnqKq7wm6buB8neSS4jkop6jPt91V2IUxaT1evA8losOPZntdUgmG/eA4/DJWGHoyA/enoRlvhCGUuBQAzkk1It+hIEjUMq2qmSEtstIcSoAZJVUfREu5XafKkKnhlxKEpJDKTkZNZ61tXIasnJRdNrnk7e5wx0nI7hiszUT1EbnNMtiG/PLwW6pMOw2qhimjpTsvebaZjvWG94fLVdEPhtbH9SP2tU6UG24qHgrCckqUoY93KpcHhXapGsXbIq4yw0iEmQFhKd2Sspx7uVZW0xb05rGSlu9pS6ITRU4YqTkb1YGM1lbLb9QucSJDLeoGkSBbEEvmEkgp7Q4Ttz499Vk+IVLdq04FmX465Z6JJsIoWtB7Kd8jUaZ5byw8Tg7aXdcGwedZoZFt8s7QJTu3drsx7sV9K4PWj/aB+rfnWb2HmzyztNqd27tAnHhjnVtZtuqE8UlMo1MyJXmTd2/kCSNnb427c+PPNRpMXU7fFfYdSMGZ5mz2/kCcbO1Ho7c46881AGJ1hdlUj+3fQ689395KuOG0xNhAd+3w5aqtOcGrKnWwsPnWb2Rtxl9ptTu3dptx7qgTuFNnja1asQuUwsrgGT2hCd24L2491W2S3qccRkg6iYMrzSftvIU42dqPR258eeaxF5Gov1+YC76yqT5uVh4Q0gbe0+7tz499SYa6tc4XqBuX46891d48HpTrTnftw05bywL/DG0N6tbtAuMvsVQVSCvCd24LCce7FYPWER7QF1RFss1S0SmQtwvNIUcgkADINZDXd91Bp/UMaX5xZkSFxC2FeThICd+cY94rE25MzX9ydcu0wNKisjaW2xzG7pj51cU3aNls1RIHRWz8TztZQ6umpDK+io4i2o2u7wsLaXvbRd8bS0e7acc1FKmO+VOtuPLSlKQkqGf6U0dHVHsqFqBCnVFfPw6Csa5Buke/q09FucpUVA9LCilIQRk8s476zmoJDdqs6tmEkJ7NpOe/H8qvsMqXU8heXXBzHgFFq8NhqIC8xbHVjZeSb7Thqf3mqhd7u8qdcENryy+dhHdy5Aj8KwpNFHOc1xUuWV0pu4rGtaG6JSlK5JUpSlCFIuXrGT8Zf1NR6kXL1jJ+Mv6mo9K7UprN0JSlKROSuRXFKEKyabvvYhMSYrLfRCz+77D7Ky+qIHl1sD7AC1temnHenv/rVFFZmxX6TbiG1fbR+9BPT3GmyueRkrzDa6HYNNVbrsr8lkNBmd20oQ5KGDhO7c3uzUm6367WS/PLDrD7zjSQpRawMDpyzUR54NKcuGn5IR2gy8wQN6fcD1HurjTjKb/d3jdSp5SWuRB2nkQO6q6SNpc6aQAttmLZq9gmeIIcOpXkTbV2u2u5Y3zGZ+l9VauH97vt6vcyU0/DjvJjoQoqZKgQFEjA3DxqwxJ+o4evH3G58Dyo29AKzGVt27zyxu65781r65zn9I3gospDaXmUlYWN+eZ8an6Rut6vl9kSlzWmn0xwgq7AEFO7pjI8arKmj2w6ZoaIy2wuPLXLRWlJVNbKzDqgvfOHnascjrobjP0WwI921Q5xBU+LhbhKNr2bzFVt2drnGN2c57818GXqV7iSpZuNvMsWvG/yVWzZ2g5Y35znvzVZW7eY+rCpNxZL5hAbzH5bd/TGfHvrD6i1NfLLqVM5L8d6QuKG9xZwNu7OMZ8RUOOgMjrRhtyy2n40Uqs6mjiM0rXhokzN/s7VZ7X2p9Q6b1YxNcegyZDkLsgUsKSkJ356bjzyKw1o1VfL/AKiM1SojD7UYtghokbd2emeuax0d2br68E3OShhcdj0S21yI3dMZ9tQ71FkaSuiUQ5gcW61kqLYHLJ5YOfCrSGkha0Qlo63Ztpl/CozVVLZe3gu7Jt88/re91mdQxn7vqSGxdn0uAx1EFlGwjBPjmsdPhSrPdWItgelIdkowoBXM8/Z3VFtX6w6kurfkq1l5tO3tUjaG0nxIrZ1ttEaxwC/MlF59KPtZLx6DvA8BTKio7GGscQTa2yFbYfRw42ZZYmOYNq/Wk5gC1wDe99c9AsVbLabbEckz3+1lrTukPrPcB0z4Cteasu/nSeS3kR2spbHj7aymt9UqubiocElEMH0ld7h/p7KqJqdh9PI0dbLvH5Kk6U45BK0UFD/aZqf/AEfPjnx4nNDXFKVZrEpSlKEJSlKEKRcvWMn4y/qaj1IuXrGT8Zf1NR6V2pTWboSlKUiclKUoQlKUoQvpCihW5JII7xX20+60oqbcWhR6lJwa6qUlgU4OLTcFWnRkKPeJMjziFv8AZpG3Kzkc67L2+vTN7UmzEMJcZG4H0s8z4+6qq24tByhak564NZXTNvF6u6Yj760BSFHcBk8h7ahywhrnSPd3LacFo6PETLTx0dNFafaykvZ2d8r68eaz2l5t2vt4ddVNbbdbj7dxZBynd0xy8a5vtjlT9QCNJnJUtEcLCw1gY3YxjNQr5Hf0lc0It0xZLzOVKKR0z0/KsarUF1VMMtUnL/Z9nu2j7uc4qOyJ73dbAQG2yy/CtJMQp6eHsOJh7pGvu/vEgj1tfx+akzWp2l54EOaQt1vmpKAOWenPPhWc0tpe+62lNzrk6tuEgbS+tIysA/dSO/39KzGhNIP6gSjUeq3A1bmU5bSvCO1A55J7k+3vqbrTifFiNm16UaRtbGzyjZhCR4IT/M1CmrJpH9RStDpBk53AfHmhlLSRA1FU5zKYm7I7m7vhc/vFZ+6TNN6GtCIyQhs4yhlHN10+J/qf9K1Dq3VVwv75Dh7GKD6DCDy95Peawc6XJmylyZT7jzyzlS1qySa6KmUGFMpj1jztPPE+yrcY6Tz17OzxDq4ho0e/20XJrilKtlmEpSlCEpSlCEpSlCF33H1hJ+Kr6muiu6cczXz/AIivrXTSu1TW7oSlKUiclKUoQlKUoQlKUoQld8KZJhPh+K8tpwDAUk4NdFKQgEWKcx7mODmmxClT58ye6lyZIceWkYBWc4FZ3Q1rgyJLt1vauztMHCnv8VZ+62PEnn8garOakPTHlw2oe7DLZKgkd6j1J9vQfKuUsRczYYbeXspMNRabrpu8dc+J4X8FZdda2uGo3PJ28xLa2cNRmzgYHQqx1P0qpE86ZNcUsMEcDAyMWCZU1UtVIZJXXJSlKV1UdKUpQhKUpQhKUpQhKUpQhf/Z" alt="FORGE — P(theta given D)">
+
+  <div id="brand" class="hud">
+    <div class="stack">
+      <div class="word">F<span class="o">O</span>RGE</div>
+      <div class="sub">functional-posterior observatory</div>
+      <div class="bar"></div>
+    </div>
+  </div>
+
+  <div id="tagline" class="hud">FROM DATA, A POSTERIOR &mdash; STRUCK INTO SHAPE</div>
+
+  <div id="rail">
+    <div class="rtrack" id="rtrack"><div class="rfill" id="rfill"></div></div>
+  </div>
+
+  <div id="strike">
+    <span class="key"><span class="glyph">&#9211;</span> STRIKE TO IGNITE</span>
+  </div>
+
+  <div id="grain"></div>
+  <div id="flash"></div>
+
+  <div id="floor">
+    <div class="eye">forge floor</div>
+    <h1>You crossed the threshold.</h1>
+    <p>This is where the splash hands off to the app dashboard. Set <code>ENTER_TARGET</code>
+       in the script to wire it to <code>index.html#dashboard</code>.</p>
+    <button id="reignite">&#9211; re-ignite</button>
+  </div>
+
+<script>
+(() => {
+  "use strict";
+  // ── wiring ──────────────────────────────────────────────────────────────
+  // Where ENTER takes you. Empty string => show the standalone landing stub.
+  const ENTER_TARGET = "experiments.html";   // the floor: experiment selection
+
+  const C = {
+    cyan:[45,212,255], cyanHot:[127,240,255],
+    ember:[255,77,31], flame:[255,122,13], gold:[255,200,87], ignite:[255,184,0],
+  };
+  const lerp = (a,b,t)=>a+(b-a)*t;
+  const mix  = (A,B,t)=>[lerp(A[0],B[0],t),lerp(A[1],B[1],t),lerp(A[2],B[2],t)];
+  const rgba = (c,a)=>`rgba(${c[0]|0},${c[1]|0},${c[2]|0},${a})`;
+  const smooth = x=>x<=0?0:(x>=1?1:x*x*(3-2*x));
+  const reduce = matchMedia("(prefers-reduced-motion:reduce)").matches;
+
+  const cv = document.getElementById("fx");
+  const ctx = cv.getContext("2d");
+  const cv2 = document.getElementById("fx2");
+  const ctx2 = cv2.getContext("2d");
+  const logo  = document.getElementById("logo");
+  let W=0,H=0,DPR=1, cx=0, cy=0, flameW=0, flameH=0, heatGrid=null, burnFronts=null, skRect=null, logoBox=null, strikeHover=0;
+  function resize(){
+    DPR = Math.min(1.5, devicePixelRatio||1);
+    W = innerWidth; H = innerHeight;
+    cv.width = W*DPR; cv.height = H*DPR;
+    cv.style.width=W+"px"; cv.style.height=H+"px";
+    ctx.setTransform(DPR,0,0,DPR,0,0);
+    cv2.width = W*DPR; cv2.height = H*DPR;
+    cv2.style.width=W+"px"; cv2.style.height=H+"px";
+    ctx2.setTransform(DPR,0,0,DPR,0,0);
+    cx = W/2; cy = H*0.46;
+    const logoW = Math.min(300, W*0.46);
+    flameW = logoW*1.42; flameH = logoW*1.72;
+    // the logo plate's on-screen box, pre-scaled to the finale scale (1.06) —
+    // the burn and its burning edge are confined to this.
+    const r = logo.getBoundingClientRect();
+    const lw = r.width||logoW, lh = r.height||logoW, s = 1.06;
+    logoBox = { x: cx - lw*s/2, y: cy - lh*s/2, w: lw*s, h: lh*s };
+    buildHeat();
+    buildBurn();
+    skRect = null;                                          // recomputed lazily in the loop
+  }
+  addEventListener("resize", resize); resize();
+  logo.addEventListener("load", resize);                    // re-anchor once the plate decodes
+
+  // ── fire: soft rising particle plume (no bars) ──────────────────────────
+  function gauss(){ // ~N(0,1), Box-Muller (cheap)
+    let u=0,v=0; while(!u)u=Math.random(); while(!v)v=Math.random();
+    return Math.sqrt(-2*Math.log(u))*Math.cos(6.283185*v);
+  }
+  // ── pre-baked particle sprites: blit instead of allocating a gradient per
+  //    particle per frame (the old hot path). Bucket each particle to the
+  //    nearest palette hue; under additive blending the banding is invisible. ──
+  const FIRE_PAL = [
+    [255,255,235], // white-hot tip
+    [255,200,87],  // gold
+    [255,122,13],  // flame
+    [255,77,31],   // ember
+    [127,240,255], // cyan-hot (cool-left)
+    [45,212,255],  // cyan
+  ];
+  const SPR = 64;
+  const fireSprites = FIRE_PAL.map(col=>{
+    const c=document.createElement("canvas"); c.width=c.height=SPR;
+    const g=c.getContext("2d");
+    const rg=g.createRadialGradient(SPR/2,SPR/2,0,SPR/2,SPR/2,SPR/2);
+    rg.addColorStop(0, rgba(col,1)); rg.addColorStop(1, rgba(col,0));
+    g.fillStyle=rg; g.fillRect(0,0,SPR,SPR);
+    return c;
+  });
+  function nearestSprite(col){
+    let bi=0,bd=1e9;
+    for(let i=0;i<FIRE_PAL.length;i++){
+      const p=FIRE_PAL[i], dr=col[0]-p[0], dg=col[1]-p[1], db=col[2]-p[2];
+      const d=dr*dr+dg*dg+db*db; if(d<bd){bd=d;bi=i;}
+    }
+    return fireSprites[bi];
+  }
+
+  const FIRE_CAP = 240, EMBER_CAP = 140;     // bound worst-case particle counts
+  const fire = [];
+  // heat ∈ [0,1]: 0 = cold, ~0.08 = idle smolder, 1 = struck. Drives the whole fire.
+  function spawnFire(heat){
+    if(fire.length>=FIRE_CAP) return;
+    const spread = flameW * (0.06 + 0.12*heat) * (0.6 + Math.random()*0.6);
+    const ox = gauss()*spread*(0.45 + 0.55*heat);
+    const u = Math.max(-1,Math.min(1, ox/(flameW*0.5)));    // -1..1 for cyan→ember tint
+    const side = (u+1)/2;
+    const baseY = cy + flameH*0.40;
+    fire.push({
+      x: cx + ox, y: baseY + Math.random()*6,
+      vx: ox*0.004 + gauss()*0.10*(0.4+0.6*heat),
+      vy: -(0.28 + Math.random()*(0.4 + 1.9*heat)),         // slow & low when smolder
+      wob: Math.random()*6.283, wobS: 0.5+Math.random()*1.3,
+      drift: (0.12 + 0.55*heat) + Math.random()*0.4,
+      r: (3 + Math.random()*4) + heat*(7 + Math.random()*13), // small smolder → big fire
+      side, life: 1, decay: (0.030 - 0.015*heat) + Math.random()*0.012, // short life when cold
+    });
+  }
+
+  // ── sparks: sparse, longer-lived embers riding the heat ─────────────────
+  const embers = [];
+  function spawnEmber(burst){
+    if(embers.length>=EMBER_CAP) return;
+    const u = gauss()*0.5;
+    embers.push({
+      x: cx + u*flameW*0.42,
+      y: cy + flameH*0.34,
+      vx: u*0.25 + (Math.random()-0.5)*0.5,
+      vy: -(0.7 + Math.random()*1.6) * (burst?2.4:1),
+      life: 1, r: 1+Math.random()*2.0,
+      c: mix(C.flame, C.gold, Math.random()),
+    });
+  }
+
+  // ── inference resolve: 2D heatmap burn-in + prior & posterior curves ─────
+  // Shared plot geometry (also used to seed the burn-in data).
+  function plotGeo(){
+    const w = flameW*1.9, x0 = cx - w/2;
+    const amp = flameH*0.5, base = cy + flameH*0.20;
+    return {w,x0,amp,base};
+  }
+
+  // Precompute the Bayesian update: a prior and a likelihood that merge into a
+  // conjugate-correct posterior (precisions add, mean is precision-weighted),
+  // plus draws FROM that posterior for the final phase. Rebuilt on resize.
+  function buildHeat(){
+    if(!flameW) return;
+    const {w,x0,amp,base}=plotGeo();
+    const my = base - amp*0.42;
+
+    // prior and likelihood: asymmetric AND well separated, so they start with
+    // almost no overlap and the posterior only forms once they slide together
+    const prior = { mu: cx - w*0.17, sig: w*0.140 };      // broad, left-of-centre (shifted right)
+    const like  = { mu: cx + w*0.20, sig: w*0.085 };       // narrow, right
+    // conjugate update gives the width; force the mean to the centre (the logo's
+    // horizontal middle) so the posterior resolves symmetrically in front of it
+    const t0 = 1/(prior.sig*prior.sig), tL = 1/(like.sig*like.sig);
+    const post = { mu: cx, sig: 1/Math.sqrt(t0+tL) };
+    const pk = { prior:0.50, like:0.64, post:0.96 };       // visual peak heights (post tallest)
+
+    // shared bin grid; each bin carries all three heights
+    const nb=34, bw=w/nb, bins=[];
+    for(let b=0;b<nb;b++){
+      const bx=x0+(b+0.5)*bw;
+      bins.push({
+        bx,
+        hp: Math.exp(-0.5*((bx-prior.mu)/prior.sig)**2)*pk.prior,
+        hl: Math.exp(-0.5*((bx-like.mu )/like.sig )**2)*pk.like,
+        hq: Math.exp(-0.5*((bx-post.mu )/post.sig )**2)*pk.post,
+        bf: nb>1 ? b/(nb-1) : 0,
+      });
+    }
+
+    // burn-in cloud: explores wide (around the prior), converges on the posterior
+    const M=300, samples=[];
+    for(let i=0;i<M;i++){
+      const p=Math.random(), sp=p*p*(3-2*p);
+      const mx  = prior.mu + (post.mu-prior.mu)*sp;
+      const sgx = prior.sig*1.4*(1-sp) + post.sig*sp;
+      const sgy = amp*0.55*(1-sp) + amp*0.34*sp;
+      let y=my+gauss()*sgy; if(y>base) y=base-(y-base)*0.3;
+      samples.push({x: mx+gauss()*sgx, y, r:1.4+Math.random()*2.2, at:p, fl:Math.random()*6.28});
+    }
+
+    // walker chains: start spread near the prior, drift to the posterior mode
+    const chains=[], nC=3, steps=18;
+    for(let c=0;c<nC;c++){
+      const pts=[]; let px=prior.mu+gauss()*prior.sig*1.2, py=my+gauss()*amp*0.55;
+      for(let s=0;s<steps;s++){
+        const f=s/(steps-1);
+        px += (post.mu-px)*0.16 + gauss()*post.sig*(2.6*(1-f)+0.5);
+        py += (my-py)*0.16 + gauss()*amp*0.16*(2*(1-f)+0.3);
+        if(py>base) py=base-(py-base)*0.3;
+        pts.push({x:px,y:py, at:0.15 + f*0.7 + c*0.03});
+      }
+      chains.push(pts);
+    }
+
+    heatGrid = { bins, bw, samples, chains, my, prior, like, post };
+  }
+
+  // ── paper-burn fronts: irregular edges, confined to the logo plate ──
+  function buildBurn(){
+    if(!flameW || !logoBox) return;
+    const b=logoBox, bcx=b.x+b.w/2, bcy=b.y+b.h/2, bdiag=Math.hypot(b.w,b.h);
+    const spots=[];
+    const N = 24;
+    for(let i=0;i<N;i++){
+      // spread across the plate; growth is clamped to the plate border at draw time
+      const x = bcx + (Math.random()-0.5)*b.w*0.84;
+      const y = bcy + (Math.random()-0.5)*b.h*0.84;
+      const harm=[]; for(let k=1;k<=6;k++) harm.push({k, a:(0.44/k)*(0.55+Math.random()), p:Math.random()*6.283});
+      const ch=[];   for(let k=1;k<=4;k++) ch.push({k, a:1/k, p:Math.random()*6.283});
+      spots.push({
+        x, y, dist: Math.hypot(x-bcx, y-bcy),
+        r0: 2 + Math.random()*8,
+        rMax: bdiag*(0.55 + Math.random()*0.30),                  // generous; the border clamp stops it
+        bright: 0.5 + Math.random()*0.7,
+        harm, ch, bias:Math.random()*6.283, biasA:0.22+Math.random()*0.20,
+      });
+    }
+    // ignite from the centre outward — start time grows with distance from the logo
+    const maxD = Math.max(...spots.map(s=>s.dist)) || 1;
+    for(const s of spots) s.start = (s.dist/maxD)*0.42 + Math.random()*0.06;
+    burnFronts = spots;
+  }
+  function frontRadius(f, ang){
+    let n=0; for(const h of f.harm) n+=h.a*Math.sin(h.k*ang+h.p);
+    n += f.biasA*Math.cos(ang - f.bias);          // push one side out (asymmetric)
+    return Math.max(0.30, 1+n);
+  }
+  function frontHeat(f, ang){                      // 0..1 → color density along the edge
+    let n=0; for(const h of f.ch) n+=h.a*Math.sin(h.k*ang+h.p);
+    return 0.5+0.5*Math.tanh(n);
+  }
+
+  // ── burning edge: the overlay has burned to the image; its rectangle stays alight ──
+  function drawBurningEdge(g, rect, k, t){
+    if(!rect || k<=0) return;
+    const {x,y,w,h}=rect, a=smooth(k);
+    g.save(); g.globalCompositeOperation="lighter";
+    // layered halo + hot inner line (no shadowBlur — stacked strokes)
+    const ring=(lw,col,al)=>{ g.lineWidth=lw; g.strokeStyle=rgba(col,al*a); g.strokeRect(x,y,w,h); };
+    ring(20, C.flame, 0.07); ring(13, C.ember, 0.13);
+    ring(7,  C.ember, 0.40); ring(2.4, C.gold, 0.72);
+    // flickering embers crawling the perimeter
+    const per=2*(w+h), step=15, n=Math.max(1,Math.floor(per/step));
+    for(let i=0;i<n;i++){
+      let d=((i*step)+ (t*40)%per)%per, px, py;            // slow crawl around the edge
+      if(d<w){ px=x+d; py=y; }
+      else if(d<w+h){ px=x+w; py=y+(d-w); }
+      else if(d<2*w+h){ px=x+w-(d-w-h); py=y+h; }
+      else { px=x; py=y+h-(d-2*w-h); }
+      const fl=0.55+0.45*Math.sin(t*16+i*1.7);
+      g.fillStyle=rgba(mix(mix(C.ember,C.gold,0.5+0.5*Math.sin(i+t*3)),[255,255,235],0.25),(0.4+0.5*fl)*a);
+      g.beginPath(); g.arc(px,py,1.6+2.4*fl,0,6.283); g.fill();
+    }
+    g.restore();
+  }
+
+  function drawInference(g, prog, t){
+    if(prog<=0 || !heatGrid) return;
+    const ctx = g;                                          // render onto the given canvas
+    const {w,x0,amp,base}=plotGeo();
+    const G=heatGrid, gap=Math.max(1,G.bw*0.12), bwid=G.bw-gap*2;
+    const sm=x=>x<=0?0:(x>=1?1:x*x*(3-2*x));
+
+    // ── continuous merge: both inputs slide toward the centre AND narrow onto the
+    //    posterior width, while the gold posterior grows in. One smooth motion. ──
+    const m = sm((prog-0.20)/0.34);                       // merge resolves early (0.20→0.54)
+    const pmu = G.prior.mu + (G.post.mu-G.prior.mu)*m;    // means converge
+    const lmu = G.like.mu  + (G.post.mu-G.like.mu )*m;
+    const psig= G.prior.sig + (G.post.sig-G.prior.sig)*m; // widths morph to the posterior
+    const lsig= G.like.sig  + (G.post.sig-G.like.sig )*m;
+    const shiftL = lmu - G.like.mu;                       // histogram screen translation
+    const merge = m;                                      // drives the rule fade-in
+    const priorVis = 1 - 0.92*sm((m-0.72)/0.28);          // fade only once essentially merged
+    const likeVis  = priorVis;
+    const postVis  = sm((m-0.10)/0.72);                   // posterior grows continuously with the merge
+
+    // baseline axis
+    ctx.save(); ctx.globalCompositeOperation="lighter";
+    ctx.strokeStyle=rgba([90,123,168],0.4); ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(x0,base); ctx.lineTo(x0+w,base); ctx.stroke(); ctx.restore();
+
+    // ── burn-in: walker chains (lines) + sample cloud (dots), converging ──
+    const burn = sm((prog-0.56)/0.42)*1.12;               // burn-in laid down AFTER the posterior resolves
+    ctx.save(); ctx.globalCompositeOperation="lighter"; ctx.lineWidth=1;
+    for(const pts of G.chains){
+      let prev=null;
+      for(const p of pts){
+        if(burn<p.at) break;
+        if(prev){ ctx.strokeStyle=rgba([175,198,222],0.16);
+          ctx.beginPath(); ctx.moveTo(prev.x,prev.y); ctx.lineTo(p.x,p.y); ctx.stroke(); }
+        ctx.fillStyle=rgba([205,222,240],0.5); ctx.fillRect(p.x-1.5,p.y-1.5,3,3);
+        prev=p;
+      }
+    }
+    ctx.restore();
+    ctx.save(); ctx.globalCompositeOperation="lighter";
+    for(const s of G.samples){
+      if(burn<s.at) continue;
+      const age=Math.min(1,(burn-s.at)/0.10);
+      const side=Math.max(0,Math.min(1,(s.x-x0)/w));
+      const flash=age<0.5?(0.5-age)/0.5:0;
+      const col=mix(mix(C.cyan,C.ember,side),[255,255,235],flash*0.8);
+      const tw=0.6+0.4*Math.sin(t*7+s.fl);
+      const a=(0.17+0.12*tw)*age, rr=s.r*(1+flash);
+      ctx.fillStyle=rgba(col,a); ctx.fillRect(s.x-rr,s.y-rr,rr*2,rr*2);
+    }
+    ctx.restore();
+
+    // draws a smooth gaussian curve (filled + stroked), revealed L→R.
+    // domain extends left to the gaussian's tail so a left-sitting curve (the
+    // prior) isn't clipped at the plot edge.
+    function curve(dist, peak, shift, color, alpha, drawProg, fillA){
+      const xL=Math.min(x0, dist.mu-3.6*dist.sig), xR=x0+w, span=xR-xL;
+      const N=170, end=Math.max(1,Math.floor(N*drawProg));
+      const X=i=>xL+(i/N)*span, Y=x=>base-peak*amp*Math.exp(-0.5*((x-dist.mu)/dist.sig)**2);
+      ctx.save(); ctx.globalCompositeOperation="lighter";
+      ctx.beginPath();
+      ctx.moveTo(X(0)+shift, base);
+      for(let i=0;i<=end;i++){ const x=X(i); ctx.lineTo(x+shift, Y(x)); }
+      ctx.lineTo(X(end)+shift, base); ctx.closePath();
+      ctx.fillStyle=rgba(color, fillA); ctx.fill();
+      ctx.beginPath();
+      for(let i=0;i<=end;i++){ const x=X(i); i?ctx.lineTo(x+shift,Y(x)):ctx.moveTo(x+shift,Y(x)); }
+      ctx.strokeStyle=rgba(color, alpha); ctx.lineWidth=2.4;
+      ctx.shadowColor=rgba(color,alpha*0.7); ctx.shadowBlur=8; ctx.stroke();
+      ctx.restore();
+    }
+
+    // A ── PRIOR: broad cyan curve that slides to centre AND narrows into the posterior ──
+    const priorDraw = sm(prog/0.16);
+    const ppeak = 0.52 + 0.34*m;                           // tightens → a touch taller as it merges
+    if(priorVis>0.01) curve({mu:pmu,sig:psig}, ppeak, 0, C.cyan, 0.75*priorVis, priorDraw, 0.10*priorVis);
+
+    // B ── LIKELIHOOD: ember histogram that slides in AND narrows toward the posterior ──
+    if(likeVis>0.01){
+      ctx.save(); ctx.globalCompositeOperation="lighter";   // additive → fuses with the prior
+      const invd = 1/(lsig*lsig) - 1/(G.like.sig*G.like.sig);
+      for(const bn of G.bins){
+        const grow=sm((prog-0.10 - bn.bf*0.06)/0.18);
+        const hl=bn.hl*Math.exp(-0.5*((bn.bx-G.like.mu)**2)*invd);   // live height as the width morphs
+        const h=hl*amp*grow; if(h<1) continue;
+        const x=bn.bx+shiftL-G.bw/2+gap;
+        ctx.fillStyle=rgba(mix(C.ember,C.flame,0.30),0.22*likeVis); ctx.fillRect(x,base-h,bwid,h);
+        ctx.strokeStyle=rgba(C.flame,0.85*likeVis); ctx.lineWidth=1; ctx.strokeRect(x,base-h,bwid,h);
+      }
+      ctx.restore();
+    }
+
+    // C ── POSTERIOR: gold product gaussian, growing continuously as the inputs merge ──
+    if(postVis>0.02){
+      curve(G.post, 0.96*postVis, 0, C.gold, 0.92*Math.min(1,postVis+0.10), 1, 0.20*postVis);
+      const fy=base-amp*0.5, fr=amp*(0.45+0.55*postVis);
+      ctx.save(); ctx.globalCompositeOperation="lighter";
+      const fg=ctx.createRadialGradient(G.post.mu,fy,0,G.post.mu,fy,fr);
+      fg.addColorStop(0,   rgba([255,255,242], 0.40*postVis));
+      fg.addColorStop(0.4, rgba(C.gold,        0.26*postVis));
+      fg.addColorStop(1,   rgba(C.flame, 0));
+      ctx.fillStyle=fg; ctx.beginPath(); ctx.arc(G.post.mu,fy,fr,0,6.283); ctx.fill();
+      ctx.restore();
+    }
+
+    // D ── the rule, fading in with the merge ──
+    ctx.save(); ctx.globalCompositeOperation="lighter";
+    ctx.font="600 13px 'Share Tech Mono', ui-monospace, monospace"; ctx.textAlign="center"; ctx.letterSpacing="1px";
+    ctx.fillStyle=rgba(C.gold,0.72*merge);
+    ctx.fillText("P(\u03B8|D)  \u221D  P(D|\u03B8) \u00B7 P(\u03B8)", cx, base+30);
+    ctx.restore();
+
+    // G ── legend (curve / bars / merged) ──
+    const la=sm(prog/0.28);
+    ctx.save(); ctx.globalCompositeOperation="lighter";
+    ctx.font="600 11px 'Share Tech Mono', ui-monospace, monospace"; ctx.textAlign="left"; ctx.letterSpacing="1.5px";
+    const lx=x0+6, ly=base-amp*1.18, row=17;
+    ctx.strokeStyle=rgba(C.cyanHot,0.9*la); ctx.lineWidth=2;
+    ctx.beginPath(); ctx.moveTo(lx,ly-3); ctx.lineTo(lx+15,ly-3); ctx.stroke();
+    ctx.fillStyle=rgba(C.cyanHot,0.85*la); ctx.fillText("PRIOR", lx+22, ly);
+    ctx.fillStyle=rgba(C.flame,0.9*la);
+    ctx.fillRect(lx,ly+row-7,4,7); ctx.fillRect(lx+6,ly+row-9,4,9); ctx.fillRect(lx+12,ly+row-6,4,6);
+    ctx.fillText("LIKELIHOOD", lx+22, ly+row);
+    ctx.fillStyle=rgba(C.gold,0.95*la); ctx.fillRect(lx,ly+row*2-9,15,4); ctx.fillText("POSTERIOR", lx+22, ly+row*2);
+    ctx.restore();
+  }
+
+  // ── reticle + rings (HELIX console echo) ────────────────────────────────
+  function drawFrame(t, glow){
+    ctx.save(); ctx.globalCompositeOperation="lighter";
+    const R = flameW*0.96;
+    for(let k=0;k<2;k++){
+      const r = R*(1+k*0.34) + Math.sin(t*0.6+k)*2;
+      ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2);
+      ctx.strokeStyle=rgba(C.cyan,(0.10-k*0.03)+glow*0.10); ctx.lineWidth=1; ctx.stroke();
+      // tick marks
+      const ticks=48;
+      for(let i=0;i<ticks;i++){
+        if(i%4) continue;
+        const a=i/ticks*Math.PI*2, c=Math.cos(a),s=Math.sin(a);
+        ctx.beginPath(); ctx.moveTo(cx+c*r,cy+s*r); ctx.lineTo(cx+c*(r+5),cy+s*(r+5));
+        ctx.strokeStyle=rgba(C.cyanDim||[14,107,115],.4); ctx.stroke();
+      }
+    }
+    // crosshair
+    const ch=R*1.5;
+    ctx.strokeStyle=rgba(C.cyan,.07+glow*.08); ctx.lineWidth=1;
+    ctx.beginPath();
+    ctx.moveTo(cx-ch,cy);ctx.lineTo(cx-R*0.55,cy);ctx.moveTo(cx+R*0.55,cy);ctx.lineTo(cx+ch,cy);
+    ctx.moveTo(cx,cy-ch*0.9);ctx.lineTo(cx,cy-R*0.6);ctx.moveTo(cx,cy+R*0.6);ctx.lineTo(cx,cy+ch*0.9);
+    ctx.stroke(); ctx.restore();
+  }
+
+  // ── state machine ───────────────────────────────────────────────────────
+  let state="idle", t0=performance.now(), igniteAt=0, heat=0;
+  let hover=0, mx=-99999, my=-99999;                       // proximity "charge" before ignition
+  const flash = document.getElementById("flash");
+  const strikeEl = document.getElementById("strike");
+  const keyEl = document.querySelector("#strike .key");
+  const glyphEl = keyEl ? keyEl.querySelector(".glyph") : null;
+
+  // ── phase rail: a light progress stepper, lit as each pipeline phase runs ──
+  const railEl = document.getElementById("rail");
+  const rtrack = document.getElementById("rtrack");
+  const rfill  = document.getElementById("rfill");
+  const PH = [   // at = seconds since ignite (phase begins)
+    { name:"PRIOR",      at:0.50 },
+    { name:"LIKELIHOOD", at:1.10 },
+    { name:"POSTERIOR",  at:1.80 },
+    { name:"BURN-IN",    at:2.90 },
+    { name:"ETCH",       at:4.30 },
+  ];
+  const railNodes = PH.map((p,i)=>{
+    const n=document.createElement("div"); n.className="rnode";
+    n.style.left=(PH.length>1 ? i/(PH.length-1)*100 : 0)+"%";
+    const l=document.createElement("div"); l.className="rl"; l.textContent=p.name;
+    n.appendChild(l); if(rtrack) rtrack.appendChild(n); return n;
+  });
+  let railShown=false;
+  function updateRail(e){
+    if(!railEl) return;
+    if(!railShown && e>0){ railEl.classList.add("on"); railShown=true; }
+    let k=0; for(let i=0;i<PH.length;i++){ if(e>=PH[i].at) k=i; }
+    const a=PH[k].at, b=(k<PH.length-1)?PH[k+1].at:a+1;
+    const within=(k<PH.length-1)?Math.min(1,Math.max(0,(e-a)/(b-a))):0;  // last node = terminus, no overshoot
+    rfill.style.width=((k+within)/(PH.length-1)*100)+"%";
+    for(let i=0;i<railNodes.length;i++){
+      railNodes[i].classList.toggle("done", i<k);
+      railNodes[i].classList.toggle("active", i===k);
+    }
+  }
+
+  function ignite(){
+    if(state!=="idle") return;
+    state="igniting"; igniteAt=performance.now();
+    strikeEl.style.transition="opacity .3s"; strikeEl.style.opacity="0";
+    logo.style.transform="translate(-50%,-50%) scale(1.06)";
+    logo.style.filter="drop-shadow(0 0 40px rgba(255,184,0,.7)) drop-shadow(0 0 60px rgba(255,77,31,.6))";
+    for(let i=0;i<60;i++) spawnEmber(true);
+    for(let i=0;i<70;i++) spawnFire(1);
+    if(navigator.vibrate) navigator.vibrate(40);
+  }
+  function cross(){
+    state="done";
+    if(ENTER_TARGET){ location.href = ENTER_TARGET; return; }
+    document.getElementById("floor").classList.add("show");
+  }
+  document.getElementById("reignite").addEventListener("click", ()=>location.reload());
+
+  addEventListener("keydown", e=>{
+    if(e.key==="Enter"||e.key===" "){ e.preventDefault(); ignite(); }
+  });
+  addEventListener("pointerdown", ()=> ignite());
+  ["pointermove","mousemove"].forEach(ev=>{
+    const h=e=>{ if(e.pointerType!=="touch"){ mx=e.clientX; my=e.clientY; } };
+    window.addEventListener(ev, h, {passive:true});
+    document.addEventListener(ev, h, {passive:true});
+  });
+  document.addEventListener("mouseleave", ()=>{ mx=-99999; my=-99999; });
+
+  // ── render loop ─────────────────────────────────────────────────────────
+  function frame(now){
+    const t=(now-t0)/1000;
+    ctx.clearRect(0,0,W,H);
+
+    // ignite progress (resolve → hold → overlay burns to the image edges → hold → cross)
+    let surge=0, post=0, fin=0, edge=0;
+    if(state==="igniting"){
+      const e=(now-igniteAt)/1000;
+      surge = Math.min(1, e/0.8);                          // flame roars up over 0.8s
+      post  = Math.min(1, Math.max(0,(e-0.40)/3.5));       // prior→like→posterior→burn-in 0.40 → 3.9s
+      fin   = Math.min(1, Math.max(0,(e-4.0)/3.8));        // veneer burns through slowly 4.0 → 7.5s
+      edge  = Math.min(1, Math.max(0,(e-7.0)/0.5));        // plate glow rises as the burn lands
+      if(e>8.0 && flash.style.opacity!=="1"){ flash.style.opacity="1"; } // burn freezes ~7.5, hold 0.5s, then wash
+      if(e>8.7){ cross(); }                                // segue from the held burning edge
+      if(Math.random()<0.9) spawnEmber(true);
+      updateRail(e);
+    }
+    const breath = reduce?0.5:(0.5+0.5*Math.sin(t*1.4));
+
+    // proximity charge — the page wakes up as the pointer nears the mark
+    let hoverTarget = 0;
+    if(state==="idle"){
+      const d=Math.hypot(mx-cx, my-cy), R0=Math.min(W,H)*0.62;
+      hoverTarget = Math.max(0, Math.min(1, 1 - d/R0));
+    }
+    hover += (hoverTarget - hover) * 0.08;
+
+    // heat ramps from a low idle smolder up to full fire once struck (charge lifts the smolder)
+    const heatTarget = (state==="idle") ? (0.08 + 0.40*hover) : 1;
+    heat += (heatTarget - heat) * (state==="idle" ? 0.04 : 0.05);
+    const dim = (1 - 0.5*post*(1-fin)) + 0.5*fin;            // flame recedes for the result, then surges back
+
+    // logo charges up as you approach the mark (idle only)
+    if(state==="idle"){
+      logo.style.transform = `translate(-50%,-50%) scale(${(1+0.03*hover).toFixed(3)})`;
+      logo.style.filter =
+        `drop-shadow(0 0 ${(22+50*hover)|0}px rgba(45,212,255,${(0.40+0.45*hover).toFixed(2)})) `
+       +`drop-shadow(0 0 ${(30+70*hover)|0}px rgba(255,77,31,${(0.34+0.50*hover).toFixed(2)}))`;
+    }
+
+    // ENTER key: native :hover does the blue→magma morph; JS just sheds embers off it
+    if(!skRect && keyEl) skRect = keyEl.getBoundingClientRect();
+    const keyHot = (state==="idle" && keyEl && keyEl.matches(":hover"));
+    strikeHover += ((keyHot?1:0) - strikeHover) * 0.15;
+    if(keyHot && skRect && strikeHover>0.4 && embers.length<EMBER_CAP && Math.random()<strikeHover*0.5){
+      embers.push({x:skRect.left+Math.random()*skRect.width, y:skRect.top+skRect.height*0.45,
+        vx:(Math.random()-0.5)*0.6, vy:-0.8-Math.random()*0.9, life:1, r:1.4+Math.random()*2.1,
+        c:mix(C.flame,C.gold,Math.random())});
+    }
+
+    const burnProg = smooth(Math.min(1, fin/0.92));         // drives the paper burn-off
+
+    // logo: opaque true colours as the burn reveals it; steady warm glow, edges catch at the end
+    if(fin>0){
+      logo.style.mixBlendMode = "normal";
+      logo.style.transform = `translate(-50%,-50%) scale(1.06)`;   // hold steady — no expand
+      const glow = Math.min(1, 0.45 + 0.55*burnProg + 0.30*edge);
+      logo.style.filter =
+        `drop-shadow(0 0 ${(26+90*burnProg+30*edge)|0}px rgba(255,184,0,${glow.toFixed(2)})) `
+       +`drop-shadow(0 0 ${(46+120*burnProg+40*edge)|0}px rgba(255,77,31,${glow.toFixed(2)}))`;
+    }
+
+    drawFrame(t, surge + hover*0.5);
+
+    // ── heat body: soft breathing flame aura (cool-left, hot-right) ──
+    ctx.save(); ctx.globalCompositeOperation="lighter";
+    const heatGlow = (0.10 + 0.90*heat) * dim;               // faint low glow when smoldering
+    const dxk = 0.4 + 0.6*heat;                              // lobes tighten when cold
+    const by = cy + flameH*(0.30 - 0.24*heat);               // glow sits low until struck
+    const rad = flameH*(0.18 + 0.34*heat)*(0.92+0.16*breath+surge*0.45);
+    function aura(dx, col, a){
+      ctx.save(); ctx.translate(cx+dx, by); ctx.scale(0.60, 1.5);
+      const g=ctx.createRadialGradient(0,0,0,0,0,rad);
+      g.addColorStop(0, rgba(col,a)); g.addColorStop(.55, rgba(col,a*0.30)); g.addColorStop(1, rgba(col,0));
+      ctx.fillStyle=g; ctx.beginPath(); ctx.arc(0,0,rad,0,6.283); ctx.fill(); ctx.restore();
+    }
+    const flick = 0.85 + 0.15*Math.sin(t*7.3) + 0.1*Math.sin(t*3.1);
+    aura(-flameW*0.13*dxk, C.cyan,  (0.13+0.08*breath+surge*0.22)*flick*heatGlow);
+    aura( flameW*0.13*dxk, C.ember, (0.16+0.09*breath+surge*0.28)*flick*heatGlow);
+    aura( 0,               C.gold,  (0.12+0.07*breath+surge*0.32)*flick*heatGlow);
+    ctx.restore();
+
+    // ── fire: rising soft particles (the live heat) ──
+    let want = (heat < 0.2) ? (Math.random()<0.45 ? 1 : 0) : Math.round(1 + heat*15);
+    for(let s=0;s<want;s++) spawnFire(heat);
+    ctx.save(); ctx.globalCompositeOperation="lighter";
+    for(let i=fire.length-1;i>=0;i--){
+      const p=fire[i];
+      p.life-=p.decay;
+      if(p.life<=0){ fire.splice(i,1); continue; }
+      p.vy*=0.992;
+      p.x += p.vx + Math.sin(t*p.wobS+p.wob)*p.drift;
+      p.y += p.vy;
+      const age=1-p.life;                                   // 0 young → 1 old
+      const sideCol = mix(C.cyan, C.ember, p.side);
+      let col = mix(mix(C.gold, sideCol, 0.45+0.55*age), C.ember, age*0.5);
+      if(age<0.16) col = mix([255,255,235], col, age/0.16); // white-hot tip
+      const rr = p.r*(0.5+0.9*p.life);
+      const a  = Math.pow(p.life,1.5) * (0.12 + 0.16*heat) * dim;
+      ctx.globalAlpha = a<0?0:(a>1?1:a);
+      const spr = nearestSprite(col);
+      ctx.drawImage(spr, p.x-rr, p.y-rr, rr*2, rr*2);
+    }
+    ctx.globalAlpha = 1;
+    ctx.restore();
+
+    // ── embers ──
+    ctx.save(); ctx.globalCompositeOperation="lighter";
+    for(let i=embers.length-1;i>=0;i--){
+      const p=embers[i];
+      p.x+=p.vx; p.y+=p.vy; p.vy+=0.006; p.life-=0.012;
+      if(p.life<=0){ embers.splice(i,1); continue; }
+      ctx.fillStyle=rgba(p.c, p.life*0.9);
+      ctx.beginPath(); ctx.arc(p.x,p.y,p.r*p.life,0,Math.PI*2); ctx.fill();
+    }
+    ctx.restore();
+    if(state==="idle"){
+      const cap = 14 + (hover*42|0);
+      if(embers.length<cap && Math.random() < 0.10+0.5*hover) spawnEmber(false);
+    }
+
+    // ── posterior layer, drawn on the canvas IN FRONT of the logo ──
+    ctx2.clearRect(0,0,W,H);
+    if(post>0){
+      const frozen = burnProg>=1;                            // burn-through has reached the logo edge → hold still
+      if(!frozen) drawInference(ctx2, post, t);              // overlay shown while resolving + burning in
+
+      // ── the posterior burns through, revealing the logo, and STOPS at the logo edge ──
+      if(burnProg>0 && logoBox){
+        const N=120, b=logoBox;
+        // distance from a point inside the plate to its border along an angle (ray→box)
+        const rayBox=(px,py,c,s)=>{ let tm=Infinity;
+          if(c>0) tm=Math.min(tm,(b.x+b.w-px)/c); else if(c<0) tm=Math.min(tm,(b.x-px)/c);
+          if(s>0) tm=Math.min(tm,(b.y+b.h-py)/s); else if(s<0) tm=Math.min(tm,(b.y-py)/s);
+          return Math.max(0,tm); };
+        const trace=(s,R)=>{ ctx2.beginPath();
+          for(let i=0;i<=N;i++){ const ang=i/N*6.283, c=Math.cos(ang), si=Math.sin(ang);
+            let rr=R*frontRadius(s,ang);
+            rr=Math.min(rr, rayBox(s.x,s.y,c,si));             // clamp: never expand past the logo edge
+            const x=s.x+c*rr, y=s.y+si*rr;
+            i?ctx2.lineTo(x,y):ctx2.moveTo(x,y);} ctx2.closePath(); };
+        const Rof=s=>{ const sp=(burnProg-s.start)/(1-s.start); return sp<=0?0:s.r0+smooth(sp)*(s.rMax-s.r0); };
+
+        if(!frozen){
+          // wipe the wider inference viz outside the plate as the burn ramps
+          const wipe = smooth(Math.min(1, burnProg/0.5));
+          ctx2.save(); ctx2.globalCompositeOperation="destination-out"; ctx2.globalAlpha=wipe;
+          ctx2.beginPath(); ctx2.rect(0,0,W,H); ctx2.rect(b.x-1,b.y-1,b.w+2,b.h+2);
+          ctx2.fill("evenodd"); ctx2.restore();
+
+          // pass 1 — burn the holes (overlapping spots merge), revealing the logo
+          ctx2.save(); ctx2.globalCompositeOperation="destination-out";
+          for(const s of burnFronts){ const R=Rof(s); if(R<=0) continue;
+            trace(s,R); ctx2.fill();
+            ctx2.lineWidth=18; ctx2.strokeStyle="rgba(0,0,0,0.5)"; trace(s,R); ctx2.stroke();
+          }
+          ctx2.restore();
+        }
+
+        // pass 2 — glowing burn-through edges (held when frozen — no fade)
+        ctx2.save(); ctx2.globalCompositeOperation="lighter";
+        for(const s of burnFronts){ const R=Rof(s); if(R<=0) continue;
+          const a = s.bright;
+          trace(s,R);
+          ctx2.lineWidth=16; ctx2.strokeStyle=rgba(C.flame,0.10*a); ctx2.stroke();
+          ctx2.lineWidth=10; ctx2.strokeStyle=rgba(C.ember,0.16*a); ctx2.stroke();
+          ctx2.lineWidth=6;  ctx2.strokeStyle=rgba(C.ember,0.50*a); ctx2.stroke();
+          trace(s,R*0.985);
+          ctx2.lineWidth=2.2; ctx2.strokeStyle=rgba(C.gold,0.72*a); ctx2.stroke();
+          for(let i=0;i<N;i+=2){ const ang=i/N*6.283, d=frontHeat(s,ang); if(d<0.34) continue;
+            const c=Math.cos(ang), si=Math.sin(ang);
+            let rr=R*frontRadius(s,ang); rr=Math.min(rr, rayBox(s.x,s.y,c,si));
+            const x=s.x+c*rr, y=s.y+si*rr, fl=0.55+0.45*Math.sin(t*16+i+s.bias*3);
+            ctx2.fillStyle=rgba(mix(mix(C.ember,C.gold,d),[255,255,235],0.3),(0.4+0.55*d)*a*fl);
+            ctx2.beginPath(); ctx2.arc(x,y,2+4*d,0,6.283); ctx2.fill();
+          }
+        }
+        ctx2.restore();
+
+        // pass 3 — re-erase interiors so the glow survives only on the merged OUTER edge
+        ctx2.save(); ctx2.globalCompositeOperation="destination-out";
+        for(const s of burnFronts){ const R=Rof(s); if(R<=0) continue;
+          trace(s, Math.max(1, R-12)); ctx2.fill(); }
+        ctx2.restore();
+
+        // sparks shed from the active fronts (only while still travelling)
+        if(!frozen) for(const s of burnFronts){ const sp=(burnProg-s.start)/(1-s.start); if(sp<=0||sp>0.96) continue;
+          if(embers.length<EMBER_CAP && Math.random()<0.45){ const ang=Math.random()*6.283, c=Math.cos(ang), si=Math.sin(ang);
+            let rr=Rof(s)*frontRadius(s,ang); rr=Math.min(rr, rayBox(s.x,s.y,c,si));
+            embers.push({x:s.x+c*rr, y:s.y+si*rr,
+              vx:c*0.5+(Math.random()-0.5)*0.5, vy:si*0.5-0.8,
+              life:1, r:1.4+Math.random()*2.6, c:mix(C.flame,C.gold,Math.random())}); }
+        }
+      }
+    }
+
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

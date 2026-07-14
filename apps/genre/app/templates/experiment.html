@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Experiment · BEARDOWN</title>
+<link rel="icon" type="image/svg+xml" href="/static/assets/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<link rel="stylesheet" href="/static/css/style.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}],throwOnError:false});"></script>
+</head>
+<body class="page">
+
+  <nav class="onpage" id="onpage" aria-label="On this page">
+    <div class="onpage-h">On this page</div>
+    <a class="onpage-i" href="#goal"><span>Goal</span><i class="onpage-dot"></i></a>
+    <a class="onpage-i" href="#architecture"><span>Architecture</span><i class="onpage-dot"></i></a>
+    <a class="onpage-i" href="#model"><span>Model diagram</span><i class="onpage-dot"></i></a>
+    <a class="onpage-i" href="#training"><span>Training objective</span><i class="onpage-dot"></i></a>
+    <a class="onpage-i" href="#data"><span>Data &amp; preprocessing</span><i class="onpage-dot"></i></a>
+    <a class="onpage-i" href="#questions"><span>Research questions</span><i class="onpage-dot"></i></a>
+  </nav>
+
+  <div class="exp">
+
+    <div class="exp-head">
+      <div class="welcome-fk">F·O·R·G·E //  ORIGINAL EXPERIMENT</div>
+      <h1 class="exp-title">B.E.A.R. D.O.W.N.</h1>
+      <div class="exp-expand">Bayesian Evaluation of Audio Representations — A Deep Optimized Waveform Network</div>
+    </div>
+
+    <div class="exp-goal" id="goal">
+      <span class="exp-goal-tag">GOAL</span>
+      <span>BEARDOWN was not chasing a leaderboard. It was a vehicle for two things: <b>testing a
+      multimodal architecture</b> for music-genre recognition, and <b>exploring epistemic / reliability
+      metrics</b> — model selection that rewards calibrated uncertainty and stability, not accuracy alone.
+      The accuracy target (75–80% on GTZAN, via k=3 cross-validation and broad random hyperparameter
+      sweeps) was the floor, not the point.</span>
+    </div>
+
+    <h2 id="architecture">The architecture</h2>
+    <p class="exp-p">A multimodal network in three stages: two deterministic encoders feed a fusion block,
+    which feeds a probabilistic Bayesian head. Each 30-second clip enters as <em>both</em> a spectrogram
+    image and a 58-dimensional feature vector, so the model sees timbre/time structure and engineered
+    audio statistics at once.</p>
+
+    <div class="exp-diagram" id="model">
+      <svg class="arch-svg" viewBox="0 0 680 312" role="img"
+           aria-label="BEARDOWN architecture: spectrogram CNN and tabular MLP (deterministic) feed a fusion block, then a Bayesian head produces a softmax over 10 genres with uncertainty.">
+        <defs>
+          <marker id="amk" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M2 1L8 5L2 9" fill="none" stroke="#6f8693" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </marker>
+        </defs>
+
+        <g class="as-in"><rect x="30" y="46" width="132" height="52" rx="7"/>
+          <text class="as-t" x="96" y="66" text-anchor="middle" dominant-baseline="central">Spectrogram</text>
+          <text class="as-s" x="96" y="84" text-anchor="middle" dominant-baseline="central">224×224×1</text></g>
+        <g class="as-in"><rect x="30" y="126" width="132" height="52" rx="7"/>
+          <text class="as-t" x="96" y="146" text-anchor="middle" dominant-baseline="central">Tabular metrics</text>
+          <text class="as-s" x="96" y="164" text-anchor="middle" dominant-baseline="central">58 features</text></g>
+
+        <g class="as-det"><rect x="186" y="46" width="136" height="52" rx="7"/>
+          <text class="as-t" x="254" y="66" text-anchor="middle" dominant-baseline="central">Spec CNN</text>
+          <text class="as-s" x="254" y="84" text-anchor="middle" dominant-baseline="central">conv → dense</text></g>
+        <g class="as-det"><rect x="186" y="126" width="136" height="52" rx="7"/>
+          <text class="as-t" x="254" y="146" text-anchor="middle" dominant-baseline="central">Tabular MLP</text>
+          <text class="as-s" x="254" y="164" text-anchor="middle" dominant-baseline="central">MLP + dropout</text></g>
+
+        <g class="as-det"><rect x="346" y="86" width="110" height="52" rx="7"/>
+          <text class="as-t" x="401" y="106" text-anchor="middle" dominant-baseline="central">Fusion</text>
+          <text class="as-s" x="401" y="124" text-anchor="middle" dominant-baseline="central">concat / gated</text></g>
+
+        <g class="as-bay"><rect x="480" y="86" width="160" height="52" rx="7"/>
+          <text class="as-t" x="560" y="106" text-anchor="middle" dominant-baseline="central">Bayesian head</text>
+          <text class="as-s" x="560" y="124" text-anchor="middle" dominant-baseline="central">Flipout / MC-drop</text></g>
+
+        <g class="as-bay"><rect x="480" y="178" width="160" height="52" rx="7"/>
+          <text class="as-t" x="560" y="198" text-anchor="middle" dominant-baseline="central">Softmax (10)</text>
+          <text class="as-s" x="560" y="216" text-anchor="middle" dominant-baseline="central">+ uncertainty</text></g>
+
+        <line class="as-arr" x1="162" y1="72"  x2="184" y2="72"  marker-end="url(#amk)"/>
+        <line class="as-arr" x1="162" y1="152" x2="184" y2="152" marker-end="url(#amk)"/>
+        <line class="as-arr" x1="322" y1="72"  x2="346" y2="102" marker-end="url(#amk)"/>
+        <line class="as-arr" x1="322" y1="152" x2="346" y2="122" marker-end="url(#amk)"/>
+        <line class="as-arr" x1="456" y1="112" x2="478" y2="112" marker-end="url(#amk)"/>
+        <line class="as-arr" x1="560" y1="138" x2="560" y2="176" marker-end="url(#amk)"/>
+
+        <g class="as-badge"><circle cx="173" cy="112" r="9"/>
+          <text x="173" y="112" text-anchor="middle" dominant-baseline="central">1</text></g>
+        <g class="as-badge"><circle cx="560" cy="72" r="9"/>
+          <text x="560" y="72" text-anchor="middle" dominant-baseline="central">2</text></g>
+
+        <g class="as-det"><rect x="30" y="252" width="14" height="14" rx="3"/></g>
+        <text class="as-leg as-s" x="50" y="259" dominant-baseline="central">deterministic</text>
+        <g class="as-bay"><rect x="175" y="252" width="14" height="14" rx="3"/></g>
+        <text class="as-leg as-s" x="195" y="259" dominant-baseline="central">Bayesian (probabilistic)</text>
+        <g class="as-badge"><circle cx="37" cy="290" r="8"/>
+          <text x="37" y="290" text-anchor="middle" dominant-baseline="central">1</text></g>
+        <text class="as-leg as-s" x="52" y="290" dominant-baseline="central">example / minibatch sampling</text>
+        <g class="as-badge"><circle cx="300" cy="290" r="8"/>
+          <text x="300" y="290" text-anchor="middle" dominant-baseline="central">2</text></g>
+        <text class="as-leg as-s" x="315" y="290" dominant-baseline="central">weight sampling (w ~ q(w))</text>
+      </svg>
+      <div class="cap">Dual encoders → fusion → Bayesian head. Examples are sampled into minibatches (①);
+      weights are sampled only inside the Bayesian head (②). All features enter every pass — no feature bagging.</div>
+    </div>
+
+    <div class="exp-stack">
+      <div class="exp-stage">
+        <div class="exp-stage-k">1 · Dual encoders <span class="exp-tag det">deterministic</span></div>
+        <div class="exp-stage-v">A compact CNN (conv–ReLU–pool → flatten → dense) over the spectrogram,
+        and a small MLP (ReLU + structured dropout) over the 58 tabular features. Each projects its modality
+        into a latent embedding.</div>
+      </div>
+      <div class="exp-stage">
+        <div class="exp-stage-k">2 · Fusion block <span class="exp-tag det">deterministic</span></div>
+        <div class="exp-stage-v">Combines the two embeddings by concatenation or a gated mechanism
+        (chosen per sampled hyperparameter) into one unified multimodal representation.</div>
+      </div>
+      <div class="exp-stage">
+        <div class="exp-stage-k">3 · Bayesian classification head <span class="exp-tag bay">probabilistic</span></div>
+        <div class="exp-stage-v">Two variants: a <b>Flipout</b> dense layer (variational inference) or an
+        <b>MC-Dropout</b> dense layer (repeated stochastic passes). Outputs a softmax over the 10 genres
+        plus <b>epistemic</b> and <b>aleatoric</b> uncertainty, aggregated by Monte-Carlo evaluation.</div>
+      </div>
+    </div>
+
+    <h2 id="training">Training objective</h2>
+    <p class="exp-p">BEARDOWN trains as <em>one</em> model — one optimizer, one loss. The loss is the
+    (negative) <b>ELBO</b>, the evidence lower bound. To settle the recurring question: the ELBO is the
+    <b>objective</b>, not the optimizer. We <em>maximize</em> the ELBO, which is identical to
+    <em>minimizing</em> its negative (below); the <b>optimizer</b> — Adam / AdamW / RMSprop, chosen per
+    sweep — is the gradient-descent algorithm that does the minimizing.</p>
+
+    <div class="eq">
+      $$\mathcal{L}(\theta,\phi)=\underbrace{\mathbb{E}_{q_\phi(w)}\!\big[-\log p(y\mid x,\,\theta_{\mathrm{cnn}},\theta_{\mathrm{mlp}},\theta_{\mathrm{fus}},\,w)\big]}_{\text{expected NLL — data fit}}\;+\;\frac{1}{N}\,\underbrace{\mathrm{KL}\!\big(q_\phi(w)\,\Vert\,p(w)\big)}_{\text{regularizer on head weights}}$$
+    </div>
+
+    <div class="exp-stack">
+      <div class="exp-stage">
+        <div class="exp-stage-k">Deterministic params <span class="exp-tag det">θ_cnn · θ_mlp · θ_fus</span></div>
+        <div class="exp-stage-v">The CNN, MLP, and fusion weights are point estimates. They sit <b>inside</b>
+        the NLL term — they shape $x\rightarrow$ logits — and carry no KL term (equivalently, a Dirac prior
+        with KL = 0). Trained by ordinary backprop.</div>
+      </div>
+      <div class="exp-stage">
+        <div class="exp-stage-k">Variational params <span class="exp-tag bay">q_φ(w)</span></div>
+        <div class="exp-stage-v">Only the head's weights are distributions — a mean-field Gaussian
+        $q_\phi(w)=\mathcal{N}(\mu,\sigma^2)$, sampled via <b>Flipout</b> using the reparameterization
+        $w=\mu+\sigma\odot\epsilon,\ \epsilon\sim\mathcal{N}(0,I)$ so gradients pass through the sample.
+        This is the only block contributing a KL term.</div>
+      </div>
+      <div class="exp-stage">
+        <div class="exp-stage-k">One step, end to end</div>
+        <div class="exp-stage-v">The loss is differentiable through the whole graph, so a single optimizer
+        step updates $\theta$ and $(\mu,\sigma)$ together — gradients flow from the head back through
+        fusion into both encoders. There is no "train the CNN, then the Bayesian part." Sweep knobs
+        <code>prior_scale</code>, <code>posterior_scale_init</code>, and <code>kl_factor</code> rescale
+        $p$, $q$, and the KL weight respectively.</div>
+      </div>
+    </div>
+
+    <h2 id="data">Data &amp; preprocessing</h2>
+    <p class="exp-p">GTZAN's spectrograms and feature CSVs don't align perfectly — after merging the two
+    modalities, ~10% of clips couldn't be matched and were dropped, leaving roughly <b>900 fully matched
+    multimodal samples</b>. Spectrograms were resized, pixel-normalized, and lightly augmented (time/frequency
+    masking, amplitude jitter); tabular features were z-score standardized with winsorization of spectral-flux
+    and energy outliers (no imputation — unmatched rows were removed during alignment). This dashboard's EDA
+    is the integrity layer underneath that step.</p>
+
+    <h2 id="questions">Two questions</h2>
+    <div class="exp-q">
+      <div class="exp-q-tag q1">Q1</div>
+      <div>
+        <div class="exp-q-h">Baseline performance</div>
+        <div class="exp-q-b">Can the hybrid Bayesian / non-Bayesian model reach 75–80% accuracy? Measured
+        with classical metrics — precision, recall, F1, per-genre breakdowns, ROC curves, confusion
+        matrices — alongside Bayesian diagnostics.</div>
+      </div>
+    </div>
+    <div class="exp-q">
+      <div class="exp-q-tag q2">Q2</div>
+      <div>
+        <div class="exp-q-h">Reliability-aware evaluation <span class="exp-tag bay">central contribution</span></div>
+        <div class="exp-q-b">The <b>Robust Ranking Metric (RRM)</b> folds accuracy, cross-validation
+        stability, and posterior dispersion into a single reliability-aware score. It correlates only
+        moderately with accuracy (r ≈ 0.62) and weakly with off-diagonal confusion noise (r ≈ 0.26) — i.e.
+        it captures reliability dimensions that accuracy alone misses. Paired with rank aggregation and a
+        Pareto front over the accuracy-vs-reliability tradeoff.</div>
+      </div>
+    </div>
+
+    <div class="exp-foot">Source: INFO 510 Fall 2025 final project report (Group 7). BEARDOWN is the
+    genre-recognition reproduction carried into the FORGE suite.</div>
+  </div>
+
+  <script>
+  (function(){
+    var items = [].slice.call(document.querySelectorAll('.onpage-i'));
+    var order = [], map = {};
+    items.forEach(function(a){
+      var id = a.getAttribute('href').slice(1);
+      var sec = document.getElementById(id);
+      if (sec){ map[id] = {link:a, sec:sec}; order.push(id); }
+    });
+    var current = null;
+    function setActive(id){
+      if (current === id || !map[id]) return;
+      items.forEach(function(a){ a.classList.remove('active'); });
+      map[id].link.classList.add('active');
+      current = id;
+    }
+    function scan(){
+      var thresh = window.innerHeight * 0.25;     // the "you are here" line
+      var active = order[0];
+      for (var i = 0; i < order.length; i++){
+        if (map[order[i]].sec.getBoundingClientRect().top <= thresh) active = order[i];
+      }
+      var doc = document.documentElement;
+      if (window.innerHeight + window.scrollY >= (doc.scrollHeight || document.body.scrollHeight) - 4)
+        active = order[order.length - 1];          // page bottom -> last section
+      setActive(active);
+    }
+    var ticking = false;
+    function onScroll(){
+      if (ticking) return; ticking = true;
+      requestAnimationFrame(function(){ scan(); ticking = false; });
+    }
+    window.addEventListener('scroll', onScroll, {passive:true});
+    window.addEventListener('resize', onScroll);
+
+    items.forEach(function(a){
+      a.addEventListener('click', function(e){
+        var id = a.getAttribute('href').slice(1);
+        if (map[id]){ e.preventDefault(); map[id].sec.scrollIntoView({behavior:'smooth', block:'start'}); setActive(id); }
+      });
+    });
+    scan();
+  })();
+  </script>
+</body>
+</html>

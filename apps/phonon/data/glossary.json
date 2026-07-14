@@ -1,0 +1,219 @@
+{
+ "title": "PHONON · Glossary",
+ "subtitle": "Terms and symbols across the phonon DOS reproduction — physics, the E(3)NN, and the FORGE Bayesian + information-theory layers.",
+ "groups": [
+  {
+   "id": "phys",
+   "label": "Physics — phonons & the DOS",
+   "terms": [
+    {
+     "term": "Phonon",
+     "def": "A quantized collective vibration of the crystal lattice — the lattice's normal modes treated as quasiparticles. A cell of $N$ atoms has $3N$ vibrational modes per wavevector."
+    },
+    {
+     "term": "Phonon density of states (DOS), $g(\\omega)$",
+     "def": "The distribution of vibrational modes over frequency: how many modes lie in each interval $[\\omega,\\omega+d\\omega]$. The 51-bin curve the model predicts. After normalization it is a probability distribution over frequency.",
+     "eq": "\\int g(\\omega)\\,d\\omega = 3N"
+    },
+    {
+     "term": "Mean phonon frequency, $\\bar\\omega$",
+     "def": "The DOS-weighted average frequency — the headline scalar the reproduction is scored on. Reaching 70% of test materials within 10% relative error on $\\bar\\omega$ is the paper's benchmark.",
+     "eq": "\\bar\\omega=\\frac{\\int d\\omega\\, g(\\omega)\\,\\omega}{\\int d\\omega\\, g(\\omega)}"
+    },
+    {
+     "term": "DFPT",
+     "def": "Density Functional Perturbation Theory — the first-principles method that computed the ground-truth phonon DOS for all 1,524 training crystals. Expensive; the model is the fast surrogate."
+    },
+    {
+     "term": "Specific heat $C_V(T)$",
+     "def": "The vibrational heat capacity, obtained by integrating the DOS against a per-mode kernel. A pure functional of $g(\\omega)$ — derivable from any predicted DOS once renormalized to $3N$.",
+     "eq": "C_V(T)=\\frac{k_B}{m_{tot}}\\int_0^\\infty\\!\\Big(\\frac{\\hbar\\omega}{2k_BT}\\Big)^2\\mathrm{csch}^2\\!\\Big(\\frac{\\hbar\\omega}{2k_BT}\\Big)g(\\omega)\\,d\\omega"
+    },
+    {
+     "term": "Vibrational entropy $S_{vib}(T)$",
+     "def": "The lattice-vibration contribution to entropy — another $\\int g(\\omega)\\cdot\\text{kernel}\\,d\\omega$ functional of the DOS, so it comes for free from a predicted spectrum."
+    },
+    {
+     "term": "Spectral entropy",
+     "def": "The Shannon entropy of the normalized DOS treated as a distribution. Low for sharp, peaked spectra (e.g. CsI); high for broad, many-mode ones. An information-theoretic feature unique to a distribution-valued target.",
+     "eq": "H[g]=-\\sum_i p_i\\ln p_i,\\quad p_i=\\frac{g_i}{\\sum_j g_j}"
+    },
+    {
+     "term": "Effective Debye temperature",
+     "def": "A single temperature scale summarizing the spectrum's stiffness, taken from moments of $g(\\omega)$ (e.g. $\\langle\\omega^2\\rangle$ or $\\langle\\ln\\omega\\rangle$). 'Effective' because the DOS has no branch labels to isolate the true acoustic cutoff."
+    },
+    {
+     "term": "Phonon bandgap",
+     "def": "A frequency window with no modes, separating acoustic from optical branches. Recoverable from the predicted DOS even when peak amplitudes are mispredicted; relevant to phonon-phonon scattering."
+    }
+   ]
+  },
+  {
+   "id": "model",
+   "label": "Model & architecture — E(3)NN",
+   "terms": [
+    {
+     "term": "E(3)NN (Euclidean neural network)",
+     "def": "A network whose features and operations are equivariant to 3D rotations, translations, and inversion. Crystal symmetry is built in by construction rather than learned, which is what makes ~1,200 examples enough."
+    },
+    {
+     "term": "Equivariance",
+     "def": "Rotate the input crystal and the internal geometric features rotate identically, leaving the scalar DOS output invariant. Removes the need for ~500-fold rotational data augmentation."
+    },
+    {
+     "term": "Irreducible representation (irrep)",
+     "def": "The symmetry 'type' of a feature under $O(3)$ — scalars ($l=0$), vectors ($l=1$), and so on. Here features carry $l=0$ and $l=1$ irreps, capped at $l_{max}=1$, with multiplicity $\\text{mul}=32$."
+    },
+    {
+     "term": "Spherical harmonics, $Y_{lm}$",
+     "def": "The angular basis functions of the convolution filters — they encode edge direction in a rotation-covariant way."
+    },
+    {
+     "term": "Convolutional filter $W(\\vec r_{ab})$",
+     "def": "Not free weights: a learned radial function times spherical harmonics of the edge direction. Tensor-producing this with neighbor features yields rotation-correct messages.",
+     "eq": "W(\\vec r_{ab})=R(|\\vec r_{ab}|)\\,Y_{lm}(\\hat r_{ab})"
+    },
+    {
+     "term": "Radial cutoff $r_{max}$",
+     "def": "Atoms bond to all neighbors (including periodic images) within $r_{max}=5\\,\\text{\\AA}$, defining the edges of the periodic graph."
+    },
+    {
+     "term": "Mass-weighted one-hot encoding",
+     "def": "Each atom's input feature is a 118-length vector, zero except at its element, where it holds the atomic mass. Mass is a continuous physical handle that survives even for elements never seen in training.",
+     "eq": "x_{\\mathrm H}=[\\,m_{\\mathrm H},0,\\dots,0\\,]"
+    },
+    {
+     "term": "Embedding layer",
+     "def": "A linear map taking the 118-length mass/type one-hots to 64 scalar features per atom, before the equivariant convolutions."
+    },
+    {
+     "term": "Gated nonlinearity",
+     "def": "The equivariance-safe activation: scalars get an ordinary nonlinearity (SiLU); vector features are multiplied by a learned sigmoid gate, since a pointwise nonlinearity would break equivariance."
+    },
+    {
+     "term": "L1Net",
+     "def": "The specific Convolution + Gated Block layer design (Miller et al.) the architecture is built from, as implemented in the e3nn library."
+    },
+    {
+     "term": "Periodic graph",
+     "def": "The crystal cast as nodes (atoms) and edges (neighbors within $r_{max}$, including images in adjacent cells); each edge stores its displacement vector $\\vec r_{ab}$."
+    }
+   ]
+  },
+  {
+   "id": "train",
+   "label": "Training & objective",
+   "terms": [
+    {
+     "term": "MSE loss",
+     "def": "The sole training objective — mean squared error between predicted $\\hat g$ and DFPT $g$, over the 51 bins. No regularization terms, no uncertainty machinery: the plain point-estimate loss the FORGE layers improve on.",
+     "eq": "\\mathcal L=\\frac{1}{51}\\sum_{i=1}^{51}\\big(\\hat g_i-g_i\\big)^2"
+    },
+    {
+     "term": "AdamW",
+     "def": "The optimizer (lr 0.005, weight decay 0.05). Weight decay is decoupled parameter shrinkage in the optimizer — not a term inside the loss."
+    },
+    {
+     "term": "Peak normalization",
+     "def": "The model output is divided by its per-row maximum, so training is on DOS shape in $[0,1]$. The absolute $\\int g\\,d\\omega=3N$ scale is restored downstream for thermodynamics."
+    },
+    {
+     "term": "No early stopping",
+     "def": "The reference recipe runs a fixed epoch budget and keeps the last checkpoint, not the best-validation one — so the released model sits slightly past its own validation optimum (train MSE $\\approx$ 0.002 vs valid $\\approx$ 0.026)."
+    }
+   ]
+  },
+  {
+   "id": "data",
+   "label": "Data & alloys",
+   "terms": [
+    {
+     "term": "Petretto DFPT database",
+     "def": "The source of ~1,500 crystalline solids with computed phonon DOS. Our working set is 1,524 materials, split 1220 / 152 / 152 (train / test / val)."
+    },
+    {
+     "term": "Unseen elements",
+     "def": "Elements absent from training (54 of 118: the lanthanides, actinides, noble gases, and the heaviest p-block). The model still produces a DOS for materials containing them via the continuous mass channel — the generalization the paper tests on Nd- and U-bearing compounds, and where Bayesian uncertainty should spike."
+    },
+    {
+     "term": "Two-hot alloy encoding",
+     "def": "For an alloy $A_pB_{1-p}$, a single site's feature is a composition-weighted mix of two elements' encodings. Because the encoding is linear, the model predicts the whole alloy series at no extra training cost.",
+     "eq": "x_{\\mathrm{alloy}}=[\\,0,\\dots,p\\,m_A,\\dots,(1-p)\\,m_B,\\dots,0\\,]"
+    },
+    {
+     "term": "VCA",
+     "def": "Virtual Crystal Approximation — a classical alloy method. Eq. 1 contains its essence (mass average $m_{VCA}=p\\,m_A+(1-p)\\,m_B$ plus a potential average) in one encoding, but without VCA's failure modes."
+    },
+    {
+     "term": "Materials Project",
+     "def": "The structure database supplying the 4,346 unseen crystals used for the downstream high-$C_V$ screening demo (no DOS labels)."
+    }
+   ]
+  },
+  {
+   "id": "eval",
+   "label": "Evaluation & information-theory metrics",
+   "terms": [
+    {
+     "term": "Relative error on $\\bar\\omega$",
+     "def": "The headline test metric. The reproduction target is 70% of test materials below 10%.",
+     "eq": "\\frac{|\\bar\\omega-\\bar\\omega^{*}|}{\\bar\\omega^{*}}"
+    },
+    {
+     "term": "MSE-vs-atom-count",
+     "def": "A diagnostic: error should be uncorrelated with unit-cell size (no bias toward small/large cells). Reproduced as $\\text{corr}\\approx 0$."
+    },
+    {
+     "term": "Jensen-Shannon (JS) divergence",
+     "def": "A symmetric distance between predicted and true DOS as distributions — a more honest fidelity score than MSE, which ignores that the bins live on a frequency axis.",
+     "eq": "\\mathrm{JS}(p\\,\\|\\,q)=\\tfrac12 \\mathrm{KL}(p\\,\\|\\,m)+\\tfrac12 \\mathrm{KL}(q\\,\\|\\,m),\\ m=\\tfrac12(p+q)"
+    },
+    {
+     "term": "Earth Mover / Wasserstein-1 (EMD)",
+     "def": "Distance along the frequency axis: a peak shifted one bin costs little, a peak in the wrong place costs a lot. MSE cannot see this; EMD respects the metric structure of $\\omega$.",
+     "eq": "\\mathrm{EMD}_1=\\sum_i\\Big|\\textstyle\\sum_{j\\le i}(p_j-q_j)\\Big|\\,\\Delta\\omega"
+    }
+   ]
+  },
+  {
+   "id": "forge",
+   "label": "FORGE — Bayesian & uncertainty (mk2+)",
+   "terms": [
+    {
+     "term": "$\\varphi$ (phi)",
+     "def": "The penultimate latent vector the final linear layer reads. FORGE's posterior lives in $\\varphi$-space; input-feature attribution is the bridge from $\\varphi$ back to named inputs."
+    },
+    {
+     "term": "LLLA",
+     "def": "Last-Layer Laplace Approximation — a Gaussian posterior over the final layer's weights of the frozen model, giving calibrated uncertainty without retraining. The mk2 contribution; turns the bare point estimate into a credible band."
+    },
+    {
+     "term": "Epistemic uncertainty",
+     "def": "Uncertainty from limited/underdetermined data (reducible with more) — distinct from aleatoric noise. Expected to be largest on unseen elements and rare-element materials."
+    },
+    {
+     "term": "Credible interval",
+     "def": "A Bayesian uncertainty band on the predicted DOS (and on derived $C_V$, $S_{vib}$). The $\\texttt{band}$ slot in the inference output is reserved for it."
+    },
+    {
+     "term": "RRM penalty vector",
+     "def": "A reliability score combining accuracy, sweep spread, and epistemic uncertainty into one ranking signal, transferred from the genre and ATLAS work and adapted to regression.",
+     "eq": "v=\\big[\\,1-A,\\ s/s_{max},\\ U/U_{max}\\,\\big]"
+    },
+    {
+     "term": "Prior precision $\\tau$",
+     "def": "The LLLA prior strength. Dragging $\\tau$ reshapes the posterior live in the FORGE panel — high $\\tau$ tightens toward the point estimate, low $\\tau$ widens the band."
+    },
+    {
+     "term": "Feature attribution, $d\\sigma/dx_k$",
+     "def": "Per-input sensitivity of the epistemic uncertainty, via the chain rule $\\tfrac{d\\sigma}{d\\varphi}\\tfrac{d\\varphi}{dx_k}$. On phonon, $x_k$ is an atom/element — so it names the physical origin of the uncertainty.",
+     "eq": "\\frac{d\\sigma}{dx_k}=\\frac{d\\sigma}{d\\varphi}\\cdot\\frac{d\\varphi}{dx_k}"
+    },
+    {
+     "term": "PICP / CRPS",
+     "def": "Calibration metrics for the predictive band: interval coverage (does the 90% band contain truth ~90% of the time) and a proper score over the full predictive distribution — the regression analogues of ECE."
+    }
+   ]
+  }
+ ]
+}

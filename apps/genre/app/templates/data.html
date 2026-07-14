@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Data · BEARDOWN</title>
+<link rel="icon" type="image/svg+xml" href="/static/assets/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/css/style.css">
+<style>
+  /* scoped to the Data panel — uses the shared TRON tokens from style.css */
+  .data-wrap{max-width:1100px;margin:0 auto;padding:22px}
+  .d-head{margin-bottom:18px}
+  .d-fk{font-family:var(--disp);letter-spacing:.22em;color:var(--cyan);font-size:12px;
+        text-shadow:0 0 12px rgba(45,226,230,.4)}
+  .d-title{font-family:var(--disp);font-weight:700;letter-spacing:.06em;margin:.25em 0 .15em;
+           font-size:26px;color:var(--text)}
+  .d-sub{color:var(--muted);font-size:13px}
+  h2.d-sec{font-family:var(--disp);letter-spacing:.1em;font-size:15px;color:var(--amber);
+           margin:30px 0 12px;padding-bottom:7px;border-bottom:1px solid var(--line);
+           display:flex;align-items:center;gap:9px}
+  h2.d-sec .n{font-size:11px;color:#04161a;background:var(--amber);border-radius:3px;
+              padding:2px 7px;letter-spacing:.1em}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:16px}
+  .p{color:var(--text);font-size:13.5px;line-height:1.6;margin:.4em 0}
+  .dim{color:var(--muted)} b{color:#eaf6f8}
+  code{font-family:var(--mono);color:var(--cyan);background:#0a131c;border:1px solid var(--line);
+       border-radius:3px;padding:1px 5px}
+  /* representation table */
+  table.rep{width:100%;border-collapse:collapse;font-size:13px;margin-top:4px}
+  table.rep th,table.rep td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line)}
+  table.rep th{color:var(--muted);font-weight:400;letter-spacing:.08em;text-transform:uppercase;font-size:11px}
+  table.rep td code{font-size:12px}
+  table.rep tr:hover td{background:#0c1622}
+  /* pipeline svg caption */
+  .cap{color:var(--muted);font-size:12px;margin-top:8px;text-align:center}
+  .pipe{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px}
+  .pipe svg{display:block;width:100%;height:auto}
+  /* leakage */
+  .lk-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:760px){.lk-grid{grid-template-columns:1fr}}
+  .dp-stat{display:block;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:18px 16px;text-align:center}
+  .dp-stat .big{display:block;font-family:var(--disp);font-size:38px;font-weight:700;line-height:1}
+  .dp-stat .big.bad{color:var(--bad);text-shadow:0 0 16px rgba(255,84,112,.35)}
+  .dp-stat .big.good{color:var(--good);text-shadow:0 0 16px rgba(57,217,138,.35)}
+  .dp-stat .lbl{display:block;color:var(--text);font-size:12.5px;margin-top:10px;letter-spacing:.02em}
+  .dp-stat .sub{display:block;color:var(--muted);font-size:11.5px;margin-top:6px}
+  .bars{margin-top:14px}
+  .bar-row{display:flex;align-items:center;gap:10px;margin:5px 0;font-size:12px}
+  .bar-row .g{width:74px;color:var(--muted);text-align:right;text-transform:capitalize}
+  .bar-track{flex:1;height:14px;background:#0a131c;border:1px solid var(--line);border-radius:3px;overflow:hidden}
+  .bar-fill{height:100%;background:linear-gradient(90deg,var(--orange),var(--bad));}
+  .bar-row .v{width:58px;color:var(--text)}
+  .interp{margin-top:14px;border-left:3px solid var(--cyan);padding:10px 14px;background:#0a131c;
+          border-radius:0 6px 6px 0;font-size:13px;line-height:1.6}
+  /* tests */
+  .tests-head{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+  .tests-head .score{font-family:var(--disp);font-size:22px;font-weight:700}
+  .tests-head .score.green{color:var(--good)} .tests-head .score.red{color:var(--bad)}
+  .dp-pill{font-size:11px;letter-spacing:.1em;padding:3px 9px;border-radius:3px;text-transform:uppercase;
+        border:1px solid currentColor}
+  .dp-pill.green{color:var(--good)} .dp-pill.red{color:var(--bad)}
+  ul.tests{list-style:none;margin:0;padding:0}
+  ul.tests li{display:flex;gap:12px;align-items:flex-start;padding:10px 12px;border:1px solid var(--line);
+              border-radius:6px;margin:6px 0;background:var(--panel)}
+  ul.tests li .tk{flex:0 0 20px;font-size:14px;line-height:1.5}
+  ul.tests li.pass .tk{color:var(--good)} ul.tests li.fail .tk{color:var(--bad)}
+  ul.tests li .body .nm{font-family:var(--mono);color:var(--cyan);font-size:12.5px}
+  ul.tests li .body .ds{color:var(--text);font-size:12.5px;margin-top:2px;line-height:1.5}
+  ul.tests li .body .er{color:var(--bad);font-size:11.5px;margin-top:3px}
+  .src{color:var(--muted);font-size:11.5px;margin-top:10px}
+  .miss{color:var(--muted);font-size:13px;padding:14px;border:1px dashed var(--line);border-radius:6px}
+  .miss code{display:inline-block;margin-top:6px}
+  .gen-tag{color:var(--muted);font-size:11.5px;margin-top:6px}
+  .kv{display:flex;flex-wrap:wrap;gap:8px 22px;margin-top:6px;font-size:12.5px}
+  .kv span b{color:var(--cyan);font-weight:400}
+</style>
+</head>
+<body class="page">
+<div class="data-wrap">
+
+  <div class="d-head">
+    <div class="d-fk">F·O·R·G·E //  DATA PIPELINE</div>
+    <div class="d-title">Data handling &amp; leakage guards</div>
+    <div class="d-sub">How GTZAN becomes tensors without leaking — the representations, the
+      track-level split that prevents segment leakage, and the invariants that keep it honest.</div>
+  </div>
+
+  <!-- ============================================ 1 · DATA HANDLING -->
+  <h2 class="d-sec"><span class="n">1</span> Data handling</h2>
+  <p class="p">Each 30-second clip exists in several <b>representations</b>; one loader serves all of
+  them through the same split + id logic, so tabular, image, and fused share one source of truth.
+  The scaler and label map are fit on the <b>train split only</b> — computing μ/σ over the whole
+  table before splitting is a quieter form of leakage.</p>
+
+  <div class="panel" style="margin-bottom:12px">
+    <table class="rep">
+      <thead><tr><th>representation</th><th>source</th><th>rows</th><th>tensor</th><th>when</th></tr></thead>
+      <tbody>
+        <tr><td><code>tab30</code></td><td>features_30_sec.csv</td><td>1,000 (1/track)</td>
+            <td><code>[N,&nbsp;58]</code></td><td>fast tabular baseline</td></tr>
+        <tr><td><code>tab3</code></td><td>features_3_sec.csv</td><td>9,990 (~10/track)</td>
+            <td><code>[N,&nbsp;58]</code></td><td>more samples; needs the guard</td></tr>
+        <tr><td><code>image</code></td><td>images_grey_scale/</td><td>1,000 (1/track)</td>
+            <td><code>[N,224,224,1]</code></td><td>spectrogram CNN encoder</td></tr>
+        <tr><td><code>fused</code></td><td>tab30 ⨝ image</td><td>1,000 (1:1/track)</td>
+            <td><code>{image, tabular}</code></td><td>BEARDOWN dual input</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="pipe">
+    <svg viewBox="0 0 920 132" role="img" aria-label="Data pipeline: raw artifacts to ids and labels to track split to train-only scaler to batched tensors.">
+      <defs>
+        <marker id="pmk" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M2 1L8 5L2 9" fill="none" stroke="#6f8693" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </marker>
+        <style>
+          .pb{fill:#111a26;stroke:#1c2a3a;rx:7}
+          .pt{fill:#cfe6ea;font:600 12px "Share Tech Mono",monospace}
+          .ps{fill:#6f8693;font:10px "Share Tech Mono",monospace}
+          .pg{fill:#0a131c;stroke:#f0a500}
+          .parr{stroke:#6f8693;stroke-width:1.5}
+        </style>
+      </defs>
+      <g><rect class="pb" x="8"   y="40" width="120" height="52" rx="7"/>
+        <text class="pt" x="68"  y="60" text-anchor="middle">raw artifacts</text>
+        <text class="ps" x="68"  y="78" text-anchor="middle">csv · png</text></g>
+      <g><rect class="pb" x="166" y="40" width="130" height="52" rx="7"/>
+        <text class="pt" x="231" y="60" text-anchor="middle">ids + labels</text>
+        <text class="ps" x="231" y="78" text-anchor="middle">track_id · 0..9</text></g>
+      <g><rect class="pb pg" x="334" y="40" width="150" height="52" rx="7"/>
+        <text class="pt" x="409" y="59" text-anchor="middle">track split</text>
+        <text class="ps" x="409" y="77" text-anchor="middle">70/15/15 · stratified</text></g>
+      <g><rect class="pb" x="522" y="40" width="150" height="52" rx="7"/>
+        <text class="pt" x="597" y="59" text-anchor="middle">scaler (train)</text>
+        <text class="ps" x="597" y="77" text-anchor="middle">fit train · apply all</text></g>
+      <g><rect class="pb" x="710" y="40" width="142" height="52" rx="7"/>
+        <text class="pt" x="781" y="59" text-anchor="middle">batched tensors</text>
+        <text class="ps" x="781" y="77" text-anchor="middle">shuffle · batch</text></g>
+      <line class="parr" x1="128" y1="66" x2="164" y2="66" marker-end="url(#pmk)"/>
+      <line class="parr" x1="296" y1="66" x2="332" y2="66" marker-end="url(#pmk)"/>
+      <line class="parr" x1="484" y1="66" x2="520" y2="66" marker-end="url(#pmk)"/>
+      <line class="parr" x1="672" y1="66" x2="708" y2="66" marker-end="url(#pmk)"/>
+      <text class="ps" x="409" y="112" text-anchor="middle" fill="#f0a500">the leakage guard lives here</text>
+    </svg>
+    <div class="cap">One loader: <code>load(representation, split_strategy, seed, ratios, standardize)</code>
+      → self-describing arrays + label map + train-fit scaler + split provenance.</div>
+  </div>
+
+  <p class="p" style="margin-top:18px"><b>What consumes these tensors — the dual encoders.</b>
+  BEARDOWN reads each track in two modalities at once, so the model sees timbre/time
+  structure <i>and</i> engineered audio statistics:</p>
+  <div class="lk-grid">
+    <div class="panel">
+      <div style="color:var(--cyan);font-size:13px;margin-bottom:4px">Spectrogram → Spec CNN</div>
+      <div class="dim" style="font-size:12.5px;line-height:1.6">The <code>image</code> tensor
+      (<code>[224,224,1]</code>) enters a compact CNN — conv → ReLU → pool → flatten → dense —
+      projecting the mel-spectrogram into a latent embedding. Deterministic.</div>
+    </div>
+    <div class="panel">
+      <div style="color:var(--cyan);font-size:13px;margin-bottom:4px">Tabular → MLP</div>
+      <div class="dim" style="font-size:12.5px;line-height:1.6">The 58-feature vector enters a
+      small MLP (ReLU + structured dropout), projecting the engineered statistics into a second
+      embedding. Deterministic.</div>
+    </div>
+  </div>
+  <p class="p" style="margin-top:10px">The two embeddings <b>fuse</b> (concat / gated) and feed a
+  probabilistic <b>Bayesian head</b> (Flipout / MC-dropout) → softmax over 10 genres <i>plus</i>
+  an uncertainty estimate. The <code>fused</code> representation above is exactly the dual input
+  this head expects — image and tabular aligned 1:1 per track. (Full architecture diagram lives on
+  the <b>Experiment</b> panel.)</p>
+
+  <!-- ============================================ 2 · LEAKAGE GUARDS -->
+  <h2 class="d-sec"><span class="n">2</span> Leakage guards</h2>
+  <p class="p">The 3-second table explodes each song into ~10 near-identical segments. Shuffle those
+  9,990 rows <i>randomly</i> and segments of the same song land in both train and test — the model
+  recognizes the <b>song</b>, not the <b>genre</b>, and accuracy inflates (the Sturm-2013 GTZAN
+  artifact). The guard assigns whole <b>tracks</b>, never segments, stratified per genre so every
+  split still holds all ten genres.</p>
+
+  <div id="leakageBody"></div>
+
+  <!-- ============================================ 3 · SPLIT TESTS -->
+  <h2 class="d-sec"><span class="n">3</span> Split tests</h2>
+  <p class="p">The guard is only worth trusting if it's enforced. These invariants run in
+  <code>_shared/tests/test_splits.py</code>; the load-bearing one is no-track-overlap — if it goes
+  red, leakage is back.</p>
+  <div id="testsBody"></div>
+
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+
+(async function(){
+  let d;
+  try { d = await (await fetch("/api/data")).json(); }
+  catch(e){ $("#leakageBody").innerHTML = miss("backend unreachable"); return; }
+  renderLeakage(d.leakage, d.split, (d.hints||{}).leakage);
+  renderTests(d.tests, (d.hints||{}).tests);
+})();
+
+function miss(msg, cmd){
+  return `<div class="miss">${esc(msg)}${cmd ? `<br><code>${esc(cmd)}</code>` : ""}</div>`;
+}
+
+function renderLeakage(lk, split, hint){
+  const el = $("#leakageBody");
+  if(!lk){ el.innerHTML = miss("No leakage.json yet — generate it:", hint); return; }
+  const naive = lk.naive_shuffle || {}, guard = lk.track_guard || {};
+  const pct = naive.pct_tracks_leaking ?? 0;
+
+  let bars = "";
+  const pg = lk.per_genre || {};
+  const genres = Object.keys(pg);
+  if(genres.length){
+    bars = `<div class="panel"><div class="dim" style="font-size:12px;margin-bottom:6px">
+      tracks straddling splits under the naive shuffle, per genre (of 100)</div><div class="bars">` +
+      genres.map(g=>{
+        const s = pg[g].straddling, t = pg[g].tracks || 100;
+        const w = Math.round(100*s/t);
+        return `<div class="bar-row"><span class="g">${esc(g)}</span>
+          <span class="bar-track"><span class="bar-fill" style="width:${w}%"></span></span>
+          <span class="v">${s}/${t}</span></div>`;
+      }).join("") + `</div></div>`;
+  }
+
+  let splitKv = "";
+  if(split){
+    splitKv = `<div class="kv">
+      <span>mode <b>${esc(split.mode)}</b></span>
+      <span>seed <b>${esc(split.seed)}</b></span>
+      <span>ratios <b>${(split.ratios||[]).join(" / ")}</b></span>
+      <span>train <b>${esc(split.train)}</b></span>
+      <span>val <b>${esc(split.val)}</b></span>
+      <span>test <b>${esc(split.test)}</b></span></div>`;
+  }
+
+  el.innerHTML = `
+    <div class="lk-grid">
+      <div class="dp-stat">
+        <div class="big bad">${pct}%</div>
+        <div class="lbl">tracks leak under a naive segment shuffle</div>
+        <div class="sub">${esc(naive.tracks_straddling ?? "?")} / ${esc(lk.n_tracks ?? "?")} tracks span &gt;1 split</div>
+      </div>
+      <div class="dp-stat">
+        <div class="big good">0</div>
+        <div class="lbl">tracks leak under the track guard</div>
+        <div class="sub">0 by construction — segments of a track stay together</div>
+      </div>
+    </div>
+    ${bars}
+    ${splitKv ? `<div class="panel" style="margin-top:12px"><div class="dim" style="font-size:12px;margin-bottom:2px">recorded split (manifest.json)</div>${splitKv}</div>` : ""}
+    <div class="interp">${esc(lk.interpretation || "")}</div>
+    ${lk.generated ? `<div class="gen-tag">measured ${esc(lk.generated)} · ${esc(lk.n_segments)} segments</div>` : ""}`;
+}
+
+function renderTests(t, hint){
+  const el = $("#testsBody");
+  if(!t){ el.innerHTML = miss("No splits_report.json yet — generate it:", hint); return; }
+  const green = t.all_green;
+  const items = (t.results||[]).map(r=>`
+    <li class="${r.passed?'pass':'fail'}">
+      <span class="tk">${r.passed?'✓':'✕'}</span>
+      <span class="body">
+        <span class="nm">${esc(r.name)}</span>
+        <span class="ds">${esc(r.description)}</span>
+        ${r.passed?"":`<span class="er">${esc(r.error)}</span>`}
+      </span>
+    </li>`).join("");
+  el.innerHTML = `
+    <div class="tests-head">
+      <span class="score ${green?'green':'red'}">${t.n_passed}/${t.n_tests}</span>
+      <span class="dp-pill ${green?'green':'red'}">${green?'all green':'failing'}</span>
+    </div>
+    <ul class="tests">${items}</ul>
+    <div class="src">source: <code>${esc(t.source)}</code>${t.generated?` · ran ${esc(t.generated)}`:""}</div>`;
+}
+</script>
+</body>
+</html>

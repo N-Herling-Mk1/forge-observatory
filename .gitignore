@@ -1,0 +1,8 @@
+.env
+__pycache__/
+*.pyc
+models/*
+!models/README.md
+runs/
+*.pkl
+*.torch
