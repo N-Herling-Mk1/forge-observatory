@@ -1,0 +1,1478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>FORGE // GAUSSIAN IGNITE v2</title>
+<style>
+  :root {
+    --bg: #050505;
+    --plate: #0a0a0a;
+    --amber: #ff8a3d;
+    --ember: #ffce3d;
+    --red: #ff3838;
+    --muted: #555;
+    --dim: #888;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg);
+    color: var(--amber);
+    font-family: 'JetBrains Mono', 'Courier New', monospace;
+    height: 100%;
+    overflow: hidden;
+  }
+  body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 18px;
+  }
+  .forge {
+    width: 100%;
+    max-width: 1280px;
+    background: var(--plate);
+    border-radius: 12px;
+    padding: 14px;
+    border: 0.5px solid rgba(255,138,61,0.18);
+  }
+
+  /* Top control bar */
+  .bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+  }
+  .lhs { display: flex; align-items: center; gap: 10px; }
+  .rhs { display: flex; gap: 8px; }
+  .led {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--red);
+    box-shadow: 0 0 8px var(--red);
+    transition: background .15s, box-shadow .15s;
+  }
+  .status { font-size: 11px; letter-spacing: 0.18em; color: var(--amber); }
+  button {
+    background: transparent;
+    color: var(--amber);
+    border: 0.5px solid var(--amber);
+    padding: 5px 16px;
+    border-radius: 6px;
+    font-family: inherit; font-size: 11px;
+    letter-spacing: 0.12em;
+    cursor: pointer;
+    transition: background .12s;
+  }
+  button:hover { background: rgba(255,138,61,0.08); }
+  button.ghost { color: var(--dim); border-color: #444; }
+
+  canvas {
+    width: 100%;
+    height: auto;
+    display: block;
+    border-radius: 8px;
+    background: #050505;
+  }
+
+  /* Bottom control panel */
+  .panel {
+    margin-top: 10px;
+    display: grid;
+    grid-template-columns: 1.2fr 1fr 1fr 1.3fr;
+    gap: 12px;
+    padding: 10px 12px;
+    background: #0d0d0d;
+    border: 0.5px solid rgba(255,138,61,0.15);
+    border-radius: 8px;
+  }
+  /* slider */
+  .slider-wrap { display: flex; align-items: center; gap: 8px; }
+  input[type=range] {
+    flex: 1;
+    -webkit-appearance: none;
+    appearance: none;
+    height: 4px;
+    background: #2a2a2a;
+    border-radius: 2px;
+    outline: none;
+    cursor: pointer;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: var(--amber);
+    box-shadow: 0 0 6px rgba(255,138,61,0.6);
+    cursor: pointer;
+  }
+  input[type=range]::-moz-range-thumb {
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: var(--amber);
+    border: none;
+    box-shadow: 0 0 6px rgba(255,138,61,0.6);
+    cursor: pointer;
+  }
+  .slider-val {
+    font-size: 10px;
+    color: var(--amber);
+    letter-spacing: 0.08em;
+    min-width: 36px;
+    text-align: right;
+  }
+  .ctrl { display: flex; flex-direction: column; gap: 6px; }
+  .ctrl-label {
+    font-size: 9px;
+    letter-spacing: 0.22em;
+    color: var(--dim);
+    text-transform: uppercase;
+  }
+  .seg {
+    display: flex;
+    border: 0.5px solid #2a2a2a;
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  .seg button {
+    flex: 1;
+    border: none;
+    border-right: 0.5px solid #2a2a2a;
+    border-radius: 0;
+    padding: 6px 4px;
+    font-size: 10px;
+    letter-spacing: 0.10em;
+    color: var(--dim);
+    background: transparent;
+  }
+  .seg button:last-child { border-right: none; }
+  .seg button.on {
+    background: rgba(255,138,61,0.12);
+    color: var(--amber);
+    text-shadow: 0 0 4px rgba(255,138,61,0.4);
+  }
+  .extras { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip {
+    display: flex; align-items: center; gap: 6px;
+    border: 0.5px solid #2a2a2a;
+    border-radius: 6px;
+    padding: 5px 9px;
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    color: var(--dim);
+    cursor: pointer;
+    user-select: none;
+    background: transparent;
+    transition: all .12s;
+  }
+  .chip .dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: #333; transition: all .12s;
+  }
+  .chip.on {
+    color: var(--amber);
+    border-color: rgba(255,138,61,0.4);
+    background: rgba(255,138,61,0.06);
+  }
+  .chip.on .dot {
+    background: var(--ember);
+    box-shadow: 0 0 6px var(--ember);
+  }
+
+  .foot {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 8px;
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+  }
+  .foot .live { color: var(--amber); }
+</style>
+</head>
+<body>
+  <div class="forge">
+    <div class="bar">
+      <div class="lhs">
+        <span class="led" id="led"></span>
+        <span class="status" id="status">FORGE // STANDBY</span>
+      </div>
+      <div class="rhs">
+        <button id="run">RUN</button>
+        <button id="reset" class="ghost">RESET</button>
+      </div>
+    </div>
+
+    <canvas id="forge" width="1280" height="600"></canvas>
+
+    <div class="panel">
+      <div class="ctrl">
+        <span class="ctrl-label">Variance &sigma;</span>
+        <div class="slider-wrap">
+          <input type="range" id="sigma" min="40" max="280" value="166" step="1">
+          <span class="slider-val" id="sigma-val">0.13</span>
+        </div>
+      </div>
+
+      <div class="ctrl">
+        <span class="ctrl-label">Flame character</span>
+        <div class="seg" id="vibe">
+          <button data-v="forge" class="on">FORGE</button>
+          <button data-v="plasma">PLASMA</button>
+          <button data-v="arcane">ARCANE</button>
+        </div>
+      </div>
+
+      <div class="ctrl">
+        <span class="ctrl-label">Flame size</span>
+        <div class="seg" id="size">
+          <button data-s="subtle">SUBTLE</button>
+          <button data-s="moderate" class="on">MODERATE</button>
+          <button data-s="dramatic">DRAMATIC</button>
+        </div>
+      </div>
+
+      <div class="ctrl">
+        <span class="ctrl-label">Extras</span>
+        <div class="extras">
+          <span class="chip on" data-x="smoke"><span class="dot"></span>SMOKE</span>
+          <span class="chip" data-x="haze"><span class="dot"></span>HEAT HAZE</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" style="grid-template-columns: 1fr; margin-top: 8px;">
+      <div class="ctrl">
+        <span class="ctrl-label">Geometry layers — stack freely</span>
+        <div class="extras" id="geomChips">
+          <span class="chip on" data-g="base"><span class="dot"></span>BASE FIRE</span>
+          <span class="chip" data-g="ellipse"><span class="dot"></span>1·ELLIPSES</span>
+          <span class="chip" data-g="crescent"><span class="dot"></span>2·CRESCENTS</span>
+          <span class="chip" data-g="voronoi"><span class="dot"></span>3·VORONOI</span>
+          <span class="chip" data-g="triangle"><span class="dot"></span>4·TRIANGLES</span>
+          <span class="chip" data-g="hex"><span class="dot"></span>5·HEX SCALES</span>
+          <span class="chip" data-g="ribbon"><span class="dot"></span>6·RIBBONS</span>
+          <span class="chip" data-g="rings"><span class="dot"></span>7·LEVEL RINGS</span>
+          <span class="chip" data-g="trails"><span class="dot"></span>8·TRAILS</span>
+          <span class="chip" data-g="lissajous"><span class="dot"></span>9·LISSAJOUS</span>
+          <span class="chip" data-g="voxel"><span class="dot"></span>10·VOXEL</span>
+          <span class="chip" data-g="glyph"><span class="dot"></span>11·GLYPHS</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="foot">
+      <span id="phase">PHASE — IDLE</span>
+      <span class="live" id="progress">0%</span>
+    </div>
+  </div>
+
+<script>
+(function(){
+  const cv = document.getElementById('forge');
+  const ctx = cv.getContext('2d');
+  const W = cv.width, H = cv.height;
+
+  const statusEl = document.getElementById('status');
+  const phaseEl = document.getElementById('phase');
+  const progEl  = document.getElementById('progress');
+  const led     = document.getElementById('led');
+  const runBtn  = document.getElementById('run');
+  const resetBtn = document.getElementById('reset');
+
+  // ----- options state -----
+  const opts = {
+    vibe: 'forge',
+    size: 'moderate',
+    smoke: true,
+    haze: false
+  };
+
+  // Geometry layer state — each is a toggleable renderer
+  const geom = {
+    base: true,
+    ellipse: false,
+    crescent: false,
+    voronoi: false,
+    triangle: false,
+    hex: false,
+    ribbon: false,
+    rings: false,
+    trails: false,
+    lissajous: false,
+    voxel: false,
+    glyph: false
+  };
+
+  // Floor for tail flame activity
+  const TAIL_FLOOR = 0.12;
+
+  // Wire up segmented toggles
+  document.querySelectorAll('#vibe button').forEach(b => {
+    b.addEventListener('click', () => {
+      opts.vibe = b.dataset.v;
+      document.querySelectorAll('#vibe button').forEach(x => x.classList.toggle('on', x === b));
+    });
+  });
+  document.querySelectorAll('#size button').forEach(b => {
+    b.addEventListener('click', () => {
+      opts.size = b.dataset.s;
+      document.querySelectorAll('#size button').forEach(x => x.classList.toggle('on', x === b));
+    });
+  });
+  document.querySelectorAll('.chip[data-x]').forEach(c => {
+    c.addEventListener('click', () => {
+      const k = c.dataset.x;
+      opts[k] = !opts[k];
+      c.classList.toggle('on', opts[k]);
+    });
+  });
+  document.querySelectorAll('.chip[data-g]').forEach(c => {
+    c.addEventListener('click', () => {
+      const k = c.dataset.g;
+      geom[k] = !geom[k];
+      c.classList.toggle('on', geom[k]);
+    });
+  });
+
+  // ----- color presets per vibe -----
+  // Each vibe defines a 5-stop palette from "newborn/hot" -> "cooling/dying"
+  // [r,g,b] floats 0..255
+  const PALETTES = {
+    forge: [
+      [255,255,235], // hot core
+      [255,210,120],
+      [255,150,40],
+      [220,70,20],
+      [90,10,5]      // smoke-edge
+    ],
+    plasma: [
+      [220,240,255], // white-blue core
+      [120,180,255],
+      [80,120,255],
+      [180,60,200],
+      [30,5,60]
+    ],
+    arcane: [
+      [255,250,200], // gold-white
+      [255,220,90],
+      [255,160,40],
+      [180,90,20],
+      [60,20,40]
+    ]
+  };
+
+  // ----- size presets -----
+  // controls particle vy, lifetime, rate, and visual width
+  function sizeCfg(){
+    switch(opts.size){
+      case 'subtle':   return { vy: -0.55, life: 0.85, rate: 0.85, width: 1.4, tongueChance: 0.005 };
+      case 'dramatic': return { vy: -1.55, life: 2.40, rate: 2.20, width: 2.8, tongueChance: 0.025 };
+      default:         return { vy: -0.95, life: 1.50, rate: 1.40, width: 2.0, tongueChance: 0.013 };
+    }
+  }
+
+  // ----- Gaussian geometry -----
+  const cx = W * 0.5;
+  const baseY = H * 0.82;
+  const amp = H * 0.52;
+  let sigma = W * 0.13;
+  const xStart = W * 0.08, xEnd = W * 0.92;
+
+  function gauss(x){
+    const dx = x - cx;
+    return baseY - amp * Math.exp(-(dx*dx) / (2*sigma*sigma));
+  }
+
+  // Sample path + per-sample tangent normal + per-sample height factor
+  const N = 800;
+  const path = new Array(N + 1);
+  const normals = new Array(N + 1);
+  const heightFactor = new Float32Array(N + 1); // 0 at tails, 1 at peak
+
+  function rebuildPath(){
+    for (let i = 0; i <= N; i++){
+      const x = xStart + (xEnd - xStart) * (i / N);
+      path[i] = { x, y: gauss(x) };
+    }
+    for (let i = 0; i <= N; i++){
+      const a = path[Math.max(0, i-1)];
+      const b = path[Math.min(N, i+1)];
+      const tx = b.x - a.x, ty = b.y - a.y;
+      const len = Math.hypot(tx, ty) || 1;
+      let nx = -ty / len, ny = tx / len;
+      if (ny > 0) { nx = -nx; ny = -ny; }
+      normals[i] = { nx, ny };
+    }
+    // height factor: full intensity inside ±3σ, sharp dropoff outside
+    // We compute a zone factor based on horizontal distance from peak in units of σ
+    for (let i = 0; i <= N; i++){
+      const dx = Math.abs(path[i].x - cx);
+      const z = dx / sigma; // distance from mean in sigma units
+      let f;
+      if (z <= 3.0){
+        f = 1.0; // full intensity zone
+      } else {
+        // Sharp dropoff outside ±3σ — exponential decay with steep falloff
+        const beyond = z - 3.0; // how far past 3σ we are
+        f = Math.exp(-beyond * 2.5); // drops to ~8% within +1σ past the edge
+      }
+      heightFactor[i] = f;
+    }
+  }
+  rebuildPath();
+  const PEAK = Math.floor(N / 2);
+
+  // Sigma slider wiring
+  const sigmaInput = document.getElementById('sigma');
+  const sigmaVal   = document.getElementById('sigma-val');
+  sigmaVal.textContent = (sigma / W).toFixed(3);
+  sigmaInput.value = sigma;
+  sigmaInput.addEventListener('input', () => {
+    sigma = parseFloat(sigmaInput.value);
+    sigmaVal.textContent = (sigma / W).toFixed(3);
+    rebuildPath();
+  });
+
+  // ----- particle pools -----
+  const flame  = [];
+  const smoke  = [];
+  const embers = [];
+  const flares = [];
+
+  // Hard caps so emission can't snowball
+  const CAP_FLAME   = 600;
+  const CAP_SMOKE   = 140;
+  const CAP_EMBERS  = 200;
+  const CAP_FLARES  = 20;
+
+  function pushCapped(arr, cap, obj){
+    if (arr.length >= cap) arr.shift();
+    arr.push(obj);
+  }
+
+  // Pre-rendered smoke sprite — one radial gradient baked once, drawImage'd cheaply everywhere
+  const SMOKE_SPRITE_SIZE = 128;
+  const smokeSprite = document.createElement('canvas');
+  smokeSprite.width = SMOKE_SPRITE_SIZE;
+  smokeSprite.height = SMOKE_SPRITE_SIZE;
+  {
+    const sc = smokeSprite.getContext('2d');
+    const r = SMOKE_SPRITE_SIZE / 2;
+    const g = sc.createRadialGradient(r, r, 0, r, r, r);
+    g.addColorStop(0, 'rgba(50,46,42,1)');
+    g.addColorStop(0.5, 'rgba(30,28,26,0.6)');
+    g.addColorStop(1, 'rgba(0,0,0,0)');
+    sc.fillStyle = g;
+    sc.fillRect(0, 0, SMOKE_SPRITE_SIZE, SMOKE_SPRITE_SIZE);
+  }
+
+  // Pre-rendered flame sprites — one tinted sprite per palette × age-bucket combination.
+  // We pick the closest sprite at draw time → just drawImage + globalAlpha.
+  const FLAME_SPRITE_SIZE = 64;
+  const FLAME_AGE_BUCKETS = 5;
+  const flameSpriteCache = {};
+  function getFlameSprites(vibe){
+    if (flameSpriteCache[vibe]) return flameSpriteCache[vibe];
+    const pal = PALETTES[vibe];
+    const sprites = [];
+    for (let b = 0; b < FLAME_AGE_BUCKETS; b++){
+      const t = b / (FLAME_AGE_BUCKETS - 1);
+      const c = lerpColor(pal, Math.min(1, t * 1.15));
+      const cv = document.createElement('canvas');
+      cv.width = FLAME_SPRITE_SIZE;
+      cv.height = FLAME_SPRITE_SIZE;
+      const sc = cv.getContext('2d');
+      const r = FLAME_SPRITE_SIZE / 2;
+      const g = sc.createRadialGradient(r, r, 0, r, r, r);
+      g.addColorStop(0, `rgba(${c[0]|0},${c[1]|0},${c[2]|0},1)`);
+      g.addColorStop(1, `rgba(${c[0]|0},${c[1]|0},${c[2]|0},0)`);
+      sc.fillStyle = g;
+      sc.fillRect(0, 0, FLAME_SPRITE_SIZE, FLAME_SPRITE_SIZE);
+      sprites.push(cv);
+    }
+    flameSpriteCache[vibe] = sprites;
+    return sprites;
+  }
+
+  // ----- helpers -----
+  function lerpColor(pal, t){
+    // Clamp t to [0,1] — out-of-range values would index pal[-1] = undefined and crash
+    if (t < 0) t = 0;
+    else if (t > 1) t = 1;
+    const seg = (pal.length - 1) * t;
+    const i = Math.floor(seg);
+    const f = seg - i;
+    const a = pal[Math.min(i, pal.length - 1)];
+    const b = pal[Math.min(i + 1, pal.length - 1)];
+    return [
+      a[0] + (b[0]-a[0]) * f,
+      a[1] + (b[1]-a[1]) * f,
+      a[2] + (b[2]-a[2]) * f
+    ];
+  }
+
+  function emitFlame(x, y, nx, ny, intensity, h){
+    const cfg = sizeCfg();
+    const vyScale  = 0.35 + 0.65 * h;
+    const sizeScale = 0.4 + 0.6 * h;
+    const lifeScale = 0.5 + 0.5 * h;
+
+    const vx = (Math.random() - 0.5) * 0.6 + nx * 0.3;
+    const vy = (cfg.vy * vyScale + (Math.random() - 0.5) * 0.4) * intensity + ny * 0.2;
+    pushCapped(flame, CAP_FLAME, {
+      x, y,
+      x0: x, y0: y,       // origin (used by ribbons/lissajous)
+      vx, vy,
+      vx0: vx, vy0: vy,   // initial velocity (used by lissajous phase)
+      life: 1.0,
+      decay: 0.018 / (cfg.life * lifeScale),
+      size: (5 + Math.random() * 7) * cfg.width * sizeScale,
+      wob: Math.random() * Math.PI * 2,
+      wobSpd: 0.1 + Math.random() * 0.15,
+      seed: Math.random(),
+      // trail (only allocated when trails layer is on, to save memory)
+      trail: null
+    });
+  }
+
+  function emitSmoke(x, y){
+    pushCapped(smoke, CAP_SMOKE, {
+      x, y,
+      vx: (Math.random() - 0.5) * 0.7,
+      vy: -0.7 - Math.random() * 0.8,
+      life: 1.0,
+      decay: 0.0025 + Math.random() * 0.003,
+      size: 18 + Math.random() * 24,
+      grow: 0.12 + Math.random() * 0.08,
+      drift: (Math.random() - 0.5) * 0.02
+    });
+  }
+
+  function emitEmber(x, y){
+    pushCapped(embers, CAP_EMBERS, {
+      x, y,
+      vx: (Math.random() - 0.5) * 0.6,
+      vy: -0.5 - Math.random() * 1.0,
+      life: 1.0,
+      decay: 0.003 + Math.random() * 0.005,
+      size: 1 + Math.random() * 1.8,
+      flicker: Math.random() * Math.PI * 2
+    });
+  }
+
+  function emitFlare(x, y, r){
+    pushCapped(flares, CAP_FLARES, { x, y, r0: r, life: 1, decay: 0.06 });
+  }
+
+  // Pre-rendered plate background — drawn once, blitted every frame
+  const plateBg = document.createElement('canvas');
+  plateBg.width = W; plateBg.height = H;
+  function renderPlateBg(){
+    const pc = plateBg.getContext('2d');
+    pc.fillStyle = '#050505';
+    pc.fillRect(0, 0, W, H);
+
+    // bed grid
+    pc.strokeStyle = 'rgba(255,138,61,0.05)';
+    pc.lineWidth = 1;
+    const grid = 64;
+    for (let x = 0; x < W; x += grid){
+      pc.beginPath(); pc.moveTo(x, 0); pc.lineTo(x, H); pc.stroke();
+    }
+    for (let y = 0; y < H; y += grid){
+      pc.beginPath(); pc.moveTo(0, y); pc.lineTo(W, y); pc.stroke();
+    }
+
+    // steel band
+    pc.fillStyle = 'rgba(40,40,42,0.55)';
+    pc.fillRect(0, baseY - amp - 30, W, amp + 60);
+    pc.fillStyle = 'rgba(255,255,255,0.018)';
+    for (let i = 0; i < 220; i++){
+      const y = baseY - amp - 30 + Math.random() * (amp + 60);
+      pc.fillRect(0, y, W, 0.5);
+    }
+
+    // reticle
+    pc.strokeStyle = 'rgba(255,138,61,0.22)';
+    pc.lineWidth = 1;
+    pc.setLineDash([4, 6]);
+    pc.beginPath();
+    pc.moveTo(cx, 0); pc.lineTo(cx, H);
+    pc.moveTo(0, baseY); pc.lineTo(W, baseY);
+    pc.stroke();
+    pc.setLineDash([]);
+  }
+  renderPlateBg();
+
+  // ----- plate render -----
+  function drawPlate(){
+    ctx.drawImage(plateBg, 0, 0);
+  }
+
+  // ----- etch/burn state -----
+  let etchEnd = 0;
+  let burnIntensity = new Float32Array(path.length);
+  let leftHead = PEAK, rightHead = PEAK;
+  let laserX = xStart, laserY = gauss(xStart);
+
+  function drawEtchedLine(){
+    if (etchEnd < 2) return;
+    ctx.strokeStyle = '#180a04';
+    ctx.lineWidth = 4;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    ctx.moveTo(path[0].x, path[0].y);
+    for (let i = 1; i < etchEnd; i++) ctx.lineTo(path[i].x, path[i].y);
+    ctx.stroke();
+
+    ctx.strokeStyle = 'rgba(255,90,30,0.55)';
+    ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    ctx.moveTo(path[0].x, path[0].y);
+    for (let i = 1; i < etchEnd; i++) ctx.lineTo(path[i].x, path[i].y);
+    ctx.stroke();
+  }
+
+  // Hot core line — the burning edge itself, glowing through the flames
+  function drawHotLine(){
+    const pal = PALETTES[opts.vibe];
+    // halo
+    ctx.globalCompositeOperation = 'lighter';
+    for (let i = 1; i < path.length; i++){
+      const k = burnIntensity[i];
+      if (k <= 0.04) continue;
+      const h = TAIL_FLOOR + (1 - TAIL_FLOOR) * heightFactor[i];
+      const c = pal[2];
+      ctx.strokeStyle = `rgba(${c[0]|0},${c[1]|0},${c[2]|0},${0.28 * k * h})`;
+      ctx.lineWidth = 16 * k * h;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(path[i-1].x, path[i-1].y);
+      ctx.lineTo(path[i].x, path[i].y);
+      ctx.stroke();
+    }
+    // core
+    for (let i = 1; i < path.length; i++){
+      const k = burnIntensity[i];
+      if (k <= 0.04) continue;
+      const h = TAIL_FLOOR + (1 - TAIL_FLOOR) * heightFactor[i];
+      const c = pal[0];
+      const flicker = 0.85 + Math.sin(i * 0.3 + performance.now() * 0.02) * 0.15;
+      const coreA = 0.95 * k * flicker * (0.55 + 0.45 * h);
+      ctx.strokeStyle = `rgba(${c[0]|0},${c[1]|0},${c[2]|0},${coreA})`;
+      ctx.lineWidth = 2.4 * k * (0.6 + 0.4 * h);
+      ctx.beginPath();
+      ctx.moveTo(path[i-1].x, path[i-1].y);
+      ctx.lineTo(path[i].x, path[i].y);
+      ctx.stroke();
+    }
+    ctx.globalCompositeOperation = 'source-over';
+  }
+
+  function drawLaser(x, y, firing, power){
+    if (firing){
+      const pal = PALETTES[opts.vibe];
+      const cTop = pal[0];
+      const cMid = pal[1];
+
+      const beamW = 2 + power * 4;
+      const grd = ctx.createLinearGradient(x, 0, x, y);
+      grd.addColorStop(0, `rgba(${cMid[0]|0},${cMid[1]|0},${cMid[2]|0},0)`);
+      grd.addColorStop(0.5, `rgba(${cMid[0]|0},${cMid[1]|0},${cMid[2]|0},${0.5 + power*0.3})`);
+      grd.addColorStop(1, `rgba(${cTop[0]|0},${cTop[1]|0},${cTop[2]|0},${0.85 + power*0.15})`);
+      ctx.strokeStyle = grd;
+      ctx.lineWidth = beamW;
+      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, y); ctx.stroke();
+
+      // outer glow
+      ctx.strokeStyle = `rgba(${cMid[0]|0},${cMid[1]|0},${cMid[2]|0},${0.22 * power})`;
+      ctx.lineWidth = beamW * 4;
+      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, y); ctx.stroke();
+
+      // impact flash
+      const r = (10 + Math.random()*4) * power;
+      const flash = ctx.createRadialGradient(x, y, 0, x, y, r * 2.5);
+      flash.addColorStop(0, `rgba(${cTop[0]|0},${cTop[1]|0},${cTop[2]|0},0.9)`);
+      flash.addColorStop(0.35, `rgba(${cMid[0]|0},${cMid[1]|0},${cMid[2]|0},0.55)`);
+      flash.addColorStop(1, 'rgba(255,80,20,0)');
+      ctx.fillStyle = flash;
+      ctx.beginPath(); ctx.arc(x, y, r * 2.5, 0, Math.PI*2); ctx.fill();
+    }
+
+    // head housing
+    ctx.fillStyle = '#1c1c1e';
+    ctx.fillRect(x - 24, 4, 48, 28);
+    ctx.strokeStyle = '#ff8a3d';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(x - 24, 4, 48, 28);
+    ctx.fillStyle = firing ? '#ffce3d' : '#444';
+    ctx.fillRect(x - 4, 32, 8, 6);
+    for (let i = 0; i < 3; i++){
+      const on = firing && Math.random() < 0.5 + power * 0.5;
+      ctx.fillStyle = on ? '#ff3838' : '#2a0808';
+      ctx.fillRect(x - 16 + i*12, 12, 6, 3);
+    }
+  }
+
+  // ----- particle updates + draws -----
+
+  // ----- Flame physics (runs every frame, regardless of which layers are on) -----
+  function stepFlamePhysics(){
+    for (let i = flame.length - 1; i >= 0; i--){
+      const p = flame[i];
+      p.wob += p.wobSpd;
+
+      if (geom.lissajous){
+        // Override with parametric path while lissajous is active
+        const t = (1 - p.life) * 3.2;
+        const a = 1.7 + p.seed * 1.3;
+        const b = 2.3 + p.seed * 0.8;
+        p.x = p.x0 + Math.sin(a * t + p.seed * 6) * 28;
+        p.y = p.y0 + p.vy0 * t * 12 + Math.cos(b * t) * 14;
+      } else {
+        p.vx += Math.sin(p.wob) * 0.05;
+        p.vy *= 0.985;
+        p.vy -= 0.02;
+        p.x += p.vx;
+        p.y += p.vy;
+      }
+      p.life -= p.decay;
+      if (p.life <= 0){ flame.splice(i, 1); continue; }
+
+      // Trail recording (only if trails layer is on)
+      if (geom.trails){
+        if (!p.trail) p.trail = [];
+        p.trail.push(p.x, p.y);
+        if (p.trail.length > 16) { p.trail.shift(); p.trail.shift(); }
+      } else if (p.trail){
+        p.trail = null;
+      }
+    }
+  }
+
+  // Helper: get age bucket and palette color for a particle
+  function bucketFor(age){
+    return Math.min(FLAME_AGE_BUCKETS - 1, (age * (FLAME_AGE_BUCKETS - 1)) | 0);
+  }
+  function colorAt(age){
+    return lerpColor(PALETTES[opts.vibe], Math.min(1, age * 1.15));
+  }
+
+  // ----- Layer 0: BASE FIRE — radial gaussian blob sprites (original look) -----
+  function drawBase(){
+    if (!geom.base || flame.length === 0) return;
+    const sprites = getFlameSprites(opts.vibe);
+    ctx.globalCompositeOperation = 'lighter';
+    for (let i = 0; i < flame.length; i++){
+      const p = flame[i];
+      const age = 1 - p.life;
+      const bkt = bucketFor(age);
+      const r = p.size * (0.6 + age * 0.6);
+      const d = r * 2;
+      ctx.globalAlpha = p.life * 0.7;
+      ctx.drawImage(sprites[bkt], p.x - r, p.y - r, d, d);
+    }
+    ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = 'source-over';
+  }
+
+  // ----- Layer 1: ELLIPSES — anisotropic, stretched along velocity -----
+  function drawEllipses(){
+    if (!geom.ellipse || flame.length === 0) return;
+    ctx.globalCompositeOperation = 'lighter';
+    for (let i = 0; i < flame.length; i++){
+      const p = flame[i];
+      const age = 1 - p.life;
+      const c = colorAt(age);
+      const speed = Math.hypot(p.vx, p.vy);
+      const stretch = 1 + Math.min(2.5, speed * 0.4);
+      const ang = Math.atan2(p.vy, p.vx) + Math.PI / 2;
+      const r = p.size * (0.55 + age * 0.45);
+
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(ang);
+      ctx.scale(1, stretch);
+      const g = ctx.createRadialGradient(0, 0, 0, 0, 0, r);
+      g.addColorStop(0, `rgba(${c[0]|0},${c[1]|0},${c[2]|0},${p.life * 0.55})`);
+      g.addColorStop(1, `rgba(${c[0]|0},${c[1]|0},${c[2]|0},0)`);
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.arc(0, 0, r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+    ctx.globalCompositeOperation = 'source-over';
+  }
+
+  // ----- Layer 2: CRESCENTS — leading hot edge arcs -----
+  function drawCrescents(){
+    if (!geom.crescent || flame.length === 0) return;
+    ctx.globalCompositeOperation = 'lighter';
+    for (let i = 0; i < flame.length; i++){
+      const p = flame[i];
+      const age = 1 - p.life;
+      const c = colorAt(age * 0.7);
+      const speed = Math.hypot(p.vx, p.vy);
+      if (speed < 0.3) continue;
+      const ang = Math.atan2(p.vy, p.vx);
+      const r = p.size * (0.6 + age * 0.4);
+
+      ctx.fillStyle = `rgba(${c[0]|0},${c[1]|0},${c[2]|0},${p.life * 0.7})`;
+      ctx.beginPath();
+      // Arc on the leading side: facing -velocity direction
+      ctx.arc(p.x, p.y, r, ang - Math.PI - Math.PI/3, ang - Math.PI + Math.PI/3);
+      ctx.lineWidth = r * 0.5;
+      ctx.strokeStyle = `rgba(${c[0]|0},${c[1]|0},${c[2]|0},${p.life * 0.6})`;
+      ctx.stroke();
+    }
+    ctx.globalCompositeOperation = 'source-over';
+  }
+
+  // ----- Layer 3: VORONOI — cell tessellation of the burning region -----
+  // Pre-seed cell points along curve; recompute occasionally not every frame.
+  let voronoiSeeds = null;
+  let voronoiBuiltAt = 0;
+  function buildVoronoiSeeds(){
+    voronoiSeeds = [];
+    for (let i = 0; i < path.length; i += 24){
+      if (heightFactor[i] < 0.1) continue;
+      const p = path[i];
+      const n = normals[i];
+      // 3 seeds per index along the normal at varying heights
+      for (let j = 0; j < 3; j++){
+        const off = 8 + j * 18 + (Math.random()-0.5)*8;
+        voronoiSeeds.push({
+          x: p.x + n.nx * off,
+          y: p.y + n.ny * off,
+          baseI: i,
+          height: j
+        });
+      }
+    }
+  }
+  function drawVoronoi(){
+    if (!geom.voronoi) return;
+    const now = performance.now();
+    if (!voronoiSeeds || now - voronoiBuiltAt > 250){
+      buildVoronoiSeeds();
+      voronoiBuiltAt = now;
+    }
+    if (!voronoiSeeds.length) return;
+    const pal = PALETTES[opts.vibe];
+    ctx.globalCompositeOperation = 'lighter';
+    // Approximate Voronoi cells by drawing each seed as a filled polygon based on
+    // distances to neighbor seeds. Cheap approximation: draw rotated diamond shapes
+    // sized by distance to nearest neighbor.
+    for (let s = 0; s < voronoiSeeds.length; s++){
+      const seed = voronoiSeeds[s];
+      const k = burnIntensity[seed.baseI];
+      if (k < 0.3) continue;
+      const h = heightFactor[seed.baseI];
+      // find nearest neighbor distance
+      let nearest = 60;
+      for (let t = 0; t < voronoiSeeds.length; t++){
+        if (t === s) continue;
+        const dx = voronoiSeeds[t].x - seed.x;
+        const dy = voronoiSeeds[t].y - seed.y;
+        const d2 = dx*dx + dy*dy;
+        if (d2 < nearest * nearest) nearest = Math.sqrt(d2);
+      }
+      const ageT = seed.height / 2 + (Math.sin(now * 0.003 + seed.x * 0.01) * 0.1);
+      const c = lerpColor(pal, Math.min(1, ageT));
+      const r = nearest * 0.45;
+      ctx.fillStyle = `rgba(${c[0]|0},${c[1]|0},${c[2]|0},${k * h * 0.45})`;
+      ctx.beginPath();
+      // diamond shape
+      ctx.moveTo(seed.x, seed.y - r);
+      ctx.lineTo(seed.x + r, seed.y);
+      ctx.lineTo(seed.x, seed.y + r);
+      ctx.lineTo(seed.x - r, seed.y);
+      ctx.closePath();
+      ctx.fill();
+      // hot edge
+      ctx.strokeStyle = `rgba(${c[0]|0},${c[1]|0},${c[2]|0},${k * h * 0.7})`;
+      ctx.lineWidth = 0.5;
+      ctx.stroke();
+    }
+    ctx.globalCompositeOperation = 'source-over';
+  }
+
+  // ----- Layer 4: TRIANGLES — angular petal flames -----
+  function drawTriangles(){
+    if (!geom.triangle || flame.length === 0) return;
+    ctx.globalCompositeOperation = 'lighter';
+    for (let i = 0; i < flame.length; i++){
+      const p = flame[i];
+      const age = 1 - p.life;
+      const c = colorAt(age);
+      const ang = Math.atan2(p.vy, p.vx);
+      const r = p.size * (0.7 + age * 0.5);
+      // wiggle the tip
+      const tipWobble = Math.sin(p.wob * 1.4) * r * 0.3;
+
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(ang + Math.PI/2);
+      ctx.fillStyle = `rgba(${c[0]|0},${c[1]|0},${c[2]|0},${p.life * 0.55})`;
+      ctx.beginPath();
+      ctx.moveTo(-r * 0.6, r * 0.6);
+      ctx.lineTo(r * 0.6, r * 0.6);
+      ctx.lineTo(tipWobble, -r * 1.4);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
+    ctx.globalCompositeOperation = 'source-over';
+  }
+
+  // ----- Layer 5: HEX SCALES — hexagonal tessellation along the burning curve -----
+  function drawHex(){
+    if (!geom.hex) return;
+    const now = performance.now();
+    const pal = PALETTES[opts.vibe];
+    ctx.globalCompositeOperation = 'lighter';
+    const hexSize = 11;
+    const hexDx = hexSize * Math.sqrt(3);
+    const hexDy = hexSize * 1.5;
+    // Iterate path with hex spacing
+    for (let i = 0; i < path.length; i += 18){
+      const k = burnIntensity[i];
+      if (k < 0.3) continue;
+      const h = heightFactor[i];
+      if (h < 0.1) continue;
+      const p = path[i];
+      const n = normals[i];
+      // Stack hexes along the normal
+      for (let row = 0; row < 3; row++){
+        const off = 10 + row * hexDy;
+        if (Math.random() > 0.8) continue;
+        const offX = (row % 2) * (hexDx / 2);
+        const cx2 = p.x + n.nx * off + offX * n.nx * 0.3;
+        const cy2 = p.y + n.ny * off + offX * n.ny * 0.3;
+        const heat = h * k * (0.6 + 0.4 * Math.sin(now * 0.004 + i * 0.1 + row));
+        const c = lerpColor(pal, row / 3);
+        ctx.fillStyle = `rgba(${c[0]|0},${c[1]|0},${c[2]|0},${heat * 0.5})`;
+        ctx.beginPath();
+        for (let v = 0; v < 6; v++){
+          const a = (v * Math.PI / 3) + Math.PI / 6;
+          const hx = cx2 + Math.cos(a) * hexSize;
+          const hy = cy2 + Math.sin(a) * hexSize;
+          if (v === 0) ctx.moveTo(hx, hy);
+          else ctx.lineTo(hx, hy);
+        }
+        ctx.closePath();
+        ctx.fill();
+      }
+    }
+    ctx.globalCompositeOperation = 'source-over';
+  }
+
+  // ----- Layer 6: RIBBONS — bezier filaments from each particle's origin -----
+  function drawRibbons(){
+    if (!geom.ribbon || flame.length === 0) return;
+    const pal = PALETTES[opts.vibe];
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.lineCap = 'round';
+    for (let i = 0; i < flame.length; i++){
+      const p = flame[i];
+      if (!p.x0) continue;
+      const age = 1 - p.life;
+      const c = colorAt(age);
+      // Control point: drifts laterally based on wob
+      const dx = p.x - p.x0;
+      const dy = p.y - p.y0;
+      const midX = p.x0 + dx * 0.5 + Math.sin(p.wob) * 18;
+      const midY = p.y0 + dy * 0.5;
+      ctx.strokeStyle = `rgba(${c[0]|0},${c[1]|0},${c[2]|0},${p.life * 0.5})`;
+      ctx.lineWidth = 1.5 + age * 1.5;
+      ctx.beginPath();
+      ctx.moveTo(p.x0, p.y0);
+      ctx.quadraticCurveTo(midX, midY, p.x, p.y);
+      ctx.stroke();
+    }
+    ctx.globalCompositeOperation = 'source-over';
+  }
+
+  // ----- Layer 7: LEVEL RINGS — concentric isobars around the peak -----
+  function drawRings(){
+    if (!geom.rings) return;
+    const now = performance.now();
+    const pal = PALETTES[opts.vibe];
+    ctx.globalCompositeOperation = 'lighter';
+    const peakBurn = burnIntensity[PEAK];
+    if (peakBurn < 0.3) {
+      ctx.globalCompositeOperation = 'source-over';
+      return;
+    }
+    // Sample along the curve, draw level-rings at each hot region
+    // 5 concentric ellipses centered on the curve peak, animated radii
+    const px = path[PEAK].x;
+    const py = path[PEAK].y;
+    for (let ring = 0; ring < 6; ring++){
+      const t = (now * 0.001 + ring * 0.2) % 1;
+      const rx = 60 + ring * 80 + t * 40;
+      const ry = (30 + ring * 30 + t * 20) * 0.6;
+      const a = (1 - t) * 0.35 * peakBurn;
+      const c = lerpColor(pal, ring / 5);
+      ctx.strokeStyle = `rgba(${c[0]|0},${c[1]|0},${c[2]|0},${a})`;
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.ellipse(px, py, rx, ry, 0, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+    ctx.globalCompositeOperation = 'source-over';
+  }
+
+  // ----- Layer 8: TRAILS — particle position history as glowing polylines -----
+  function drawTrails(){
+    if (!geom.trails || flame.length === 0) return;
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.lineCap = 'round';
+    for (let i = 0; i < flame.length; i++){
+      const p = flame[i];
+      if (!p.trail || p.trail.length < 4) continue;
+      const age = 1 - p.life;
+      const c = colorAt(age);
+      ctx.strokeStyle = `rgba(${c[0]|0},${c[1]|0},${c[2]|0},${p.life * 0.6})`;
+      ctx.lineWidth = 1.4 + age * 1.2;
+      ctx.beginPath();
+      ctx.moveTo(p.trail[0], p.trail[1]);
+      for (let j = 2; j < p.trail.length; j += 2){
+        ctx.lineTo(p.trail[j], p.trail[j+1]);
+      }
+      ctx.stroke();
+    }
+    ctx.globalCompositeOperation = 'source-over';
+  }
+
+  // ----- Layer 9: LISSAJOUS — physics override already in stepFlamePhysics -----
+  // Renders here just as bright cores so the woven path is visible
+  function drawLissajous(){
+    if (!geom.lissajous || flame.length === 0) return;
+    ctx.globalCompositeOperation = 'lighter';
+    for (let i = 0; i < flame.length; i++){
+      const p = flame[i];
+      const age = 1 - p.life;
+      const c = colorAt(age);
+      ctx.fillStyle = `rgba(${c[0]|0},${c[1]|0},${c[2]|0},${p.life * 0.85})`;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 1.6 + age * 1.2, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalCompositeOperation = 'source-over';
+  }
+
+  // ----- Layer 10: VOXEL — pixelated heightmap columns along curve -----
+  function drawVoxel(){
+    if (!geom.voxel) return;
+    const now = performance.now();
+    const pal = PALETTES[opts.vibe];
+    ctx.globalCompositeOperation = 'lighter';
+    const colW = 6;
+    for (let i = 0; i < path.length; i += 5){
+      const k = burnIntensity[i];
+      if (k < 0.3) continue;
+      const h = heightFactor[i];
+      if (h < 0.05) continue;
+      const p = path[i];
+      const n = normals[i];
+      // Column height varies with noise
+      const noise = 0.6 + 0.4 * Math.sin(now * 0.006 + i * 0.4 + Math.cos(i * 0.13));
+      const totalH = 40 * h * k * noise;
+      const steps = Math.max(2, (totalH / 6) | 0);
+      for (let s = 0; s < steps; s++){
+        const heightUp = s * 6;
+        const t = s / steps;
+        const c = lerpColor(pal, t);
+        const x = p.x + n.nx * heightUp - colW/2;
+        const y = p.y + n.ny * heightUp - 3;
+        ctx.fillStyle = `rgba(${c[0]|0},${c[1]|0},${c[2]|0},${(1 - t) * k * 0.7})`;
+        ctx.fillRect(x, y, colW, 5);
+      }
+    }
+    ctx.globalCompositeOperation = 'source-over';
+  }
+
+  // ----- Layer 11: GLYPHS — mathematical symbols rising from burn -----
+  const GLYPH_CHARS = ['σ', 'μ', 'π', '∞', '∫', '∂', '∑', 'φ', 'ψ', 'λ', 'e', '+', '-', '·', '√', 'Δ', 'ξ', '∇'];
+  const glyphs = [];
+  const CAP_GLYPHS = 50;
+  function maybeEmitGlyph(){
+    if (!geom.glyph) return;
+    // sparse emission
+    if (Math.random() > 0.04) return;
+    // pick a hot point
+    let bestI = -1, bestK = -1;
+    for (let a = 0; a < 4; a++){
+      const i = (Math.random() * path.length) | 0;
+      const score = burnIntensity[i] * heightFactor[i];
+      if (score > bestK){ bestK = score; bestI = i; }
+    }
+    if (bestI < 0 || bestK < 0.3) return;
+    pushCapped(glyphs, CAP_GLYPHS, {
+      x: path[bestI].x,
+      y: path[bestI].y,
+      vx: (Math.random() - 0.5) * 0.4,
+      vy: -0.6 - Math.random() * 0.8,
+      life: 1.0,
+      decay: 0.005 + Math.random() * 0.004,
+      ch: GLYPH_CHARS[(Math.random() * GLYPH_CHARS.length) | 0],
+      size: 11 + Math.random() * 8,
+      rot: (Math.random() - 0.5) * 0.5
+    });
+  }
+  function drawGlyphs(){
+    if (!geom.glyph || glyphs.length === 0) return;
+    const pal = PALETTES[opts.vibe];
+    ctx.globalCompositeOperation = 'lighter';
+    for (let i = glyphs.length - 1; i >= 0; i--){
+      const g = glyphs[i];
+      g.x += g.vx;
+      g.y += g.vy;
+      g.vy *= 0.99;
+      g.life -= g.decay;
+      if (g.life <= 0){ glyphs.splice(i, 1); continue; }
+      const age = 1 - g.life;
+      const c = lerpColor(pal, age * 0.8);
+      ctx.save();
+      ctx.translate(g.x, g.y);
+      ctx.rotate(g.rot * (1 - g.life));
+      ctx.fillStyle = `rgba(${c[0]|0},${c[1]|0},${c[2]|0},${g.life * 0.85})`;
+      ctx.font = `${g.size}px 'JetBrains Mono', monospace`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(g.ch, 0, 0);
+      ctx.restore();
+    }
+    ctx.globalCompositeOperation = 'source-over';
+  }
+
+  function stepSmoke(){
+    if (!opts.smoke || smoke.length === 0) return;
+    for (let i = smoke.length - 1; i >= 0; i--){
+      const p = smoke[i];
+      p.vx += p.drift || 0;
+      p.vy *= 0.992;
+      p.x += p.vx;
+      p.y += p.vy;
+      p.size += p.grow;
+      p.life -= p.decay;
+      if (p.life <= 0){ smoke.splice(i, 1); continue; }
+      ctx.globalAlpha = p.life * 0.26;
+      const d = p.size * 2;
+      ctx.drawImage(smokeSprite, p.x - p.size, p.y - p.size, d, d);
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  function stepEmbers(){
+    const pal = PALETTES[opts.vibe];
+    for (let i = embers.length - 1; i >= 0; i--){
+      const e = embers[i];
+      e.x += e.vx; e.y += e.vy;
+      e.vy *= 0.985;
+      e.life -= e.decay;
+      e.flicker += 0.32;
+      if (e.life <= 0){ embers.splice(i, 1); continue; }
+      const fl = 0.55 + Math.sin(e.flicker)*0.45;
+      const c = pal[1];
+      ctx.fillStyle = `rgba(${c[0]|0},${c[1]|0},${c[2]|0},${e.life * fl})`;
+      ctx.beginPath();
+      ctx.arc(e.x, e.y, e.size, 0, Math.PI*2);
+      ctx.fill();
+    }
+  }
+
+  function stepFlares(){
+    const pal = PALETTES[opts.vibe];
+    ctx.globalCompositeOperation = 'lighter';
+    for (let i = flares.length - 1; i >= 0; i--){
+      const f = flares[i];
+      f.life -= f.decay;
+      if (f.life <= 0){ flares.splice(i, 1); continue; }
+      const r = f.r0 * (2 - f.life);
+      const c0 = pal[0], c1 = pal[1];
+      const g = ctx.createRadialGradient(f.x, f.y, 0, f.x, f.y, r);
+      g.addColorStop(0, `rgba(${c0[0]|0},${c0[1]|0},${c0[2]|0},${f.life * 0.9})`);
+      g.addColorStop(0.4, `rgba(${c1[0]|0},${c1[1]|0},${c1[2]|0},${f.life * 0.5})`);
+      g.addColorStop(1, 'rgba(255,80,20,0)');
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.arc(f.x, f.y, r, 0, Math.PI*2); ctx.fill();
+    }
+    ctx.globalCompositeOperation = 'source-over';
+  }
+
+  function stepHaze(){
+    if (!opts.haze) return;
+    // Run only every 4th frame and at stride 16 — getImageData is the most expensive canvas op
+    if (((performance.now() / 16) | 0) % 4 !== 0) return;
+
+    for (let i = 0; i < path.length; i += 16){
+      const k = burnIntensity[i];
+      if (k < 0.35) continue;
+      const x = path[i].x;
+      const y = path[i].y;
+      const stripH = 80 * k;
+      const stripW = 3;
+      const t = performance.now() * 0.004 + i * 0.05;
+      const jx = Math.sin(t) * 1.4 * k;
+
+      try {
+        const img = ctx.getImageData(x - stripW/2, y - stripH, stripW, stripH);
+        ctx.putImageData(img, x - stripW/2 + jx, y - stripH - 1);
+      } catch(e){}
+    }
+  }
+
+  // ----- emission along the burning line -----
+  function emitAlongBurn(){
+    const cfg = sizeCfg();
+    for (let i = 0; i < path.length; i++){
+      const k = burnIntensity[i];
+      if (k < 0.3) continue;
+
+      const h = TAIL_FLOOR + (1 - TAIL_FLOOR) * heightFactor[i];
+
+      const baseRate = 0.06 * cfg.rate * h;
+      if (Math.random() > baseRate * k) continue;
+
+      const p = path[i];
+      const n = normals[i];
+      const px = p.x + n.nx * (2 + Math.random() * 3);
+      const py = p.y + n.ny * (2 + Math.random() * 3);
+      emitFlame(px, py, n.nx, n.ny, k, h);
+
+      // Embers — continuous, low rate
+      if (Math.random() < 0.022 * k * h) emitEmber(px, py);
+    }
+
+    // SMOKE — along the whole hot body
+    if (opts.smoke){
+      for (let i = 0; i < path.length; i += 6){
+        if (heightFactor[i] < 0.5) continue;
+        if (burnIntensity[i] < 0.4) continue;
+        if (Math.random() < 0.08){
+          const p = path[i];
+          const n = normals[i];
+          emitSmoke(
+            p.x + n.nx * 20 + (Math.random()-0.5)*30,
+            p.y + n.ny * 20 - Math.random()*15
+          );
+        }
+      }
+      if (burnIntensity[PEAK] > 0.4 && Math.random() < 0.35){
+        emitSmoke(
+          path[PEAK].x + (Math.random()-0.5)*50,
+          path[PEAK].y - 25 - Math.random()*25
+        );
+      }
+    }
+  }
+
+  // ----- phase machine -----
+  let phase = 'idle';
+  let t0 = 0;
+  let raf = null;
+
+  const T_ETCH    = 4000;
+  const T_PARK    = 900;
+  const T_FOCUS   = 900;
+  const T_TRAVEL  = 3200;
+  const T_LINGER  = 5500;
+  const T_TOTAL = T_ETCH + T_PARK + T_FOCUS + T_TRAVEL + T_LINGER;
+
+  function setPhase(p){
+    phase = p;
+    const lbl = {
+      idle: 'IDLE', etch: 'LASER ETCH', park: 'REPOSITION TO PEAK',
+      focus: 'BEAM FOCUS // PEAK', travel: 'TRAVELING IGNITION',
+      linger: 'BURN SUSTAIN', sustain: 'BURN SUSTAIN'
+    };
+    const stat = {
+      idle: 'FORGE // STANDBY', etch: 'FORGE // ETCHING',
+      park: 'FORGE // REPOSITION', focus: 'FORGE // FOCUSING',
+      travel: 'FORGE // IGNITING', linger: 'FORGE // BURN',
+      sustain: 'FORGE // BURN'
+    };
+    phaseEl.textContent = 'PHASE — ' + lbl[p];
+    statusEl.textContent = stat[p];
+    const hot = (p === 'focus' || p === 'travel');
+    led.style.background = hot ? '#ffce3d' : (p === 'idle' ? '#ff3838' : '#ff8a3d');
+    led.style.boxShadow = `0 0 10px ${led.style.background}`;
+  }
+
+  function reset(){
+    etchEnd = 0;
+    burnIntensity = new Float32Array(path.length);
+    leftHead = PEAK; rightHead = PEAK;
+    laserX = xStart; laserY = gauss(xStart);
+    flame.length = 0; smoke.length = 0;
+    embers.length = 0; flares.length = 0;
+    glyphs.length = 0;
+    voronoiSeeds = null;
+    setPhase('idle');
+    progEl.textContent = '0%';
+    drawPlate();
+  }
+
+  function run(){
+    if (raf) cancelAnimationFrame(raf);
+    reset();
+    t0 = performance.now();
+    setPhase('etch');
+    loop();
+  }
+
+  function easeInOut(u){ return u < 0.5 ? 2*u*u : 1 - Math.pow(-2*u + 2, 2)/2; }
+
+  function loop(){
+    const now = performance.now();
+    const t = now - t0;
+
+    drawPlate();
+    drawEtchedLine();
+
+    // ----- phase logic -----
+    if (t < T_ETCH){
+      setPhase('etch');
+      const u = t / T_ETCH;
+      const target = Math.floor(u * path.length);
+      etchEnd = target;
+      const head = path[Math.min(etchEnd, path.length - 1)];
+      laserX = head.x; laserY = head.y;
+      drawLaser(laserX, laserY, true, 1.0);
+      progEl.textContent = Math.round(u * 22) + '%';
+    }
+    else if (t < T_ETCH + T_PARK){
+      setPhase('park');
+      etchEnd = path.length;
+      const u = (t - T_ETCH) / T_PARK;
+      const e = easeInOut(u);
+      laserX = xEnd + (cx - xEnd) * e;
+      laserY = gauss(laserX);
+      drawLaser(laserX, laserY, true, 0.55 + 0.25 * (1 - e));
+      progEl.textContent = Math.round(22 + u * 8) + '%';
+    }
+    else if (t < T_ETCH + T_PARK + T_FOCUS){
+      setPhase('focus');
+      etchEnd = path.length;
+      const u = (t - T_ETCH - T_PARK) / T_FOCUS;
+      laserX = cx; laserY = gauss(cx);
+      const power = 0.5 + Math.pow(u, 1.8) * 2.3;
+      burnIntensity[PEAK] = Math.min(1, u * 1.1);
+      if (u > 0.85 && Math.random() < 0.5) emitFlare(cx, laserY, 18);
+      drawLaser(laserX, laserY, true, power);
+      progEl.textContent = Math.round(30 + u * 8) + '%';
+    }
+    else if (t < T_ETCH + T_PARK + T_FOCUS + T_TRAVEL){
+      setPhase('travel');
+      etchEnd = path.length;
+      const u = (t - T_ETCH - T_PARK - T_FOCUS) / T_TRAVEL;
+      const e = easeInOut(u);
+      const reach = Math.floor(e * (path.length / 2));
+      leftHead  = Math.max(0, PEAK - reach);
+      rightHead = Math.min(path.length - 1, PEAK + reach);
+
+      // Drag flame: full intensity behind heads, fresh at heads
+      for (let d = 0; d <= reach; d++){
+        const li = PEAK - d;
+        const ri = PEAK + d;
+        const age = d / Math.max(1, reach);
+        const I = Math.min(1, 0.6 + (1 - age) * 0.5);
+        if (li >= 0) burnIntensity[li] = Math.max(burnIntensity[li], I);
+        if (ri < path.length) burnIntensity[ri] = Math.max(burnIntensity[ri], I);
+      }
+
+      // Flicker on burning section
+      for (let i = leftHead; i <= rightHead; i++){
+        burnIntensity[i] *= 0.96 + Math.random() * 0.06;
+      }
+
+      // Both laser beams ride outward
+      drawLaser(path[rightHead].x, path[rightHead].y, true, 2.4);
+      drawLaser(path[leftHead].x, path[leftHead].y, true, 2.4);
+
+      progEl.textContent = Math.round(38 + u * 35) + '%';
+    }
+    else if (t < T_TOTAL){
+      setPhase('linger');
+      etchEnd = path.length;
+      const u = (t - T_ETCH - T_PARK - T_FOCUS - T_TRAVEL) / T_LINGER;
+      // SUSTAINED BURN — no decay, just turbulent flicker around a high baseline
+      for (let i = 0; i < path.length; i++){
+        // target intensity is high; flicker around it
+        const target = 0.85;
+        burnIntensity[i] = burnIntensity[i] * 0.92 + target * 0.08;
+        burnIntensity[i] *= 0.96 + Math.random() * 0.08;
+        // clamp
+        if (burnIntensity[i] > 1) burnIntensity[i] = 1;
+        if (burnIntensity[i] < 0.5) burnIntensity[i] = 0.5;
+      }
+      progEl.textContent = Math.round(73 + u * 27) + '%';
+    }
+    else {
+      // SUSTAINED — flames keep going indefinitely
+      setPhase('sustain');
+      etchEnd = path.length;
+      for (let i = 0; i < path.length; i++){
+        const target = 0.82;
+        burnIntensity[i] = burnIntensity[i] * 0.93 + target * 0.07;
+        burnIntensity[i] *= 0.96 + Math.random() * 0.08;
+        if (burnIntensity[i] > 1) burnIntensity[i] = 1;
+        if (burnIntensity[i] < 0.5) burnIntensity[i] = 0.5;
+      }
+      progEl.textContent = '100%';
+    }
+
+    // ----- emit and draw flames -----
+    emitAlongBurn();
+
+    // smoke goes UNDER flames so flames look hotter
+    stepSmoke();
+    // heat haze samples canvas before flames draw on top
+    stepHaze();
+
+    // ----- Flame physics (one pass) -----
+    stepFlamePhysics();
+    maybeEmitGlyph();
+
+    // ----- Layered geometry render (any combination) -----
+    drawBase();
+    drawEllipses();
+    drawCrescents();
+    drawVoronoi();
+    drawTriangles();
+    drawHex();
+    drawRibbons();
+    drawRings();
+    drawTrails();
+    drawLissajous();
+    drawVoxel();
+    drawGlyphs();
+
+    drawHotLine();
+    stepFlares();
+    stepEmbers();
+
+    // Sustained burn — never stop the loop
+    raf = requestAnimationFrame(loop);
+  }
+
+  runBtn.addEventListener('click', run);
+  resetBtn.addEventListener('click', () => {
+    if (raf) cancelAnimationFrame(raf);
+    reset();
+  });
+
+  reset();
+  setTimeout(run, 250);
+})();
+</script>
+</body>
+</html>
