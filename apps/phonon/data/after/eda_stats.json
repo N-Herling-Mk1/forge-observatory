@@ -1,0 +1,849 @@
+{
+  "schema": "eda_stats/1.1",
+  "project": "phonon",
+  "model_target": "phonon_net",
+  "generated": "2026-06-25 23:05:47",
+  "phase": "after",
+  "expectations": {
+    "n_materials": 1524,
+    "n_freq_bins": 51,
+    "freq_range_cm": [
+      0,
+      1000
+    ],
+    "freq_step_cm": 20.0,
+    "grid_shared": true,
+    "splits": {
+      "train": 1220,
+      "val": 152,
+      "test": 152
+    },
+    "target_norm": "peak-normalized DOS (absolute scale via integral g dw = 3N)"
+  },
+  "missing_corrupt": {
+    "counts": {
+      "per_split": {
+        "train": 1220,
+        "val": 152,
+        "test": 152
+      },
+      "total": 1524
+    },
+    "nan_inf": {
+      "phdos_nan": 0,
+      "phdos_inf": 0,
+      "phdos_gt_nan": 0,
+      "phdos_gt_inf": 0
+    },
+    "empty_spectra": {
+      "n": 0,
+      "ids": []
+    },
+    "negative_dos": {
+      "n_rows": 0,
+      "phdos_min": 0.0,
+      "phdos_gt_min": -0.000809379719103461,
+      "note": "51-bin target clipped >=0; hi-res gt has SG-smoothing undershoot"
+    },
+    "duplicate_ids": 0,
+    "grid_monotonic": true,
+    "known_issues": [
+      "phdos_gt carries tiny negative values (Savitzky-Golay window-101 order-3 smoothing undershoot); harmless for the 51-bin target which is clipped"
+    ]
+  },
+  "type_audit": {
+    "columns": [
+      {
+        "name": "material_id",
+        "logical": "int id",
+        "dtype": "int64",
+        "shape": [
+          1524
+        ],
+        "note": "ok"
+      },
+      {
+        "name": "phfre",
+        "logical": "freq grid (cm-1)",
+        "dtype": "float64",
+        "shape": [
+          51
+        ],
+        "note": "shared by all materials"
+      },
+      {
+        "name": "phdos",
+        "logical": "51-bin DOS target",
+        "dtype": "float64",
+        "shape": [
+          1524,
+          51
+        ],
+        "note": "peak-normalized [0,1]"
+      },
+      {
+        "name": "phdos_gt",
+        "logical": "hi-res DOS (DFPT)",
+        "dtype": "float64",
+        "shape": [
+          1524,
+          4404
+        ],
+        "note": "SG-smoothed; tiny negatives"
+      },
+      {
+        "name": "cif",
+        "logical": "crystal structure",
+        "dtype": "list[str]",
+        "shape": [
+          1524
+        ],
+        "note": "non-numeric - parsed to graph at train time"
+      },
+      {
+        "name": "omega_bar",
+        "logical": "mean phonon frequency  <w>  (cm-1)",
+        "dtype": "float64",
+        "shape": [
+          1524
+        ],
+        "note": "derived"
+      },
+      {
+        "name": "omega_peak",
+        "logical": "dominant peak frequency  (cm-1)",
+        "dtype": "float64",
+        "shape": [
+          1524
+        ],
+        "note": "derived"
+      },
+      {
+        "name": "omega_cutoff",
+        "logical": "spectral cutoff  w_max  (cm-1)",
+        "dtype": "float64",
+        "shape": [
+          1524
+        ],
+        "note": "derived"
+      },
+      {
+        "name": "spectral_spread",
+        "logical": "spectral spread  sigma_w  (cm-1)",
+        "dtype": "float64",
+        "shape": [
+          1524
+        ],
+        "note": "derived"
+      },
+      {
+        "name": "spectral_entropy",
+        "logical": "normalized spectral entropy  (0-1)",
+        "dtype": "float64",
+        "shape": [
+          1524
+        ],
+        "note": "derived"
+      },
+      {
+        "name": "spectral_skew",
+        "logical": "spectral skewness",
+        "dtype": "float64",
+        "shape": [
+          1524
+        ],
+        "note": "derived"
+      },
+      {
+        "name": "spectral_kurtosis",
+        "logical": "spectral kurtosis",
+        "dtype": "float64",
+        "shape": [
+          1524
+        ],
+        "note": "derived"
+      },
+      {
+        "name": "dos_peak",
+        "logical": "peak DOS height  (norm.)",
+        "dtype": "float64",
+        "shape": [
+          1524
+        ],
+        "note": "derived"
+      },
+      {
+        "name": "dos_integral",
+        "logical": "integral g(w) dw  (norm.*cm-1)",
+        "dtype": "float64",
+        "shape": [
+          1524
+        ],
+        "note": "derived"
+      },
+      {
+        "name": "n_active_bins",
+        "logical": "active bins  (>1% of peak)",
+        "dtype": "int64",
+        "shape": [
+          1524
+        ],
+        "note": "derived"
+      },
+      {
+        "name": "n_elements",
+        "logical": "distinct elements",
+        "dtype": "int64",
+        "shape": [
+          1524
+        ],
+        "note": "derived"
+      },
+      {
+        "name": "n_atoms",
+        "logical": "atoms per formula unit",
+        "dtype": "int64",
+        "shape": [
+          1524
+        ],
+        "note": "derived"
+      },
+      {
+        "name": "mean_atomic_mass",
+        "logical": "mean atomic mass  (u)",
+        "dtype": "float64",
+        "shape": [
+          1524
+        ],
+        "note": "derived"
+      },
+      {
+        "name": "max_Z",
+        "logical": "heaviest element  (Z)",
+        "dtype": "int64",
+        "shape": [
+          1524
+        ],
+        "note": "derived"
+      }
+    ],
+    "n_rows": 1524,
+    "n_mismatch_or_note": 1,
+    "arrays": {
+      "phdos": {
+        "dtype": "float64",
+        "shape": [
+          1524,
+          51
+        ]
+      },
+      "phdos_gt": {
+        "dtype": "float64",
+        "shape": [
+          1524,
+          4404
+        ]
+      },
+      "phfre": {
+        "dtype": "float64",
+        "shape": [
+          51
+        ]
+      }
+    },
+    "homogeneity": "all 1524 DOS share one float64 51-bin grid; only cif is non-numeric"
+  },
+  "nerd_stats": {
+    "per_feature": {
+      "omega_bar": {
+        "count": 1524,
+        "mean": 230.5412516174448,
+        "median": 212.40338281644824,
+        "mode": 44.018743,
+        "std": 115.94994613750777,
+        "min": 44.01874285741502,
+        "max": 766.3692479595728,
+        "q1": 139.27774352296808,
+        "q3": 301.7150686034427,
+        "iqr": 162.43732508047464,
+        "skew": 0.8764404719980429,
+        "n_outliers": 21,
+        "outlier_frac": 0.0138
+      },
+      "omega_peak": {
+        "count": 1524,
+        "mean": 178.5564304461942,
+        "median": 120.0,
+        "mode": 60.0,
+        "std": 170.69327593598445,
+        "min": 20.0,
+        "max": 1000.0,
+        "q1": 60.0,
+        "q3": 220.0,
+        "iqr": 160.0,
+        "skew": 2.0863542728472004,
+        "n_outliers": 114,
+        "outlier_frac": 0.0748
+      },
+      "omega_cutoff": {
+        "count": 1524,
+        "mean": 520.01312335958,
+        "median": 500.0,
+        "mode": 1000.0,
+        "std": 251.6900194316522,
+        "min": 80.0,
+        "max": 1000.0,
+        "q1": 300.0,
+        "q3": 700.0,
+        "iqr": 400.0,
+        "skew": 0.3660273157436801,
+        "n_outliers": 0,
+        "outlier_frac": 0.0
+      },
+      "spectral_spread": {
+        "count": 1524,
+        "mean": 137.15796489617978,
+        "median": 123.8909226809139,
+        "mode": 19.41745,
+        "std": 73.75735400345566,
+        "min": 19.41745015447121,
+        "max": 353.67320732652064,
+        "q1": 72.45542047341688,
+        "q3": 191.29222733361138,
+        "iqr": 118.8368068601945,
+        "skew": 0.5406187787091805,
+        "n_outliers": 0,
+        "outlier_frac": 0.0
+      },
+      "spectral_entropy": {
+        "count": 1524,
+        "mean": 0.6993544641371107,
+        "median": 0.7000899721786207,
+        "mode": 0.61666,
+        "std": 0.12112098452289403,
+        "min": 0.3402036362647296,
+        "max": 0.9556037136449138,
+        "q1": 0.6117005949247983,
+        "q3": 0.7939730965331849,
+        "iqr": 0.1822725016083866,
+        "skew": -0.16866758243307636,
+        "n_outliers": 0,
+        "outlier_frac": 0.0
+      },
+      "spectral_skew": {
+        "count": 1524,
+        "mean": 0.5225295109133715,
+        "median": 0.4921077415504247,
+        "mode": -0.778141,
+        "std": 0.6885838352232386,
+        "min": -0.7781414139744746,
+        "max": 11.46254579792226,
+        "q1": 0.09197160672128371,
+        "q3": 0.8478688922009934,
+        "iqr": 0.7558972854797097,
+        "skew": 5.7761964117460876,
+        "n_outliers": 23,
+        "outlier_frac": 0.0151
+      },
+      "spectral_kurtosis": {
+        "count": 1524,
+        "mean": 2.6886034117461515,
+        "median": 2.1760070034368733,
+        "mode": 2.192251,
+        "std": 7.2109107745361,
+        "min": 1.1097329114889012,
+        "max": 210.90221970312234,
+        "q1": 1.8368809943754774,
+        "q3": 2.617436515157607,
+        "iqr": 0.7805555207821295,
+        "skew": 25.092624605642186,
+        "n_outliers": 91,
+        "outlier_frac": 0.0597
+      },
+      "dos_peak": {
+        "count": 1524,
+        "mean": 1.0,
+        "median": 1.0,
+        "mode": 1.0,
+        "std": 0.0,
+        "min": 1.0,
+        "max": 1.0,
+        "q1": 1.0,
+        "q3": 1.0,
+        "iqr": 0.0,
+        "skew": null,
+        "n_outliers": 0,
+        "outlier_frac": 0.0
+      },
+      "dos_integral": {
+        "count": 1524,
+        "mean": 186.17823765078882,
+        "median": 162.12416698870263,
+        "mode": 55.306525,
+        "std": 83.74663322188573,
+        "min": 55.3065254558701,
+        "max": 520.7032022021413,
+        "q1": 124.9555174645169,
+        "q3": 228.93231743908055,
+        "iqr": 103.97679997456365,
+        "skew": 1.0927641854030674,
+        "n_outliers": 51,
+        "outlier_frac": 0.0335
+      },
+      "n_active_bins": {
+        "count": 1524,
+        "mean": 22.02034120734908,
+        "median": 20.0,
+        "mode": 16.0,
+        "std": 10.068979733370494,
+        "min": 4.0,
+        "max": 50.0,
+        "q1": 14.0,
+        "q3": 29.0,
+        "iqr": 15.0,
+        "skew": 0.6206814926569818,
+        "n_outliers": 0,
+        "outlier_frac": 0.0
+      },
+      "n_elements": {
+        "count": 1524,
+        "mean": 2.8891076115485563,
+        "median": 3.0,
+        "mode": 3.0,
+        "std": 0.6257020673235717,
+        "min": 1.0,
+        "max": 5.0,
+        "q1": 3.0,
+        "q3": 3.0,
+        "iqr": 0.0,
+        "skew": 0.05212388511225047,
+        "n_outliers": 573,
+        "outlier_frac": 0.376
+      },
+      "n_atoms": {
+        "count": 1524,
+        "mean": 7.369422572178478,
+        "median": 8.0,
+        "mode": 8.0,
+        "std": 3.2731838971555662,
+        "min": 1.0,
+        "max": 40.0,
+        "q1": 5.0,
+        "q3": 10.0,
+        "iqr": 5.0,
+        "skew": 0.6610196702628608,
+        "n_outliers": 3,
+        "outlier_frac": 0.002
+      },
+      "mean_atomic_mass": {
+        "count": 1524,
+        "mean": 59.349308636467796,
+        "median": 54.440666666666665,
+        "mode": 20.048,
+        "std": 30.134148373696334,
+        "min": 3.974,
+        "max": 196.967,
+        "q1": 36.7157159090909,
+        "q3": 75.95175,
+        "iqr": 39.2360340909091,
+        "skew": 0.8244445239151819,
+        "n_outliers": 25,
+        "outlier_frac": 0.0164
+      },
+      "max_Z": {
+        "count": 1524,
+        "mean": 48.4238845144357,
+        "median": 50.0,
+        "mode": 55.0,
+        "std": 20.109127274443644,
+        "min": 3.0,
+        "max": 83.0,
+        "q1": 34.0,
+        "q3": 56.0,
+        "iqr": 22.0,
+        "skew": 0.0542622107494536,
+        "n_outliers": 0,
+        "outlier_frac": 0.0
+      }
+    },
+    "n_features": 14,
+    "feature_labels": {
+      "omega_bar": "mean phonon frequency  <w>  (cm-1)",
+      "omega_peak": "dominant peak frequency  (cm-1)",
+      "omega_cutoff": "spectral cutoff  w_max  (cm-1)",
+      "spectral_spread": "spectral spread  sigma_w  (cm-1)",
+      "spectral_entropy": "normalized spectral entropy  (0-1)",
+      "spectral_skew": "spectral skewness",
+      "spectral_kurtosis": "spectral kurtosis",
+      "dos_peak": "peak DOS height  (norm.)",
+      "dos_integral": "integral g(w) dw  (norm.*cm-1)",
+      "n_active_bins": "active bins  (>1% of peak)",
+      "n_elements": "distinct elements",
+      "n_atoms": "atoms per formula unit",
+      "mean_atomic_mass": "mean atomic mass  (u)",
+      "max_Z": "heaviest element  (Z)"
+    },
+    "splits": [
+      "train",
+      "val",
+      "test"
+    ]
+  },
+  "dos": {
+    "freq_cm": [
+      0.0,
+      20.0,
+      40.0,
+      60.0,
+      80.0,
+      100.0,
+      120.0,
+      140.0,
+      160.0,
+      180.0,
+      200.0,
+      220.0,
+      240.0,
+      260.0,
+      280.0,
+      300.0,
+      320.0,
+      340.0,
+      360.0,
+      380.0,
+      400.0,
+      420.0,
+      440.0,
+      460.0,
+      480.0,
+      500.0,
+      520.0,
+      540.0,
+      560.0,
+      580.0,
+      600.0,
+      620.0,
+      640.0,
+      660.0,
+      680.0,
+      700.0,
+      720.0,
+      740.0,
+      760.0,
+      780.0,
+      800.0,
+      820.0,
+      840.0,
+      860.0,
+      880.0,
+      900.0,
+      920.0,
+      940.0,
+      960.0,
+      980.0,
+      1000.0
+    ],
+    "mean_spectrum": [
+      0.0,
+      0.17703261739968112,
+      0.39691250718233306,
+      0.5730663320353421,
+      0.6204765008836293,
+      0.5981406960874255,
+      0.55438291051099,
+      0.506699726470072,
+      0.46121516686851477,
+      0.4275091245323345,
+      0.39522420239700357,
+      0.3590246963277459,
+      0.33006427806450467,
+      0.30537798601829647,
+      0.2847194077882236,
+      0.2667901636643927,
+      0.24879212312379817,
+      0.22328315208372063,
+      0.19690341682133716,
+      0.1742500168984217,
+      0.1587193051973803,
+      0.14947637035544664,
+      0.1458628045592043,
+      0.1425253867224283,
+      0.13450133803620296,
+      0.1231148652686353,
+      0.11582431020082112,
+      0.10980727382265566,
+      0.1037528446836004,
+      0.09494111424511986,
+      0.09061324830571177,
+      0.08668426518001801,
+      0.08015806693964447,
+      0.06949735481059206,
+      0.06314742496126395,
+      0.06069222080845858,
+      0.05344520491254765,
+      0.0465866566165455,
+      0.04408095886947175,
+      0.045052554745712084,
+      0.04123995423011662,
+      0.037147503786377364,
+      0.032476506624807756,
+      0.029090534669151423,
+      0.027752552591761036,
+      0.02908132257593765,
+      0.027992105179948074,
+      0.023277882927312872,
+      0.01872474856321826,
+      0.0160876799535791,
+      0.015384994076002015
+    ],
+    "p10": [
+      0.0,
+      0.0,
+      0.021002287353265713,
+      0.053921921062107005,
+      0.13776283729892122,
+      0.1612847576892296,
+      0.12067380718756386,
+      0.09696839221025105,
+      0.04196455275286125,
+      0.00015324833353973493,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "p90": [
+      0.0,
+      0.5985205814382211,
+      0.9848619634411645,
+      1.0,
+      1.0,
+      1.0,
+      0.9695312126867893,
+      0.9306341119878072,
+      0.8899972321754106,
+      0.8830089296662709,
+      0.8579280977288516,
+      0.802520801691037,
+      0.7897854079922793,
+      0.7672531383898433,
+      0.7451964589216442,
+      0.7184364695918708,
+      0.7164031292658579,
+      0.6441600845148885,
+      0.5982157945332496,
+      0.5524205353445409,
+      0.5527598280745413,
+      0.5226606189751539,
+      0.5130997534102295,
+      0.47430993598081167,
+      0.47372081045358,
+      0.4315983824441792,
+      0.4234412755700062,
+      0.41013582602932064,
+      0.3874978030158488,
+      0.367214965624214,
+      0.3611510298232401,
+      0.3548118196192124,
+      0.3491978117246661,
+      0.2920145421089207,
+      0.24347360667160536,
+      0.2365693225353184,
+      0.19886024183561055,
+      0.1658380373687731,
+      0.14499851376235026,
+      0.13131423023893327,
+      0.11507592210583177,
+      0.096935307901898,
+      0.06208974977279949,
+      0.018646629388592764,
+      0.0003856626745092851,
+      1.1183022457956174e-08,
+      3.27890481852733e-11,
+      6.810141264323825e-13,
+      8.55649335981544e-14,
+      3.0140933129209257e-17,
+      9.48715712013866e-19
+    ]
+  },
+  "elements": {
+    "n_present": 64,
+    "n_absent": 54,
+    "top": [
+      {
+        "symbol": "O",
+        "count": 426
+      },
+      {
+        "symbol": "F",
+        "count": 204
+      },
+      {
+        "symbol": "K",
+        "count": 202
+      },
+      {
+        "symbol": "Cs",
+        "count": 177
+      },
+      {
+        "symbol": "Rb",
+        "count": 167
+      },
+      {
+        "symbol": "S",
+        "count": 154
+      },
+      {
+        "symbol": "Na",
+        "count": 153
+      },
+      {
+        "symbol": "Li",
+        "count": 141
+      },
+      {
+        "symbol": "P",
+        "count": 128
+      },
+      {
+        "symbol": "Ba",
+        "count": 128
+      },
+      {
+        "symbol": "N",
+        "count": 119
+      },
+      {
+        "symbol": "Se",
+        "count": 107
+      }
+    ],
+    "coverage": {
+      "H": 72,
+      "Li": 141,
+      "Be": 36,
+      "B": 39,
+      "C": 49,
+      "N": 119,
+      "O": 426,
+      "F": 204,
+      "Na": 153,
+      "Mg": 75,
+      "Al": 63,
+      "Si": 61,
+      "P": 128,
+      "S": 154,
+      "Cl": 103,
+      "K": 202,
+      "Ca": 99,
+      "Sc": 38,
+      "Ti": 40,
+      "V": 5,
+      "Cr": 1,
+      "Mn": 1,
+      "Fe": 14,
+      "Co": 7,
+      "Ni": 12,
+      "Cu": 90,
+      "Zn": 71,
+      "Ga": 58,
+      "Ge": 44,
+      "As": 98,
+      "Se": 107,
+      "Br": 76,
+      "Rb": 167,
+      "Sr": 99,
+      "Y": 57,
+      "Zr": 37,
+      "Nb": 30,
+      "Mo": 5,
+      "Tc": 2,
+      "Ru": 13,
+      "Rh": 13,
+      "Pd": 39,
+      "Ag": 64,
+      "Cd": 55,
+      "In": 61,
+      "Sn": 56,
+      "Sb": 95,
+      "Te": 97,
+      "I": 58,
+      "Cs": 177,
+      "Ba": 128,
+      "La": 42,
+      "Hf": 21,
+      "Ta": 25,
+      "W": 5,
+      "Re": 5,
+      "Os": 11,
+      "Ir": 6,
+      "Pt": 48,
+      "Au": 51,
+      "Hg": 33,
+      "Tl": 36,
+      "Pb": 23,
+      "Bi": 58
+    }
+  },
+  "figures": [
+    "split_balance.png",
+    "element_coverage.png",
+    "dos_heatmap.png",
+    "dos_exemplars.png",
+    "dos_bin_box.png",
+    "feature_corr.png",
+    "scatter_relations.png",
+    "feature_01_omega_bar.png",
+    "feature_02_omega_peak.png",
+    "feature_03_omega_cutoff.png",
+    "feature_04_spectral_spread.png",
+    "feature_05_spectral_entropy.png",
+    "feature_06_spectral_skew.png",
+    "feature_07_spectral_kurtosis.png",
+    "feature_08_dos_peak.png",
+    "feature_09_dos_integral.png",
+    "feature_10_n_active_bins.png",
+    "feature_11_n_elements.png",
+    "feature_12_n_atoms.png",
+    "feature_13_mean_atomic_mass.png",
+    "feature_14_max_Z.png"
+  ]
+}

@@ -1,0 +1,27 @@
+# FORGE · phonon · MODEL 1 — Chen et al. 2021 faithful replication.
+# Architecture pinned to the authors' released reference checkpoint
+# (reference_model.torch model_kwargs).
+model: phonon_net          # registered builder key
+family: e3nn_repro
+
+architecture:
+  in_dim: 118              # mass/type one-hot over 118 elements
+  em_dim: 64               # Linear(118 -> 64) embedding (ReLU)
+  out_dim: 51              # 51-bin DOS, 0-1000 cm^-1 (20 cm^-1 bins)
+  layers: 2                # gate blocks; convolutions = layers + 1 = 3
+  mul: 32                  # irrep multiplicity
+  lmax: 1                  # spherical harmonics order
+  max_radius: 5.0          # Angstrom cutoff (paper rmax = 5)
+  number_of_basis: 10      # radial gaussian basis
+
+training:                  # reference optimizer/schedule
+  epochs: 64
+  batch_size: 1
+  lr: 0.005
+  weight_decay: 0.05
+  gamma: 0.96              # ExponentialLR
+  loss: mse
+
+target:
+  metric: omega_bar_within_10pct
+  value: 0.70              # Fig 2c headline

@@ -1,0 +1,131 @@
+# ============================================================================
+# BEARDOWN_3SEC — Model 3.  The data-limited test.
+#
+# Identical RRM sweep to mk2 (beardown_rrm.yaml) in EVERY axis except the data:
+# the 30-sec fused table (1 row/track) is replaced by the 3-sec fused table
+# (~10 rows/track), each 3-sec segment joined MANY-TO-ONE to its parent track's
+# single mel spectrogram (representation: fused3). This is the controlled
+# experiment behind mk1's headline finding ("506/512 last-layer directions were
+# prior-led → data-limited, not capacity-limited"): hold architecture + sweep
+# space + selection fixed, give the model ~10× the samples, and watch two things:
+#
+#   1. Does test accuracy rise (the data-limited prediction)?
+#   2. Does the epistemic axis U come back to life? mk2.5's negative result
+#      (U flat, RRM_w no test-predictive edge over plain accuracy) was diagnosed
+#      as a boundary condition of the frozen-backbone + post-hoc-LLLA setup on
+#      ~700 training rows. With ~7000 rows the GGN is far better-conditioned, so
+#      if U is going to vary anywhere, it varies here. mk3 is the test.
+#
+# LEAKAGE GUARD (load-bearing): the split is on TRACK ids (split.mode below), so
+# all ~10 segments of a recording land in ONE split. Splitting the 9,990 segments
+# randomly would let the model memorise the song, not the genre (Sturm 2013) →
+# inflated numbers. The honest track-vs-naive accuracy delta is itself a result;
+# measure it with a sibling run at split.mode: naive (do NOT deploy that one).
+#
+# Same frozen-det-backbone → 8-file bundle contract as mk1/mk2, so bayes/llla.py +
+# hmc.py attach unchanged and the FORGE tab + Model-panel dot work with zero
+# special-casing. scaler.json carries the same 57 named axes, so input-feature
+# attribution (mk2.5 spec) is amenable here too.
+# ============================================================================
+model: beardown
+run_name: beardown_3sec            # M3
+representation: fused3             # 3-sec tabular ⨝ parent-track mel image (~10:1)
+data_root: projects/genre/data/raw
+
+split:
+  mode: stratified                # SAME partition as mk1/mk2 (BEARDOWN gtzan_eda.py,
+  seed: 42                        # seed 42). Segments inherit their parent track's
+                                  # split → apples-to-apples vs the 30-sec models,
+                                  # and leakage-safe by construction. (Use mode:
+                                  # track for the generic stratified-track split;
+                                  # mode: naive ONLY to measure the leakage delta.)
+
+features:
+  drop_length: true               # 57 features. NB: 3-sec `length` is a constant
+                                  # 66149 (vs 661500 for 30-sec) — dropping it is
+                                  # doubly correct here (zero-variance + no signal).
+  image_size: 128
+  image_dir: images_mel
+
+mel:
+  sample_rate: 22050
+  n_fft: 2048
+  hop_length: 512
+  n_mels: 128
+
+# BASE architecture = the mk2 WINNER (deployed cfg 17: img768 / tab256 / concat).
+# Fields the sweep overrides per config are marked [SWEPT]. Keeping the base equal
+# to cfg 17 means "single-config" runs (train.py, no sweep) reproduce the mk2 shape
+# on 10× data — the cleanest one-line data-density read before the full sweep.
+arch:
+  spec_cnn:
+    in_ch: 1
+    conv: [[32, 3], [64, 3], [128, 3]]   # fixed (not swept)
+    embed: 768                    # [SWEPT] dense_units_img   (cfg 17 = 768)
+    dropout: 0.21                 # [SWEPT] dropout_backbone  (cfg 17 = 0.2109)
+  tab_mlp:
+    in_dim: 57                    # auto-overridden by real feature count
+    hidden: [256]                 # [SWEPT] -> [dense_units_tab]
+    embed: 256                    # [SWEPT] dense_units_tab   (cfg 17 = 256)
+    dropout: 0.17                 # [SWEPT] dropout_tab       (cfg 17 = 0.1703)
+  fusion: concat                  # [SWEPT] {concat, gated}   (cfg 17 = concat)
+  head:
+    penultimate: 768              # [SWEPT] tracks dense_units_img (cfg 17 = 768)
+    dropout: 0.20                 # fixed (fusion_dropout, not swept)
+  n_classes: 10
+
+train:
+  epochs: 50                      # [SWEPT] {50, 75}. With ~10× data each epoch is
+                                  # ~10× the gradient steps, so early stopping
+                                  # (below) will usually halt well before 50.
+  batch_size: 32                  # bumped 8 -> 32: ~7k train segments make batch 8
+                                  # ~10× the steps/epoch; 32 keeps wall-time sane.
+                                  # (Set to 8 if you want the byte-identical mk2
+                                  # optimiser regime; expect ~10× longer runs.)
+  lr: 7.367094572864616e-05       # [SWEPT] loguniform 1e-4..1e-3 (cfg_14 base value)
+  weight_decay: 0.0
+  optimizer: adam                 # [SWEPT] {adam, adamw, rmsprop} (cfg 17 = adam)
+  early_stopping:
+    monitor: val_accuracy
+    patience: 4
+    restore_best: true
+  reduce_lr_on_plateau:
+    factor: 0.5
+    patience: 2
+    min_lr: 1.0e-6
+
+cv:
+  folds: 3                        # GroupKFold-by-track on the TRAIN split. GroupKFold
+                                  # keys on track_ids -> folds never split a track's
+                                  # segments (the in-CV mirror of the outer guard).
+
+# ----------------------------------------------------------------- the sweep
+# Byte-for-byte the mk2 search space (INFO 510 Table A1, head fixed `det`).
+# Selection = RRM; everything else (RAM, Pareto, Pearson, dCor, both U-τ variants,
+# MacKay-τ) RECORDED. Holding this identical to mk2 is the point: the ONLY thing
+# that changes between mk2 and mk3 is the data, so any shift in the U / RRM_w
+# story is attributable to data density alone.
+sweep:
+  n: 20                           # configs sampled (paper cohort size)
+  seed: 1234                      # reproducible: same sampled config list as mk2
+  folds: 3
+  select: rrm                     # argmax RRM; tiebreak -> lower off_diag rate
+  tau_alpha: 0.01                 # SELECTION U: shared-α prior, τ = α·λ_max(config)
+  llla:
+    method: probit                # deterministic σ (no MC seed-noise in the selector)
+    n_samples: 2000               # used only if method == mc
+  record_mackay_tau: true         # RECORDED B-column: per-config empirical-Bayes τ
+  space:
+    dropout_backbone: {dist: uniform,    low: 0.15, high: 0.35}
+    dropout_tab:      {dist: uniform,    low: 0.10, high: 0.40}
+    dense_units_img:  {dist: choice,     values: [256, 384, 512, 768]}
+    dense_units_tab:  {dist: choice,     values: [64, 128, 192, 256]}
+    lr:               {dist: loguniform, low: 1.0e-4, high: 1.0e-3}
+    epochs:           {dist: choice,     values: [50, 75]}
+    optimizer:        {dist: choice,     values: [adam, adamw, rmsprop]}
+    fusion:           {dist: choice,     values: [concat, gated]}
+
+paper_target:
+  val_accuracy: 0.80              # expectation, not a guarantee: track-safe 3-sec
+  accept_min: 0.75                # GTZAN typically lands ~0.78-0.82 val. Same gate
+                                  # as mk1/mk2 so "PASS" means the same thing.

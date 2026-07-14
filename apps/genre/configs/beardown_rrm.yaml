@@ -1,0 +1,98 @@
+# ============================================================================
+# BEARDOWN_RRM — Model 2.  Broad random sweep over the clean det pipeline,
+# RRM-SELECTED (reliability, not raw accuracy). Same frozen-det-backbone →
+# 8-file bundle contract as mk1, so bayes/llla.py + hmc.py attach unchanged and
+# the Model-panel dot + FORGE tab work with zero per-model special-casing.
+#
+# Identity: the "Bayesian-layer treatment" of the genre family. The head stays
+# `det`; the Bayesian layer is post-hoc LLLA applied identically to every config
+# as the evaluation lens — it is NOT a swept axis. Selection is driven by the
+# posterior of that final layer (the U term of RRM).
+#
+# The arch/train blocks below are the BASE (mk1 cfg_14 values); the sweep
+# OVERRIDES the fields named in `sweep.space` per config. Run names (Model-panel
+# dots): beardown | beardown_rrm | beardown_3sec.
+# ============================================================================
+model: beardown
+run_name: beardown_rrm             # M2
+representation: fused              # 30-sec tabular ⨝ per-track mel image (same as mk1)
+data_root: projects/genre/data/raw
+
+split:
+  mode: stratified                # BEARDOWN gtzan_eda.py split
+  seed: 42
+
+features:
+  drop_length: true               # 57 features (faithful to cfg_14)
+  image_size: 128
+  image_dir: images_mel
+
+mel:
+  sample_rate: 22050
+  n_fft: 2048
+  hop_length: 512
+  n_mels: 128
+
+# BASE architecture (mk1 cfg_14). Fields overridden per config are marked  [SWEPT].
+arch:
+  spec_cnn:
+    in_ch: 1
+    conv: [[32, 3], [64, 3], [128, 3]]   # fixed (not swept)
+    embed: 512                    # [SWEPT] dense_units_img
+    dropout: 0.20                 # [SWEPT] dropout_backbone
+  tab_mlp:
+    in_dim: 57                    # auto-overridden by real feature count
+    hidden: [192]                 # [SWEPT] -> [dense_units_tab]
+    embed: 192                    # [SWEPT] dense_units_tab
+    dropout: 0.20                 # [SWEPT] dropout_tab
+  fusion: gated                   # [SWEPT] {concat, gated}
+  head:
+    penultimate: 512              # [SWEPT] tracks dense_units_img (paper: fusion_units)
+    dropout: 0.20                 # fixed (fusion_dropout, not swept)
+  n_classes: 10
+
+train:
+  epochs: 75                      # [SWEPT] {50, 75}
+  batch_size: 8
+  lr: 7.367094572864616e-05       # [SWEPT] loguniform 1e-4..1e-3
+  weight_decay: 0.0
+  optimizer: adam                 # [SWEPT] {adam, adamw, rmsprop}
+  early_stopping:
+    monitor: val_accuracy
+    patience: 4
+    restore_best: true
+  reduce_lr_on_plateau:
+    factor: 0.5
+    patience: 2
+    min_lr: 1.0e-6
+
+cv:
+  folds: 3                        # GroupKFold-by-track on the TRAIN split
+
+# ----------------------------------------------------------------- the sweep
+# Search space = INFO 510 Table A1, head fixed `det` (the Bayesian/hybrid head
+# axis is dropped — uncertainty is post-hoc LLLA, not trained). Selection = RRM;
+# everything else (RAM, Pareto, Pearson, dCor, both U-τ variants) is RECORDED.
+sweep:
+  n: 20                           # configs sampled (paper cohort size)
+  seed: 1234                      # reproducible: sampled config list -> sweep.json
+  folds: 3
+  select: rrm                     # argmax RRM; tiebreak -> lower off_diag rate
+  tau_alpha: 0.01                 # SELECTION U: shared-α prior, τ = α·λ_max(config)
+  llla:
+    method: probit                # deterministic σ (no MC seed-noise in the selector)
+    n_samples: 2000               # used only if method == mc
+  record_mackay_tau: true         # RECORDED B-column: per-config empirical-Bayes τ
+  space:
+    dropout_backbone: {dist: uniform,    low: 0.15, high: 0.35}
+    dropout_tab:      {dist: uniform,    low: 0.10, high: 0.40}
+    dense_units_img:  {dist: choice,     values: [256, 384, 512, 768]}
+    dense_units_tab:  {dist: choice,     values: [64, 128, 192, 256]}
+    lr:               {dist: loguniform, low: 1.0e-4, high: 1.0e-3}
+    epochs:           {dist: choice,     values: [50, 75]}
+    optimizer:        {dist: choice,     values: [adam, adamw, rmsprop]}
+    fusion:           {dist: choice,     values: [concat, gated]}
+
+paper_target:
+  val_accuracy: 0.766
+  accept_min: 0.75

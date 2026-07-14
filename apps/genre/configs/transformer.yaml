@@ -1,0 +1,10 @@
+model: transformer         # -> src/models/transformer.py  (STUB)
+features: mel_spectrogram   # TODO: EAViT=3s mel segments; ViT=mel; set per paper choice
+split:
+  mode: track
+  seed: 0
+train:
+  epochs: 100
+  batch_size: 16
+  lr: 3.0e-4
+paper_target: {}           # TODO: e.g. {accuracy: 0.868} for improved-ViT
