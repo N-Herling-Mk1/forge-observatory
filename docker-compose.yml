@@ -7,7 +7,7 @@ services:
     build: .
     image: forge-observatory:cpu
     command: python apps/genre/app/server.py
-    environment: { FORGE_HOST: 0.0.0.0, FORGE_PORT: 5000 }
+    environment: { FORGE_HOST: 0.0.0.0, FORGE_PORT: 5000, FORGE_DEBUG: "0", FORGE_SITE: "0", FORGE_HMC: "0" }
     ports: ["127.0.0.1:5001:5000"]
     restart: unless-stopped
 
@@ -15,7 +15,7 @@ services:
     build: .
     image: forge-observatory:cpu
     command: python apps/phonon/app/server.py
-    environment: { FORGE_HOST: 0.0.0.0, FORGE_PORT: 5000 }
+    environment: { FORGE_HOST: 0.0.0.0, FORGE_PORT: 5000, FORGE_DEBUG: "0", FORGE_SITE: "0", FORGE_HMC: "0" }
     ports: ["127.0.0.1:5002:5000"]
     restart: unless-stopped
 
@@ -23,7 +23,7 @@ services:
   #   build: .
   #   image: forge-observatory:cpu
   #   command: python apps/atlas/app/server.py
-  #   environment: { FORGE_HOST: 0.0.0.0, FORGE_PORT: 5000 }
+  #   environment: { FORGE_HOST: 0.0.0.0, FORGE_PORT: 5000, FORGE_DEBUG: "0", FORGE_SITE: "0", FORGE_HMC: "0" }
   #   ports: ["127.0.0.1:5003:5000"]
   #   restart: unless-stopped
 

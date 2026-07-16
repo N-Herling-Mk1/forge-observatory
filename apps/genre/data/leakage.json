@@ -1,0 +1,65 @@
+{
+  "schema": "leakage/1.0",
+  "generated": "2026-06-19 07:22:04",
+  "dataset": "GTZAN 3-sec segments",
+  "n_segments": 9990,
+  "n_tracks": 1000,
+  "seed": 0,
+  "ratios": [
+    0.7,
+    0.15,
+    0.15
+  ],
+  "track_guard": {
+    "tracks_straddling": 0,
+    "note": "0 by construction \u2014 segments of a track stay together"
+  },
+  "naive_shuffle": {
+    "tracks_straddling": 971,
+    "pct_tracks_leaking": 97.1,
+    "note": "segment-level random shuffle \u2014 the leaky baseline most GTZAN papers use"
+  },
+  "per_genre": {
+    "blues": {
+      "tracks": 100,
+      "straddling": 98
+    },
+    "classical": {
+      "tracks": 100,
+      "straddling": 97
+    },
+    "country": {
+      "tracks": 100,
+      "straddling": 97
+    },
+    "disco": {
+      "tracks": 100,
+      "straddling": 99
+    },
+    "hiphop": {
+      "tracks": 100,
+      "straddling": 95
+    },
+    "jazz": {
+      "tracks": 100,
+      "straddling": 94
+    },
+    "metal": {
+      "tracks": 100,
+      "straddling": 99
+    },
+    "pop": {
+      "tracks": 100,
+      "straddling": 97
+    },
+    "reggae": {
+      "tracks": 100,
+      "straddling": 97
+    },
+    "rock": {
+      "tracks": 100,
+      "straddling": 98
+    }
+  },
+  "interpretation": "Under a naive segment shuffle, 971/1000 tracks (97.1%) leak across train/val/test \u2014 the model can memorize the song and score it again at test. The track guard makes this 0, so any accuracy gap between the two splits is leakage inflation, not skill."
+}

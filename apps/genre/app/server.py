@@ -38,7 +38,8 @@ DATA = EXP_ROOT / "data"
 FIGS = EXP_ROOT / "eda" / "figures"
 RUNS = EXP_ROOT / "runs"
 MODELS = EXP_ROOT / "models"
-REPO_ROOT = EXP_ROOT.parent.parent          # projects/<exp> -> repo root (for _shared)
+REPO_ROOT = EXP_ROOT.parent.parent          # <pkg>/<exp> -> repo root (for _shared)
+PKG = EXP_ROOT.parent.name                  # "projects" (dev repo) | "apps" (deploy repo)
 
 app = Flask(__name__, static_folder="static", static_url_path="/static")
 
@@ -86,6 +87,61 @@ def _logo():
 # ---- routes (KEEP NAMES IDENTICAL ACROSS EXPERIMENTS) -----------------------
 @app.get("/")
 def index():
+    # dev (FORGE_SITE=1, default): full site shell - splash first, like the apex.
+    # container (compose pins FORGE_SITE=0): / = model selection (plate lands here).
+    if config.SITE and (REPO_ROOT / "index.html").exists():
+        return send_file(REPO_ROOT / "index.html")
+    return send_file(APP_DIR / "templates" / "select.html")
+
+
+@app.get("/index.html")
+def site_splash_alias():
+    # the floor's back-link and Pages both use the literal filename
+    if not (config.SITE and (REPO_ROOT / "index.html").exists()):
+        abort(404)
+    return send_file(REPO_ROOT / "index.html")
+
+
+@app.get("/experiments.html")
+def site_floor():
+    if not (config.SITE and (REPO_ROOT / "experiments.html").exists()):
+        abort(404)
+    # Flask-served floor: hard-rewrite the Beardown plate to the in-process app.
+    # Server-side, so no JS/cache state can leak the local chain onto the
+    # public subdomain. The file on disk stays production-true for Pages.
+    html = (REPO_ROOT / "experiments.html").read_text(encoding="utf-8")
+    html = html.replace("https://genre.forge-observatory.com/", "/select")
+    return app.response_class(html, mimetype="text/html")
+
+
+@app.get("/coming-soon.html")
+def site_coming_soon():
+    if not (config.SITE and (REPO_ROOT / "coming-soon.html").exists()):
+        abort(404)
+    return send_file(REPO_ROOT / "coming-soon.html")
+
+
+@app.get("/assets/<path:name>")
+def site_assets(name):
+    if not config.SITE:
+        abort(404)
+    return send_from_directory(REPO_ROOT / "assets", name)
+
+
+@app.get("/select")
+def select_page():
+    return send_file(APP_DIR / "templates" / "select.html")
+
+
+@app.get("/dashboard")
+def dashboard_page():
+    # BEARDOWN analysis dashboard (session-3 first component: feature stats)
+    return send_file(APP_DIR / "templates" / "dashboard.html")
+
+
+@app.get("/hub")
+def hub_page():
+    # the original dev mini-stack landing, kept reachable
     return send_file(APP_DIR / "templates" / "index.html")
 
 
@@ -140,7 +196,7 @@ def api_predict():
     if str(repo_root) not in sys.path:
         sys.path.insert(0, str(repo_root))
     try:
-        mod = importlib.import_module(f"projects.{EXPERIMENT}.src.predict")
+        mod = importlib.import_module(f"{PKG}.{EXPERIMENT}.src.predict")
     except Exception as e:
         return jsonify(error=f"no predict module for '{EXPERIMENT}': {e}"), 501
     suffix = os.path.splitext(f.filename)[1] or ".wav"
@@ -304,7 +360,7 @@ def _registry():
     """Lazy import of the genre model registry (projects/<exp>/src/registry.py)."""
     _repo_on_path()
     import importlib
-    return importlib.import_module(f"projects.{EXPERIMENT}.src.registry")
+    return importlib.import_module(f"{PKG}.{EXPERIMENT}.src.registry")
 
 
 @app.get("/api/registry")
@@ -343,14 +399,14 @@ def _forge_lap():
     are then O(d) in the browser off the payload."""
     _repo_on_path()
     import importlib
-    reg = importlib.import_module(f"projects.{EXPERIMENT}.src.registry")
+    reg = importlib.import_module(f"{PKG}.{EXPERIMENT}.src.registry")
     bundle = reg.selected_dir(str(MODELS))
     if not bundle:
         raise RuntimeError("no active model — select one in the Model panel")
     wp = Path(bundle) / "weights.pt"
     key = (bundle, wp.stat().st_mtime if wp.exists() else 0)
     if _FORGE.get("key") != key:
-        llla = importlib.import_module(f"projects.{EXPERIMENT}.src.bayes.llla")
+        llla = importlib.import_module(f"{PKG}.{EXPERIMENT}.src.bayes.llla")
         _FORGE.clear()
         _FORGE["key"] = key
         _FORGE["lap"] = llla.from_bundle(bundle)
@@ -439,6 +495,8 @@ def forge_datasweep():
 
 @app.get("/api/forge/hmc")
 def forge_hmc():
+    if os.environ.get("FORGE_HMC", "1") != "1":
+        return jsonify(error="HMC sampler disabled on this deployment"), 403
     """Run last-layer HMC (gold standard) and return its predictive for one example,
     alongside the LLLA predictive at the same τ for the overlay. The chain depends
     only on (bundle, τ, sampler params) — not the example — so it's cached and reused
@@ -455,7 +513,7 @@ def forge_hmc():
         n_samples = max(50, min(int(request.args.get("samples", 250)), 1500))
         n_leap = max(5, min(int(request.args.get("leapfrog", 15)), 60))
 
-        hmc_mod = importlib.import_module(f"projects.{EXPERIMENT}.src.bayes.hmc")
+        hmc_mod = importlib.import_module(f"{PKG}.{EXPERIMENT}.src.bayes.hmc")
         key = (bundle, round(tau, 6), n_samples, n_leap)
         if _FORGE.get("hmc_key") != key:
             H = hmc_mod.from_bundle(bundle, tau=tau)
@@ -583,7 +641,8 @@ def _banner():
     for p in config.PHASES:
         mark = "FOUND" if _stats(p).exists() else "—    "
         print(f"  EDA [{p:<6}] : {mark}   figures: {_fig_count(p)}")
-    print(f"  serving      : http://{config.HOST}:{config.PORT}\n")
+    note = getattr(config, "PORT_NOTE", "")
+    print(f"  serving      : http://{config.HOST}:{config.PORT}  {note}\n")
 
 
 if __name__ == "__main__":

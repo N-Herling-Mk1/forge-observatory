@@ -1,0 +1,76 @@
+{
+  "schema": "splits_report/1.0",
+  "generated": "2026-06-19 07:26:46",
+  "source": "_shared/tests/test_splits.py",
+  "n_tests": 11,
+  "n_passed": 11,
+  "all_green": true,
+  "results": [
+    {
+      "name": "no_track_overlap_track_split",
+      "description": "Under the track guard, no track id appears in more than one split (row-level too).",
+      "passed": true,
+      "error": ""
+    },
+    {
+      "name": "assert_no_track_overlap_fires_on_leak",
+      "description": "The overlap assertion fails loud when a track straddles splits.",
+      "passed": true,
+      "error": ""
+    },
+    {
+      "name": "every_split_has_all_ten_genres",
+      "description": "Stratification gives coverage = 1.0: every split holds all 10 genres.",
+      "passed": true,
+      "error": ""
+    },
+    {
+      "name": "stratified_counts_exact_for_n100",
+      "description": "For 100 tracks/genre the per-genre split is exactly 70/15/15.",
+      "passed": true,
+      "error": ""
+    },
+    {
+      "name": "track_counts_sum_back",
+      "description": "Rounded splits sum back to the stratum size; train absorbs the remainder.",
+      "passed": true,
+      "error": ""
+    },
+    {
+      "name": "determinism_same_seed",
+      "description": "Same seed \u2192 identical split (reproducible).",
+      "passed": true,
+      "error": ""
+    },
+    {
+      "name": "different_seed_changes_assignment",
+      "description": "A different seed changes the assignment (it is actually randomized).",
+      "passed": true,
+      "error": ""
+    },
+    {
+      "name": "naive_random_straddles_tracks",
+      "description": "The whole point of keeping naive_random: on segment-level shuffling many",
+      "passed": true,
+      "error": ""
+    },
+    {
+      "name": "bad_ratios_raise",
+      "description": "Ratios that don't sum to 1.0 (or wrong length) are rejected.",
+      "passed": true,
+      "error": ""
+    },
+    {
+      "name": "artist_split_is_explicit_notimplemented",
+      "description": "artist_split fails explicitly (no GTZAN artist metadata) rather than splitting wrong.",
+      "passed": true,
+      "error": ""
+    },
+    {
+      "name": "write_split_to_manifest",
+      "description": "The split records seed/ratios/sizes into manifest.json, preserving existing keys.",
+      "passed": true,
+      "error": ""
+    }
+  ]
+}

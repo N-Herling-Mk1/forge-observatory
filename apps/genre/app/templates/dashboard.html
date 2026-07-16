@@ -1,0 +1,919 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>BEARDOWN — analysis dashboard</title>
+<meta name="description" content="BEARDOWN analysis dashboard — feature stats, posterior observatory, model genealogy."/>
+<meta name="theme-color" content="#040207"/>
+<meta name="robots" content="noindex"/>
+<link rel="icon" href="/static/assets/favicon.svg" type="image/svg+xml">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --void:#040207; --void2:#0a0610;
+    --cyan:#2DD4FF; --cyan-hot:#7ff0ff; --cyan-dim:#0e6b73;
+    --ember:#FF4D1F; --flame:#FF7A0D; --gold:#FFC857;
+    --amber:#f0a92e; --good:#39d98a; --bad:#ff5470;
+    --line:rgba(45,212,255,.22);
+    --mono:'Share Tech Mono', ui-monospace, Consolas, monospace;
+    --disp:'Orbitron', var(--mono);
+    --cut:12px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{min-height:100%;background:var(--void);font-family:var(--mono);color:var(--cyan);font-size:13px}
+  body{display:flex;flex-direction:column;
+    background:
+      radial-gradient(120% 90% at 50% 0%, rgba(45,212,255,.05), transparent 55%),
+      radial-gradient(120% 90% at 50% 110%, rgba(255,77,31,.05), transparent 55%),
+      var(--void)}
+  .hud{user-select:none;text-transform:uppercase;letter-spacing:.2em}
+  a{color:var(--cyan)}
+
+  /* ------- HUD header ------- */
+  header{display:flex;align-items:center;gap:22px;padding:18px 26px 14px;
+    border-bottom:1px solid var(--line);flex-wrap:wrap}
+  #brand a{text-decoration:none}
+  #brand .word{font-family:var(--disp);font-weight:900;font-size:15px;letter-spacing:.45em;
+    color:#eafbff;text-shadow:0 0 14px rgba(45,212,255,.55)}
+  #brand .word .o{color:var(--flame);text-shadow:0 0 14px rgba(255,122,13,.6)}
+  #exp{font-family:var(--disp);font-weight:700;font-size:12px;letter-spacing:.24em;color:var(--cyan-hot)}
+  #modelchip{font-size:9.5px;letter-spacing:.2em;padding:4px 10px;border:1px solid var(--flame);
+    color:var(--gold);text-transform:uppercase;
+    clip-path:polygon(7px 0,100% 0,100% calc(100% - 7px),calc(100% - 7px) 100%,0 100%,0 7px)}
+  #modelchip a{color:var(--gold);text-decoration:none}
+  #modelchip a:hover{color:var(--cyan-hot)}
+  .spacer{flex:1}
+  #phase{display:flex;border:1px solid var(--line)}
+  #phase button{font-family:var(--mono);background:transparent;border:none;color:var(--cyan-dim);
+    padding:6px 14px;cursor:pointer;letter-spacing:.18em;font-size:10px;text-transform:uppercase}
+  #phase button.on{background:var(--cyan);color:#02161c}
+  #hstat{font-size:9px;color:var(--cyan-dim);letter-spacing:.24em;text-align:right;line-height:1.9}
+  #hstat b{color:var(--amber);font-weight:400}
+  #hstat .dot{display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--flame);
+    box-shadow:0 0 7px var(--flame);margin-right:6px;vertical-align:middle;animation:blip 1.6s infinite}
+  @keyframes blip{0%,100%{opacity:.35}50%{opacity:1}}
+
+  /* ------- frame: rail + stage ------- */
+  #frame{flex:1;display:flex;min-height:0}
+  #rail{width:210px;flex:none;padding:22px 0 22px 26px;display:flex;flex-direction:column;gap:10px;
+    position:relative}
+  #rail::before{content:"";position:absolute;left:12px;top:0;width:1px;height:0;
+    background:linear-gradient(180deg,var(--cyan),rgba(45,212,255,.12));
+    animation:trace .9s ease-out forwards}
+  @keyframes trace{to{height:100%}}
+  .bay{position:relative;display:flex;align-items:center;gap:10px;padding:12px 12px;cursor:pointer;
+    border:1px solid var(--line);background:linear-gradient(180deg,rgba(45,212,255,.05),transparent);
+    clip-path:polygon(var(--cut) 0,100% 0,100% calc(100% - var(--cut)),calc(100% - var(--cut)) 100%,0 100%,0 var(--cut));
+    transition:border-color .2s, background .2s}
+  .bay:hover{border-color:rgba(45,212,255,.6)}
+  .bay.on{border-color:rgba(255,122,13,.8);
+    background:linear-gradient(180deg,rgba(150,16,8,.22),rgba(255,122,32,.07))}
+  .led{width:7px;height:7px;border-radius:50%;flex:none}
+  .led.live{background:var(--cyan);box-shadow:0 0 8px var(--cyan)}
+  .bay.on .led.live{background:var(--gold);box-shadow:0 0 9px var(--gold)}
+  .led.staged{background:var(--amber);box-shadow:0 0 6px rgba(240,169,46,.7);animation:blip 2.2s infinite}
+  .led.locked{background:#233; box-shadow:none}
+  .bay .t{font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--cyan-hot);line-height:1.5}
+  .bay .s{display:block;font-size:8px;letter-spacing:.18em;color:var(--cyan-dim)}
+  .bay.on .t{color:#fff}
+  .bay.dis .t{color:var(--cyan-dim)}
+
+  #stage{flex:1;min-width:0;padding:22px 26px;overflow-y:auto}
+  .panel{display:none}
+  .panel.on{display:block}
+  .eye{font-size:9.5px;letter-spacing:.4em;color:var(--cyan-dim);text-transform:uppercase}
+  h1{font-family:var(--disp);font-weight:700;font-size:17px;letter-spacing:.24em;color:#eafbff;
+    text-transform:uppercase;text-shadow:0 0 16px rgba(45,212,255,.35);margin:8px 0 4px}
+  .sub{font-size:10.5px;color:var(--cyan-dim);letter-spacing:.08em;line-height:1.7;max-width:760px}
+
+  /* chips */
+  #chips{display:flex;flex-wrap:wrap;gap:10px;margin:18px 0 16px}
+  .chip{padding:9px 13px;border:1px solid var(--line);min-width:96px;
+    background:linear-gradient(180deg,rgba(45,212,255,.05),transparent);
+    clip-path:polygon(9px 0,100% 0,100% calc(100% - 9px),calc(100% - 9px) 100%,0 100%,0 9px)}
+  .chip .k{font-size:8px;letter-spacing:.24em;color:var(--cyan-dim);text-transform:uppercase}
+  .chip .v{font-size:14px;color:var(--cyan-hot);margin-top:3px}
+  .chip.ok .v{color:var(--good)} .chip.warn .v{color:var(--bad)}
+
+  /* controls */
+  #ctl{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin:4px 0 14px}
+  #q{font-family:var(--mono);background:transparent;border:1px solid var(--line);color:var(--cyan-hot);
+    padding:7px 11px;font-size:11px;letter-spacing:.08em;width:220px;outline:none}
+  #q:focus{border-color:var(--cyan)}
+  .seg{display:flex;border:1px solid var(--line)}
+  .seg button{font-family:var(--mono);background:transparent;border:none;color:var(--cyan-dim);
+    padding:7px 13px;cursor:pointer;font-size:9.5px;letter-spacing:.18em;text-transform:uppercase}
+  .seg button.on{background:var(--cyan);color:#02161c}
+  #count{font-size:9.5px;color:var(--cyan-dim);letter-spacing:.16em}
+
+  /* stats table */
+  table{width:100%;border-collapse:collapse;font-size:11.5px}
+  thead th{position:sticky;top:0;background:var(--void);text-align:left;font-weight:400;
+    font-size:9px;letter-spacing:.22em;text-transform:uppercase;color:var(--cyan-dim);
+    padding:8px 10px;border-bottom:1px solid var(--line);cursor:pointer;white-space:nowrap}
+  thead th:hover{color:var(--cyan-hot)}
+  thead th .arr{color:var(--gold)}
+  tbody td{padding:6px 10px;border-bottom:1px solid rgba(45,212,255,.08);color:var(--cyan-hot);white-space:nowrap}
+  tbody tr{cursor:pointer}
+  tbody tr:hover td{background:rgba(45,212,255,.05)}
+  td.f{color:#eafbff;letter-spacing:.05em}
+  td.num{font-variant-numeric:tabular-nums}
+  td.hot{color:var(--gold)}
+  canvas.spark{display:block;height:20px;width:96px}
+
+  /* figure grid */
+  #grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px}
+  .fig{border:1px solid var(--line);background:linear-gradient(180deg,rgba(45,212,255,.04),transparent);
+    clip-path:polygon(10px 0,100% 0,100% calc(100% - 10px),calc(100% - 10px) 100%,0 100%,0 10px);
+    cursor:pointer;transition:border-color .2s}
+  .fig:hover{border-color:rgba(255,200,87,.7)}
+  .fig img{display:block;width:100%;aspect-ratio:4/3;object-fit:contain;background:#060a10}
+  .fig .cap{padding:8px 10px;font-size:9px;color:var(--cyan-dim);letter-spacing:.06em;line-height:1.6;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+  /* observatory */
+  .obs-chips{display:flex;flex-wrap:wrap;gap:10px;margin:16px 0 12px}
+  .obs-ctl{display:flex;flex-wrap:wrap;gap:22px;align-items:flex-end;margin:6px 0 16px;
+    padding:14px;border:1px solid var(--line);
+    clip-path:polygon(10px 0,100% 0,100% calc(100% - 10px),calc(100% - 10px) 100%,0 100%,0 10px)}
+  .obs-ctl .lab{font-size:8.5px;letter-spacing:.26em;color:var(--cyan-dim);text-transform:uppercase;margin-bottom:6px}
+  #tau{-webkit-appearance:none;appearance:none;width:min(420px,60vw);height:3px;outline:none;
+    background:linear-gradient(90deg,var(--flame),var(--cyan))}
+  #tau::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:15px;height:15px;
+    background:var(--gold);border:1px solid #000;cursor:ew-resize;
+    clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%);box-shadow:0 0 10px rgba(255,200,87,.8)}
+  #tau::-moz-range-thumb{width:15px;height:15px;background:var(--gold);border:1px solid #000;cursor:ew-resize}
+  .tau-read{font-size:13px;color:var(--gold);margin-left:12px}
+  .kdirs{font-size:9.5px;color:var(--cyan-dim);letter-spacing:.14em;margin-left:12px}
+  .exwrap{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  #ex-idx{font-family:var(--mono);width:72px;background:transparent;border:1px solid var(--line);
+    color:var(--cyan-hot);padding:6px 8px;font-size:12px;outline:none}
+  .xbtn{font-family:var(--mono);background:transparent;border:1px solid var(--line);color:var(--cyan-dim);
+    padding:6px 10px;font-size:9px;letter-spacing:.16em;text-transform:uppercase;cursor:pointer}
+  .xbtn:hover{color:var(--cyan-hot);border-color:var(--cyan)}
+  .expred{font-size:10px;color:var(--gold);letter-spacing:.12em}
+  .obs-grid{display:grid;grid-template-columns:minmax(0,3fr) minmax(0,2fr);gap:14px}
+  .obs-cell{border:1px solid var(--line);padding:12px 12px 8px;min-width:0;
+    background:linear-gradient(180deg,rgba(45,212,255,.04),transparent);
+    clip-path:polygon(10px 0,100% 0,100% calc(100% - 10px),calc(100% - 10px) 100%,0 100%,0 10px)}
+  .obs-cell .ct{font-size:8.5px;letter-spacing:.26em;color:var(--cyan-dim);text-transform:uppercase;margin-bottom:8px}
+  .obs-cell canvas{display:block;width:100%}
+  #cv-bars{height:280px} #cv-eig{height:132px} #cv-sweep{height:132px} #cv-conf{height:150px}
+  .obs-legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:6px;font-size:8.5px;
+    letter-spacing:.18em;color:var(--cyan-dim);text-transform:uppercase}
+  .obs-legend b{font-weight:400}
+  .lg-llla b{color:var(--cyan)} .lg-mc b{color:var(--gold)} .lg-map b{color:#eafbff} .lg-hmc b{color:var(--ember)}
+  .obs-hmc{margin-top:14px;border:1px solid var(--line);padding:14px;
+    clip-path:polygon(10px 0,100% 0,100% calc(100% - 10px),calc(100% - 10px) 100%,0 100%,0 10px)}
+  .obs-hmc .hrow{display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap}
+  .obs-hmc input{font-family:var(--mono);width:70px;background:transparent;border:1px solid var(--line);
+    color:var(--cyan-hot);padding:6px 8px;font-size:12px;outline:none}
+  #hmc-run{font-family:var(--disp);font-weight:700;font-size:10px;letter-spacing:.26em;text-transform:uppercase;
+    color:var(--void);background:linear-gradient(90deg,var(--ember),var(--flame));border:none;padding:9px 20px;cursor:pointer;
+    clip-path:polygon(8px 0,100% 0,100% calc(100% - 8px),calc(100% - 8px) 100%,0 100%,0 8px)}
+  #hmc-run:disabled{opacity:.35;cursor:wait}
+  #hmc-diag{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+  #cv-lp{height:56px;margin-top:10px}
+  .obs-err{display:none;margin:14px 0;color:var(--bad);font-size:11px;letter-spacing:.1em}
+  .obs-err.on{display:block}
+  @media (max-width:1050px){.obs-grid{grid-template-columns:1fr}}
+
+  /* drop deck */
+  #drop-row{display:flex;flex-wrap:wrap;gap:16px;align-items:center;margin:18px 0 8px}
+  .dz{position:relative;overflow:hidden;display:flex;flex-direction:column;align-items:center;
+    justify-content:center;gap:9px;width:min(580px,100%);min-height:138px;padding:24px 18px;
+    text-align:center;border:1px dashed rgba(45,212,255,.45);cursor:pointer;
+    transition:border-color .2s, background .2s;
+    clip-path:polygon(12px 0,100% 0,100% calc(100% - 12px),calc(100% - 12px) 100%,0 100%,0 12px)}
+  .dz:hover,.dz.hot{border-color:var(--gold);background:rgba(255,200,87,.04)}
+  .dz.busy{animation:dzpulse 1.2s ease-in-out infinite}
+  @keyframes dzpulse{0%,100%{border-color:rgba(255,122,13,.5)}50%{border-color:var(--gold)}}
+  .dz .wm{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+    font-family:var(--disp);font-weight:900;font-size:78px;letter-spacing:.4em;text-indent:.4em;
+    color:rgba(45,212,255,.06);user-select:none;pointer-events:none;white-space:nowrap}
+  .dz .wm i{font-style:normal;color:rgba(255,122,13,.10)}
+  .dz .big{position:relative;font-family:var(--disp);font-weight:900;font-size:20px;letter-spacing:.34em;
+    text-transform:uppercase;color:#eafbff;text-shadow:0 0 18px rgba(45,212,255,.5)}
+  .dz .small{position:relative;font-size:9.5px;letter-spacing:.2em;color:var(--cyan-dim);text-transform:uppercase}
+  .dz .fname{position:relative;font-size:12.5px;color:var(--gold);letter-spacing:.06em}
+  #drop-scan{display:none;height:3px;margin:10px 0 4px;position:relative;overflow:hidden;
+    background:rgba(45,212,255,.12)}
+  #drop-scan.on{display:block}
+  #drop-scan::after{content:"";position:absolute;top:0;left:-30%;width:30%;height:100%;
+    background:linear-gradient(90deg,transparent,var(--flame),var(--gold),transparent);
+    animation:scan 1.1s linear infinite}
+  @keyframes scan{to{left:100%}}
+  #drop-fire{font-family:var(--disp);font-weight:700;font-size:11px;letter-spacing:.3em;text-transform:uppercase;
+    color:var(--void);background:linear-gradient(90deg,var(--flame),var(--gold));border:none;padding:11px 28px;cursor:pointer;
+    clip-path:polygon(8px 0,100% 0,100% calc(100% - 8px),calc(100% - 8px) 100%,0 100%,0 8px)}
+  #drop-fire:disabled{opacity:.25;cursor:not-allowed}
+  #drop-status{min-height:14px;font-size:10px;letter-spacing:.14em;color:var(--cyan-dim);margin:10px 0}
+  #drop-status.err{color:var(--bad)}
+  .drop-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:14px;margin-top:6px}
+  .dcard{border:1px solid var(--line);padding:12px;min-width:0;
+    background:linear-gradient(180deg,rgba(45,212,255,.04),transparent);
+    clip-path:polygon(10px 0,100% 0,100% calc(100% - 10px),calc(100% - 10px) 100%,0 100%,0 10px)}
+  .dcard .mkline{display:flex;justify-content:space-between;font-size:10.5px;letter-spacing:.22em;
+    color:var(--cyan-dim);text-transform:uppercase;margin-bottom:8px}
+  .dcard .topline{font-family:var(--disp);font-size:16px;font-weight:700;color:var(--gold);
+    letter-spacing:.1em;margin-bottom:10px;text-shadow:0 0 12px rgba(255,200,87,.35)}
+  .dcard canvas{display:block;width:100%;height:250px}
+  .dcard .derr{font-size:10px;color:var(--bad);letter-spacing:.08em;line-height:1.6}
+
+  /* stubs */
+  .stub{margin-top:22px;max-width:640px;border:1px dashed rgba(45,212,255,.35);padding:22px;
+    clip-path:polygon(12px 0,100% 0,100% calc(100% - 12px),calc(100% - 12px) 100%,0 100%,0 12px)}
+  .stub .st{font-size:9px;letter-spacing:.3em;text-transform:uppercase;margin-bottom:10px}
+  .stub .st.amber{color:var(--amber)} .stub .st.lock{color:var(--cyan-dim)}
+  .stub p{font-size:11px;color:var(--cyan-dim);line-height:1.8;letter-spacing:.04em}
+  .stub a{color:var(--gold);text-decoration:none}
+  .stub a:hover{color:var(--cyan-hot)}
+
+  /* lightbox */
+  #lb{position:fixed;inset:0;display:none;align-items:center;justify-content:center;
+    background:rgba(2,4,8,.9);z-index:50;padding:30px;cursor:zoom-out}
+  #lb.on{display:flex}
+  #lb img{max-width:min(1100px,94vw);max-height:88vh;border:1px solid var(--line);background:#060a10}
+  #lb .cap{position:fixed;bottom:14px;left:0;right:0;text-align:center;font-size:10px;
+    color:var(--cyan-dim);letter-spacing:.1em}
+
+  #err{display:none;margin-top:20px;color:var(--bad);font-size:11px;letter-spacing:.1em}
+  #err.on{display:block}
+
+  @media (max-width:820px){
+    #frame{flex-direction:column}
+    #rail{width:auto;flex-direction:row;flex-wrap:wrap;padding:14px 16px 0}
+    #rail::before{display:none}
+    #stage{padding:16px}
+    header{padding:14px 16px 10px}
+  }
+  @media (prefers-reduced-motion:reduce){
+    #rail::before{animation:none;height:100%}
+    #hstat .dot,.led.staged{animation:none}
+  }
+</style>
+</head>
+<body>
+
+<header class="hud">
+  <div id="brand"><a href="https://forge-observatory.com/"><span class="word">F<span class="o">O</span>RGE</span></a></div>
+  <div id="exp">BEARDOWN</div>
+  <div id="modelchip"><a href="/select" title="change model">model: <span id="mname">&mdash;</span></a></div>
+  <div class="spacer"></div>
+  <div id="phase">
+    <button data-p="before">before</button>
+    <button data-p="after" class="on">after</button>
+  </div>
+  <div id="hstat"><span class="dot"></span>dashboard <b>online</b><br><span id="hphase">after</span> &middot; data-doctor pass</div>
+</header>
+
+<div id="frame">
+  <nav id="rail" aria-label="analysis modules">
+    <div class="bay on" data-panel="stats"><span class="led live"></span>
+      <span class="t">Feature stats<span class="s">live &middot; input space</span></span></div>
+    <div class="bay" data-panel="forge"><span class="led live"></span>
+      <span class="t">Observatory<span class="s">live &middot; &tau;-knob posterior</span></span></div>
+    <div class="bay" data-panel="drop"><span class="led live"></span>
+      <span class="t">Drop Deck<span class="s">live &middot; song &rarr; family</span></span></div>
+    <div class="bay" data-panel="genealogy"><span class="led staged"></span>
+      <span class="t">Genealogy<span class="s">queued &middot; mk1&rarr;mk3</span></span></div>
+    <div class="bay dis" data-panel="attribution"><span class="led locked"></span>
+      <span class="t">Attribution<span class="s">gated &middot; precompute</span></span></div>
+  </nav>
+
+  <main id="stage">
+
+    <!-- ============ FEATURE STATS (live) ============ -->
+    <section class="panel on" id="p-stats">
+      <div class="eye">module 01 &middot; input space</div>
+      <h1>Feature stats</h1>
+      <div class="sub">The profiled input battery (the 57 model features + raw length) and spectrogram expectations, per genre.
+        BEFORE is the raw compendium; AFTER is the post data-doctor pass the frozen models trained on.
+        Click a row or figure for the full plot.</div>
+
+      <div id="chips"><!-- injected --></div>
+
+      <div id="ctl">
+        <input id="q" type="search" placeholder="filter features..." autocomplete="off" spellcheck="false">
+        <div class="seg" id="view">
+          <button data-v="table" class="on">stats table</button>
+          <button data-v="grid">figures</button>
+        </div>
+        <div class="seg" id="kind" style="display:none">
+          <button data-k="feature_dist" class="on">distributions</button>
+          <button data-k="class_balance">balance</button>
+          <button data-k="exemplars">exemplars</button>
+        </div>
+        <div class="spacer"></div>
+        <div id="count"></div>
+      </div>
+
+      <div id="tblwrap">
+        <table>
+          <thead><tr id="thead"></tr></thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+      <div id="grid" style="display:none"></div>
+      <div id="err"></div>
+    </section>
+
+    <!-- ============ OBSERVATORY (live) ============ -->
+    <section class="panel" id="p-forge">
+      <div class="eye">module 02 &middot; posterior</div>
+      <h1>Observatory</h1>
+      <div class="sub">Last-layer Laplace over the frozen head. Drag &tau; (prior precision): every plot recomputes
+        in-browser from the bundle's cached eigen-projections &mdash; v(&tau;)=&Sigma;&thinsp;c<sub>i</sub>/(&lambda;<sub>i</sub>+&tau;).
+        Pick a training example to see whose uncertainty you're looking at.</div>
+
+      <div class="obs-err" id="obs-err"></div>
+      <div class="obs-chips" id="obs-cards"></div>
+
+      <div class="obs-ctl">
+        <div>
+          <div class="lab">prior precision &tau; (log)</div>
+          <input type="range" id="tau" min="0" max="1000" value="500">
+          <span class="tau-read" id="tau-read">&mdash;</span>
+          <span class="kdirs" id="kdirs"></span>
+        </div>
+        <div>
+          <div class="lab">training example</div>
+          <div class="exwrap">
+            <input type="number" id="ex-idx" min="0" value="0">
+            <button class="xbtn" id="ex-starved" title="max input variance">most starved</button>
+            <button class="xbtn" id="ex-anchored" title="min input variance">most anchored</button>
+            <button class="xbtn" id="ex-rand">random</button>
+            <span class="expred" id="ex-pred"></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="obs-grid">
+        <div class="obs-cell" style="grid-row:span 2">
+          <div class="ct">predictive posterior &mdash; mean &plusmn; &sigma; (live probit)</div>
+          <canvas id="cv-bars"></canvas>
+          <div class="obs-legend">
+            <span class="lg-llla"><b>&#9632;</b> llla @ &tau; (live)</span>
+            <span class="lg-mc"><b>&#9679;</b> mc reference @ &tau;&#8320;</span>
+            <span class="lg-map"><b>&#9472;</b> map softmax</span>
+            <span class="lg-hmc"><b>&#9648;</b> hmc (after run)</span>
+          </div>
+        </div>
+        <div class="obs-cell"><div class="ct">ggn eigenspectrum vs &tau;</div><canvas id="cv-eig"></canvas></div>
+        <div class="obs-cell"><div class="ct">data-fraction sweep &mdash; v(&tau;)</div><canvas id="cv-sweep"></canvas></div>
+      </div>
+      <div class="obs-grid" style="margin-top:14px">
+        <div class="obs-cell"><div class="ct">test confusion (recall) &mdash; aleatoric overlap</div><canvas id="cv-conf"></canvas></div>
+        <div class="obs-cell obs-hmc" style="border:none;padding:0;clip-path:none">
+          <div class="obs-hmc">
+            <div class="ct">gold standard &mdash; last-layer hmc</div>
+            <div class="hrow">
+              <div><div class="lab">samples</div><input id="hmc-n" type="number" value="250" min="50" max="1500"></div>
+              <div><div class="lab">leapfrog</div><input id="hmc-l" type="number" value="15" min="5" max="60"></div>
+              <button id="hmc-run">run sampler</button>
+              <span class="kdirs">heavy: live chain on the box at current &tau;</span>
+            </div>
+            <div id="hmc-diag"></div>
+            <canvas id="cv-lp"></canvas>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ DROP DECK (live) ============ -->
+    <section class="panel" id="p-drop">
+      <div class="eye">module 03 &middot; live fire</div>
+      <h1>Drop Deck</h1>
+      <div class="sub">Drop a track. The whole family answers &mdash; MK1 / MK2 / MK3 each return per-genre
+        probability &plusmn; &sigma; on your audio. One upload, three verdicts, disagreements included.</div>
+
+      <input type="file" id="drop-file" accept="audio/*,.wav,.mp3,.ogg,.flac,.m4a" style="display:none">
+      <div id="drop-row">
+        <div class="dz" id="dz">
+          <span class="wm" aria-hidden="true">F<i>O</i>RGE</span>
+          <span class="big">drop song here</span>
+          <span class="small">click / drag &middot; wav mp3 ogg flac</span>
+          <span class="fname" id="drop-name"></span>
+        </div>
+        <button id="drop-fire" disabled>analyze</button>
+        <div id="drop-status"></div>
+      </div>
+      <div id="drop-scan"></div>
+      <div class="drop-grid" id="drop-grid"></div>
+    </section>
+
+    <!-- ============ GENEALOGY (queued stub) ============ -->
+    <section class="panel" id="p-genealogy">
+      <div class="eye">module 03 &middot; lineage</div>
+      <h1>Genealogy</h1>
+      <div class="sub">MK1 &rarr; MK2 &rarr; MK3 side by side &mdash; the only bay that sees all bundles at once.</div>
+      <div class="stub"><div class="st amber">queued</div>
+        <p>Planned board: per-genre F1 deltas across the three bundles, the variance-weighted RRM_w selection story
+        (cfg 17, CV-only inputs), and MK3's segment&rarr;track vote gain. Pure reads over
+        <span style="color:var(--cyan-hot)">metrics.json / vote_eval.json</span> &mdash; no model execution. Small build,
+        scheduled after the observatory promotes.</p></div>
+    </section>
+
+    <!-- ============ ATTRIBUTION (locked stub) ============ -->
+    <section class="panel" id="p-attribution">
+      <div class="eye">module 04 &middot; input attribution</div>
+      <h1>Attribution</h1>
+      <div class="sub">Epistemic sensitivity pushed backward through the frozen backbone onto named inputs
+        (rung 2 of the attribution ladder).</div>
+      <div class="stub"><div class="st lock">gated &mdash; awaiting precompute</div>
+        <p>The math is implemented (<span style="color:var(--cyan-hot)">attribution.py</span> &mdash; exact dv/d&phi;,
+        &tau; factored via the cached M<sub>ik</sub> trick) but the bay stays dark until an
+        <span style="color:var(--cyan-hot)">attribution.npz</span> is written at bundle-time: one torch backward pass per
+        train example on the GPU box. No bundle on deck carries one yet.</p></div>
+    </section>
+
+  </main>
+</div>
+
+<div id="lb" role="dialog" aria-label="figure viewer"><img id="lbimg" alt=""><div class="cap" id="lbcap"></div></div>
+
+<script>
+const $ = s => document.querySelector(s);
+let PHASE = "after", EDA = {before:null, after:null};
+let SORT = {key:"idx", dir:1};
+let VIEW = "table", KIND = "feature_dist", Q = "";
+
+/* ---------- number formatting ---------- */
+function fnum(x){
+  if(x==null || Number.isNaN(x)) return "&mdash;";
+  const a = Math.abs(x);
+  if(a!==0 && (a<1e-3 || a>=1e6)) return x.toExponential(2);
+  if(a>=1000) return x.toFixed(0);
+  return x.toPrecision(4).replace(/\.?0+$/,"");
+}
+
+/* ---------- header chips ---------- */
+function chips(d){
+  const s=d.summary||{}, e=d.expectations||{}, mc=(d.missing_corrupt||{}).counts||{};
+  const wavMiss = Object.values(mc.wav_per_class||{}).reduce((a,b)=>a+b,0);
+  const c = [
+    {k:"tracks", v:s.n_rows},
+    {k:"features", v:s.n_features},
+    {k:"per class", v:e.per_class},
+    {k:"sample rate", v:e.sample_rate+" hz"},
+    {k:"duration", v:e.duration_s+" s"},
+    {k:"nan / inf", v:(s.total_nan||0)+" / "+(s.total_inf||0), ok:(s.total_nan||0)+(s.total_inf||0)===0},
+    {k:"types", v:s.n_types_pass+"/"+(s.n_types_pass+s.n_types_fail)+" pass", ok:s.all_types_pass},
+    {k:"missing wav", v:wavMiss, ok:wavMiss===0},
+  ];
+  $("#chips").innerHTML = c.map(x=>
+    `<div class="chip ${x.ok===true?'ok':(x.ok===false?'warn':'')}">
+       <div class="k">${x.k}</div><div class="v">${x.v==null?"&mdash;":x.v}</div></div>`).join("");
+}
+
+/* ---------- sparkline from hist ---------- */
+function spark(cv, hist){
+  if(!hist || !hist.per_genre) return;
+  const per = Object.values(hist.per_genre);
+  const n = per[0].length, tot = new Array(n).fill(0);
+  per.forEach(a=>a.forEach((v,i)=>tot[i]+=v));
+  const max = Math.max(...tot, 1);
+  const ctx = cv.getContext("2d");
+  const W = cv.width = 96*devicePixelRatio, H = cv.height = 20*devicePixelRatio;
+  ctx.clearRect(0,0,W,H);
+  const bw = W/n;
+  const grad = ctx.createLinearGradient(0,0,W,0);
+  grad.addColorStop(0,"#2DD4FF"); grad.addColorStop(1,"#FFC857");
+  ctx.fillStyle = grad; ctx.globalAlpha = .85;
+  tot.forEach((v,i)=>{ const h = Math.max(1, v/max*(H-2)); ctx.fillRect(i*bw+.5, H-h, Math.max(1,bw-1), h); });
+}
+
+/* ---------- stats table ---------- */
+const COLS = [
+  {key:"idx",  lab:"#",        num:true},
+  {key:"name", lab:"feature",  num:false},
+  {key:"mean", lab:"mean",     num:true},
+  {key:"std",  lab:"std",      num:true},
+  {key:"skew", lab:"skew",     num:true},
+  {key:"outlier_pct", lab:"outliers %", num:true},
+  {key:"spark", lab:"distribution", num:false, nosort:true},
+];
+function rows(d){
+  const pf = (d.nerd_stats||{}).per_feature || {};
+  return Object.entries(pf).map(([name,st],i)=>({
+    idx:i+1, name, mean:st.mean, std:st.std, skew:st.skew,
+    outlier_pct:st.outlier_pct, hist:st.hist,
+    fig:(d.figures||[]).find(f=>f.feature===name && f.kind==="feature_dist")
+  }));
+}
+function renderTable(){
+  const d = EDA[PHASE]; if(!d) return;
+  let R = rows(d).filter(r=>r.name.toLowerCase().includes(Q));
+  const {key,dir} = SORT;
+  if(key!=="spark") R.sort((a,b)=>{
+    const x=a[key], y=b[key];
+    if(x==null) return 1; if(y==null) return -1;
+    return (typeof x==="string" ? x.localeCompare(y) : x-y)*dir;
+  });
+  $("#thead").innerHTML = COLS.map(c=>
+    `<th data-k="${c.key}">${c.lab}${SORT.key===c.key?` <span class="arr">${dir>0?"&#9652;":"&#9662;"}</span>`:""}</th>`).join("");
+  const tb = $("#tbody"); tb.innerHTML = "";
+  R.forEach(r=>{
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td class="num" style="color:var(--cyan-dim)">${String(r.idx).padStart(2,"0")}</td>
+      <td class="f">${r.name}</td>
+      <td class="num">${fnum(r.mean)}</td><td class="num">${fnum(r.std)}</td>
+      <td class="num ${Math.abs(r.skew)>2?'hot':''}">${fnum(r.skew)}</td>
+      <td class="num ${r.outlier_pct>8?'hot':''}">${r.outlier_pct==null?"&mdash;":r.outlier_pct.toFixed(1)}</td>
+      <td><canvas class="spark"></canvas></td>`;
+    if(r.fig) tr.addEventListener("click", ()=>lightbox(r.fig));
+    tb.appendChild(tr);
+    spark(tr.querySelector("canvas"), r.hist);
+  });
+  $("#count").textContent = R.length+" / "+rows(d).length+" features";
+  document.querySelectorAll("#thead th").forEach(th=>th.addEventListener("click",()=>{
+    const k = th.dataset.k, col = COLS.find(c=>c.key===k);
+    if(col.nosort) return;
+    SORT = {key:k, dir: SORT.key===k ? -SORT.dir : 1};
+    renderTable();
+  }));
+}
+
+/* ---------- figure grid ---------- */
+function renderGrid(){
+  const d = EDA[PHASE]; if(!d) return;
+  let F = (d.figures||[]).filter(f=>
+    (KIND==="exemplars" ? (f.kind||"").startsWith("exemplars") : f.kind===KIND));
+  if(Q) F = F.filter(f=>((f.feature||"")+" "+(f.caption||"")).toLowerCase().includes(Q));
+  $("#grid").innerHTML = F.map(f=>
+    `<div class="fig" data-file="${f.file}" data-cap="${(f.caption||f.file).replace(/"/g,"&quot;")}">
+       <img loading="lazy" src="/figures/${PHASE}/${f.file}" alt="${f.feature||f.kind}">
+       <div class="cap">${f.caption||f.file}</div></div>`).join("");
+  $("#count").textContent = F.length+" figures";
+  document.querySelectorAll("#grid .fig").forEach(el=>el.addEventListener("click",
+    ()=>lightbox({file:el.dataset.file, caption:el.dataset.cap})));
+}
+
+/* ---------- lightbox ---------- */
+function lightbox(f){
+  $("#lbimg").src = "/figures/"+PHASE+"/"+f.file;
+  $("#lbcap").textContent = f.caption||f.file;
+  $("#lb").classList.add("on");
+}
+$("#lb").addEventListener("click", ()=>$("#lb").classList.remove("on"));
+addEventListener("keydown", e=>{ if(e.key==="Escape") $("#lb").classList.remove("on"); });
+
+/* ---------- data / phase ---------- */
+async function loadPhase(p){
+  if(EDA[p]) return EDA[p];
+  const r = await fetch("/api/eda?phase="+p);
+  const j = await r.json();
+  if(!r.ok || j.error) throw new Error(j.error||r.status);
+  EDA[p] = j; return j;
+}
+async function setPhase(p){
+  PHASE = p;
+  document.querySelectorAll("#phase button").forEach(b=>b.classList.toggle("on", b.dataset.p===p));
+  $("#hphase").textContent = p;
+  $("#err").classList.remove("on");
+  try{
+    const d = await loadPhase(p);
+    chips(d);
+    VIEW==="table" ? renderTable() : renderGrid();
+  }catch(err){
+    $("#err").textContent = "no '"+p+"' EDA on disk — "+err.message;
+    $("#err").classList.add("on");
+    $("#tbody").innerHTML=""; $("#grid").innerHTML=""; $("#chips").innerHTML=""; $("#count").textContent="";
+  }
+}
+document.querySelectorAll("#phase button").forEach(b=>b.addEventListener("click",()=>setPhase(b.dataset.p)));
+
+/* ---------- controls ---------- */
+$("#q").addEventListener("input", e=>{ Q = e.target.value.trim().toLowerCase();
+  VIEW==="table" ? renderTable() : renderGrid(); });
+document.querySelectorAll("#view button").forEach(b=>b.addEventListener("click",()=>{
+  VIEW = b.dataset.v;
+  document.querySelectorAll("#view button").forEach(x=>x.classList.toggle("on", x===b));
+  $("#tblwrap").style.display = VIEW==="table" ? "" : "none";
+  $("#grid").style.display   = VIEW==="grid"  ? "grid" : "none";
+  $("#kind").style.display   = VIEW==="grid"  ? "" : "none";
+  VIEW==="table" ? renderTable() : renderGrid();
+}));
+document.querySelectorAll("#kind button").forEach(b=>b.addEventListener("click",()=>{
+  KIND = b.dataset.k;
+  document.querySelectorAll("#kind button").forEach(x=>x.classList.toggle("on", x===b));
+  renderGrid();
+}));
+
+/* ================= DROP DECK (bay 03) ================= */
+const DROP = {file:null, busy:false};
+(function(){
+  const dz = document.getElementById("dz"), fi = document.getElementById("drop-file");
+  const nm = document.getElementById("drop-name"), fire = document.getElementById("drop-fire");
+  function setFile(f){
+    if(!f) return;
+    DROP.file = f;
+    nm.textContent = f.name + "  (" + (f.size/1048576).toFixed(1) + " MB)";
+    fire.disabled = false;
+  }
+  dz.addEventListener("click", ()=>fi.click());
+  fi.addEventListener("change", ()=>setFile(fi.files[0]));
+  ["dragover","dragenter"].forEach(ev=>dz.addEventListener(ev, e=>{e.preventDefault(); dz.classList.add("hot");}));
+  ["dragleave","drop"].forEach(ev=>dz.addEventListener(ev, e=>{e.preventDefault(); dz.classList.remove("hot");}));
+  dz.addEventListener("drop", e=>setFile(e.dataTransfer.files[0]));
+  fire.addEventListener("click", dropFire);
+})();
+function drawDropBars(cv, per){
+  const r = cv.getBoundingClientRect(), dpr = devicePixelRatio||1;
+  cv.width = r.width*dpr; cv.height = r.height*dpr;
+  const ctx = cv.getContext("2d"); ctx.setTransform(dpr,0,0,dpr,0,0);
+  const W = r.width, H = r.height, n = per.length;
+  const rowH = H/n, padL = 104, padR = 58;
+  per.forEach((g,i)=>{
+    const y = i*rowH;
+    const span = W-padL-padR;
+    const w = span*Math.max(0,Math.min(1,g.prob));
+    const sw = span*Math.max(0,g.sigma||0);
+    const grad = ctx.createLinearGradient(padL,0,padL+Math.max(1,w),0);
+    grad.addColorStop(0,"rgba(45,212,255,.15)"); grad.addColorStop(1, i===0? "#FFC857" : "#2DD4FF");
+    ctx.fillStyle = grad;
+    ctx.fillRect(padL, y+rowH*.26, Math.max(1.5,w), rowH*.48);
+    ctx.strokeStyle = "#7ff0ff"; ctx.lineWidth = 1.4;
+    ctx.beginPath(); ctx.moveTo(padL+Math.max(0,w-sw), y+rowH*.5); ctx.lineTo(Math.min(W-2,padL+w+sw), y+rowH*.5); ctx.stroke();
+    ctx.fillStyle = i===0 ? "#FFC857" : "#8fd8e8";
+    ctx.font = (i===0? "700 " : "") + "12px 'Share Tech Mono'"; ctx.textAlign = "right";
+    ctx.fillText(g.genre, padL-8, y+rowH*.5+4);
+    ctx.textAlign = "left";
+    ctx.fillStyle = i===0 ? "#FFC857" : "#0e9bb0";
+    ctx.fillText((100*g.prob).toFixed(1)+"%", padL+w+6, y+rowH*.5+4);
+  });
+}
+async function dropFire(){
+  if (!DROP.file || DROP.busy) return;
+  DROP.busy = true;
+  const st = document.getElementById("drop-status"), grid = document.getElementById("drop-grid");
+  const fire = document.getElementById("drop-fire");
+  const scan = document.getElementById("drop-scan"), dzEl = document.getElementById("dz");
+  st.className = "";
+  fire.disabled = true; fire.textContent = "forging...";
+  scan.classList.add("on"); dzEl.classList.add("busy");
+  const t0 = Date.now();
+  DROP.tick = setInterval(()=>{
+    st.textContent = "running the family on "+DROP.file.name+" ... "+
+      Math.round((Date.now()-t0)/1000)+"s (first run loads three models)";
+  }, 500);
+  grid.innerHTML = "";
+  try{
+    const fd = new FormData(); fd.append("audio", DROP.file);
+    const r = await fetch("/api/predict", {method:"POST", body:fd});
+    const j = await r.json();
+    if (j.error) throw new Error(j.error);
+    const blocks = j.models || j.blocks || (Array.isArray(j)? j : []);
+    if (!blocks.length) throw new Error("empty response");
+    st.textContent = "verdicts in.";
+    blocks.forEach(b=>{
+      const card = document.createElement("div"); card.className = "dcard";
+      if (b.error){
+        card.innerHTML = `<div class="mkline"><span>${b.label||b.run||"model"}</span><span>${b.run||""}</span></div>
+          <div class="derr">${b.error}</div>`;
+      } else {
+        card.innerHTML = `<div class="mkline"><span>${b.label||b.run}</span><span>${b.run||""}</span></div>
+          <div class="topline">top: ${b.top.genre} ${(100*b.top.prob).toFixed(1)}% &plusmn; ${(100*(b.top.sigma||0)).toFixed(1)}</div>
+          <canvas></canvas>`;
+      }
+      grid.appendChild(card);
+      const cv = card.querySelector("canvas");
+      if (cv) drawDropBars(cv, b.per_genre);
+    });
+  }catch(e){
+    st.className = "err"; st.textContent = "drop failed: "+e.message;
+  }
+  clearInterval(DROP.tick);
+  scan.classList.remove("on"); dzEl.classList.remove("busy");
+  DROP.busy = false; fire.disabled = false; fire.textContent = "analyze";
+}
+
+/* ================= OBSERVATORY (bay 02) ================= */
+const OBS = {ready:false, meta:null, post:null, sweep:null, hmc:null, tau:null, idx:0};
+const TAUC = {min:1e-4, max:1};
+function tauFromSlider(v){ const t = Math.pow(10, Math.log10(TAUC.min) + (v/1000)*(Math.log10(TAUC.max)-Math.log10(TAUC.min))); return t; }
+function sliderFromTau(t){ return Math.round(1000*(Math.log10(t)-Math.log10(TAUC.min))/(Math.log10(TAUC.max)-Math.log10(TAUC.min))); }
+function softmax(z){ const m=Math.max(...z); const e=z.map(x=>Math.exp(x-m)); const s=e.reduce((a,b)=>a+b,0); return e.map(x=>x/s); }
+function vOfTau(c, lam, tau){ let v=0; for(let i=0;i<c.length;i++) v += c[i]/(lam[i]+tau); return v; }
+function probit(mu, SA, v){
+  const C = mu.length;
+  const Sig = SA.map(row=>row.map(x=>x*v));
+  const diag = Sig.map((r,i)=>Math.max(0,r[i]));
+  const kap = diag.map(d=>1/Math.sqrt(1+Math.PI/8*d));
+  const mean = softmax(mu.map((m,i)=>m*kap[i]));
+  const p = softmax(mu);
+  const J = []; for(let i=0;i<C;i++){ J.push([]); for(let j=0;j<C;j++) J[i].push((i===j?p[i]:0)-p[i]*p[j]); }
+  const sig = [];
+  for(let i=0;i<C;i++){ let acc=0;
+    for(let j=0;j<C;j++){ let t=0; for(let k=0;k<C;k++) t += Sig[j][k]*J[i][k]; acc += J[i][j]*t; }
+    sig.push(Math.sqrt(Math.max(0,acc)));
+  }
+  return {mean, sig};
+}
+function cvCtx(id){
+  const cv = document.getElementById(id);
+  const r = cv.getBoundingClientRect(), dpr = devicePixelRatio||1;
+  cv.width = Math.max(50, r.width*dpr); cv.height = Math.max(30, r.height*dpr);
+  const ctx = cv.getContext("2d"); ctx.setTransform(dpr,0,0,dpr,0,0);
+  return {ctx, W:r.width, H:r.height};
+}
+const OC = {cyan:"#2DD4FF", hot:"#7ff0ff", dim:"#0e6b73", gold:"#FFC857", flame:"#FF7A0D", ember:"#FF4D1F", white:"#eafbff"};
+
+function drawBars(){
+  const P = OBS.post; if(!P) return;
+  const {ctx,W,H} = cvCtx("cv-bars");
+  const G = P.genres, C = G.length;
+  const tau = OBS.tau;
+  const v = vOfTau(P.eig.c, P.eig.lam, tau);
+  const live = probit(P.logit_mean, P.output_cov, v);
+  const mapP = softmax(P.logit_mean);
+  const pad = {l:34, r:8, t:8, b:34};
+  const bw = (W-pad.l-pad.r)/C;
+  const y = p => pad.t + (1-p)*(H-pad.t-pad.b);
+  ctx.strokeStyle = "rgba(45,212,255,.15)"; ctx.fillStyle = OC.dim;
+  ctx.font = "9px 'Share Tech Mono'"; ctx.textAlign = "right";
+  [0,.25,.5,.75,1].forEach(g=>{ ctx.beginPath(); ctx.moveTo(pad.l,y(g)); ctx.lineTo(W-pad.r,y(g)); ctx.stroke(); ctx.fillText((g*100)+"%", pad.l-5, y(g)+3); });
+  for(let i=0;i<C;i++){
+    const x = pad.l + i*bw;
+    const m = live.mean[i], sg = live.sig[i];
+    const grad = ctx.createLinearGradient(0,y(m),0,y(0));
+    grad.addColorStop(0,OC.cyan); grad.addColorStop(1,"rgba(45,212,255,.12)");
+    ctx.fillStyle = grad;
+    ctx.fillRect(x+bw*.2, y(m), bw*.6, y(0)-y(m));
+    ctx.strokeStyle = OC.hot; ctx.beginPath();
+    ctx.moveTo(x+bw*.5, y(Math.min(1,m+sg))); ctx.lineTo(x+bw*.5, y(Math.max(0,m-sg))); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x+bw*.38, y(Math.min(1,m+sg))); ctx.lineTo(x+bw*.62, y(Math.min(1,m+sg))); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x+bw*.38, y(Math.max(0,m-sg))); ctx.lineTo(x+bw*.62, y(Math.max(0,m-sg))); ctx.stroke();
+    ctx.strokeStyle = OC.white;
+    ctx.beginPath(); ctx.moveTo(x+bw*.15, y(mapP[i])); ctx.lineTo(x+bw*.85, y(mapP[i])); ctx.stroke();
+    const ref = P.posterior;
+    if (ref && ref.mean){ ctx.fillStyle = OC.gold; ctx.beginPath(); ctx.arc(x+bw*.5, y(ref.mean[i]), 2.4, 0, 7); ctx.fill(); }
+    if (OBS.hmc && OBS.hmc.hmc){
+      const h = OBS.hmc.hmc; ctx.strokeStyle = OC.ember;
+      ctx.strokeRect(x+bw*.3, y(Math.min(1,h.mean[i]+h.sigma[i])), bw*.4, Math.max(1, y(Math.max(0,h.mean[i]-h.sigma[i])) - y(Math.min(1,h.mean[i]+h.sigma[i]))));
+    }
+    ctx.fillStyle = OC.dim; ctx.textAlign="center"; ctx.save();
+    ctx.translate(x+bw*.5, H-4); ctx.rotate(-Math.PI/5); ctx.fillText(G[i], 0, 0); ctx.restore();
+  }
+}
+function drawEig(){
+  const P = OBS.post; if(!P) return;
+  const {ctx,W,H} = cvCtx("cv-eig");
+  const lam = [...P.eig.lam].sort((a,b)=>b-a).filter(x=>x>0);
+  const tau = OBS.tau;
+  const pad = {l:8,r:8,t:6,b:14};
+  const lmin = Math.log10(Math.max(1e-12, lam[lam.length-1])), lmax = Math.log10(lam[0]);
+  const y = L => pad.t + (1-(Math.log10(Math.max(1e-12,L))-lmin)/Math.max(1e-9,(lmax-lmin)))*(H-pad.t-pad.b);
+  const x = i => pad.l + (i/(lam.length-1))*(W-pad.l-pad.r);
+  const k = lam.filter(L=>L>tau).length;
+  ctx.fillStyle = "rgba(255,77,31,.10)";
+  const yT = Math.min(H-pad.b, Math.max(pad.t, y(tau)));
+  ctx.fillRect(pad.l, yT, W-pad.l-pad.r, (H-pad.b)-yT);
+  ctx.strokeStyle = OC.cyan; ctx.beginPath();
+  lam.forEach((L,i)=>{ i? ctx.lineTo(x(i),y(L)) : ctx.moveTo(x(i),y(L)); }); ctx.stroke();
+  ctx.strokeStyle = OC.gold; ctx.setLineDash([4,3]); ctx.beginPath();
+  ctx.moveTo(pad.l,yT); ctx.lineTo(W-pad.r,yT); ctx.stroke(); ctx.setLineDash([]);
+  ctx.fillStyle = OC.dim; ctx.font="9px 'Share Tech Mono'"; ctx.textAlign="left";
+  ctx.fillText("tau", pad.l+2, yT-3);
+  document.getElementById("kdirs").textContent = k+" / "+lam.length+" directions data-dominated";
+}
+function drawSweep(){
+  const S = OBS.sweep; if(!S) return;
+  const {ctx,W,H} = cvCtx("cv-sweep");
+  const tau = OBS.tau;
+  const pts = S.fractions.map(f=>({x:f.frac, v:vOfTau(f.c, f.lam, tau)}));
+  const pad = {l:34,r:8,t:8,b:16};
+  const vmax = Math.max(...pts.map(p=>p.v)), vmin = Math.min(...pts.map(p=>p.v));
+  const lo = Math.log10(Math.max(1e-12,vmin)), hi = Math.log10(Math.max(1e-11,vmax));
+  const X = f => pad.l + (f-0.1)/0.9*(W-pad.l-pad.r);
+  const Y = v => pad.t + (1-(Math.log10(Math.max(1e-12,v))-lo)/Math.max(1e-9,hi-lo))*(H-pad.t-pad.b);
+  ctx.strokeStyle = OC.flame; ctx.beginPath();
+  pts.forEach((p,i)=>{ i? ctx.lineTo(X(p.x),Y(p.v)) : ctx.moveTo(X(p.x),Y(p.v)); }); ctx.stroke();
+  ctx.fillStyle = OC.gold;
+  pts.forEach(p=>{ ctx.beginPath(); ctx.arc(X(p.x),Y(p.v),2.6,0,7); ctx.fill(); });
+  ctx.fillStyle = OC.dim; ctx.font="9px 'Share Tech Mono'"; ctx.textAlign="center";
+  pts.forEach(p=>ctx.fillText(Math.round(p.x*100)+"%", X(p.x), H-3));
+  ctx.textAlign="left"; ctx.fillText("v(tau) log", pad.l-30, 10);
+}
+function drawConf(){
+  const M = OBS.meta; if(!M || !M.confusion){ return; }
+  const {ctx,W,H} = cvCtx("cv-conf");
+  const cm = M.confusion, n = cm.length;
+  const pad = {l:44,r:2,t:2,b:14};
+  const cw = (W-pad.l-pad.r)/n, ch = (H-pad.t-pad.b)/n;
+  for(let i=0;i<n;i++) for(let j=0;j<n;j++){
+    const v = cm[i][j];
+    ctx.fillStyle = i===j ? "rgba(45,212,255,"+(0.12+0.8*v)+")" : "rgba(255,77,31,"+(0.05+0.9*v)+")";
+    ctx.fillRect(pad.l+j*cw, pad.t+i*ch, cw-1, ch-1);
+  }
+  ctx.fillStyle = OC.dim; ctx.font="8px 'Share Tech Mono'"; ctx.textAlign="right";
+  (M.conf_labels||M.genres).forEach((g,i)=>ctx.fillText(g.slice(0,6), pad.l-3, pad.t+i*ch+ch*.7));
+}
+function drawLp(){
+  const H0 = OBS.hmc && OBS.hmc.hmc; if(!H0 || !H0.lp_trace) return;
+  const {ctx,W,H} = cvCtx("cv-lp");
+  const t = H0.lp_trace, n = t.length;
+  const mn = Math.min(...t), mx = Math.max(...t);
+  const X = i => (i/(n-1))*W, Y = v => 4 + (1-(v-mn)/Math.max(1e-9,mx-mn))*(H-8);
+  const wf = Math.floor((H0.warmup_frac||0)*n);
+  ctx.fillStyle = "rgba(240,169,46,.10)"; ctx.fillRect(0,0,X(wf),H);
+  ctx.strokeStyle = OC.ember; ctx.beginPath();
+  t.forEach((v,i)=>{ i? ctx.lineTo(X(i),Y(v)) : ctx.moveTo(X(i),Y(v)); }); ctx.stroke();
+  ctx.fillStyle = OC.dim; ctx.font="8px 'Share Tech Mono'"; ctx.fillText("log-posterior trace (warmup shaded)", 4, 10);
+}
+function obsDrawAll(){ drawBars(); drawEig(); drawSweep(); drawConf(); drawLp();
+  document.getElementById("tau-read").textContent = "tau = "+OBS.tau.toExponential(2); }
+
+function obsErr(msg){ const e=document.getElementById("obs-err"); e.textContent=msg; e.classList.add("on"); }
+function obsCards(){
+  const M = OBS.meta, c = M.card||{};
+  const f = x => (x==null?"&mdash;":(typeof x==="number"?(x*100).toFixed(1)+"%":x));
+  const items = [
+    {k:"bundle", v:M.bundle}, {k:"val", v:f(c.val)}, {k:"test", v:f(c.test)},
+    {k:"ece", v:(c.test_ece==null?"&mdash;":c.test_ece.toFixed(3))},
+    {k:"phi dim", v:(OBS.post? OBS.post.eig.lam.length : "&mdash;")},
+    {k:"train n", v:M.n_examples},
+  ];
+  document.getElementById("obs-cards").innerHTML = items.map(x=>
+    `<div class="chip"><div class="k">${x.k}</div><div class="v">${x.v}</div></div>`).join("");
+}
+async function obsLoadExample(i){
+  const M = OBS.meta;
+  OBS.idx = Math.max(0, Math.min(i, (M.n_examples||1)-1));
+  document.getElementById("ex-idx").value = OBS.idx;
+  const [pr, sr] = await Promise.all([
+    fetch("/api/forge/posterior?index="+OBS.idx), fetch("/api/forge/datasweep?index="+OBS.idx)]);
+  const pj = await pr.json(), sj = await sr.json();
+  if (pj.error) throw new Error(pj.error);
+  OBS.post = pj; OBS.sweep = sj.error? null : sj; OBS.hmc = null;
+  const g = M.genres[M.predicted[OBS.idx]] || "?";
+  const iv = M.input_var && M.input_var[OBS.idx];
+  document.getElementById("ex-pred").textContent =
+    "#"+OBS.idx+" predicted: "+g+(iv!=null? "  v0="+Number(iv).toExponential(2) : "");
+  obsCards(); obsDrawAll();
+}
+async function obsInit(){
+  if (OBS.ready) return; OBS.ready = true;
+  try{
+    const r = await fetch("/api/forge/meta"); const j = await r.json();
+    if (j.error) throw new Error(j.error);
+    OBS.meta = j;
+    TAUC.min = j.tau_range[0]; TAUC.max = j.tau_range[1];
+    OBS.tau = j.tau_default;
+    const sl = document.getElementById("tau");
+    sl.value = sliderFromTau(OBS.tau);
+    let starved = 0, anchored = 0;
+    (j.input_var||[]).forEach((v,i)=>{ if(v>j.input_var[starved]) starved=i; if(v<j.input_var[anchored]) anchored=i; });
+    document.getElementById("ex-starved").onclick = ()=>obsLoadExample(starved).catch(e=>obsErr(e.message));
+    document.getElementById("ex-anchored").onclick = ()=>obsLoadExample(anchored).catch(e=>obsErr(e.message));
+    document.getElementById("ex-rand").onclick = ()=>obsLoadExample(Math.floor(Math.random()*j.n_examples)).catch(e=>obsErr(e.message));
+    document.getElementById("ex-idx").onchange = e=>obsLoadExample(parseInt(e.target.value||0,10)).catch(x=>obsErr(x.message));
+    sl.addEventListener("input", ()=>{ OBS.tau = tauFromSlider(+sl.value); requestAnimationFrame(obsDrawAll); });
+    document.getElementById("hmc-run").onclick = obsRunHmc;
+    await obsLoadExample(starved);
+  }catch(e){ obsErr("observatory unavailable: "+e.message); }
+}
+async function obsRunHmc(){
+  const btn = document.getElementById("hmc-run");
+  btn.disabled = true; btn.textContent = "sampling...";
+  try{
+    const n = document.getElementById("hmc-n").value, l = document.getElementById("hmc-l").value;
+    const r = await fetch(`/api/forge/hmc?index=${OBS.idx}&tau=${OBS.tau}&samples=${n}&leapfrog=${l}`);
+    const j = await r.json();
+    if (j.error) throw new Error(j.error);
+    OBS.hmc = j;
+    const h = j.hmc;
+    const chips = [["accept",h.accept.toFixed(2)],["rhat",(h.rhat==null?"&mdash;":h.rhat.toFixed(3))],
+      ["ess",Math.round(h.ess)],["divergences",h.n_divergences],["step",h.step.toExponential(1)],
+      ["@ tau",Number(j.tau).toExponential(2)]];
+    document.getElementById("hmc-diag").innerHTML = chips.map(x=>
+      `<div class="chip"><div class="k">${x[0]}</div><div class="v">${x[1]}</div></div>`).join("");
+    obsDrawAll();
+  }catch(e){ obsErr("hmc: "+e.message); }
+  btn.disabled = false; btn.textContent = "run sampler";
+}
+document.querySelector('.bay[data-panel="forge"]').addEventListener("click", obsInit);
+addEventListener("resize", ()=>{ if(OBS.ready && OBS.post) obsDrawAll(); });
+
+/* ---------- rail ---------- */
+document.querySelectorAll(".bay").forEach(b=>b.addEventListener("click",()=>{
+  document.querySelectorAll(".bay").forEach(x=>x.classList.toggle("on", x===b));
+  document.querySelectorAll(".panel").forEach(p=>p.classList.toggle("on", p.id==="p-"+b.dataset.panel));
+}));
+
+/* ---------- model chip ---------- */
+(async ()=>{
+  try{
+    const r = await fetch("/api/registry"); const j = await r.json();
+    $("#mname").textContent = j.selected || (j.entries&&j.entries[0]&&j.entries[0].id) || "none";
+  }catch(e){ $("#mname").textContent = "offline"; }
+})();
+
+setPhase(PHASE);
+if(["127.0.0.1","localhost"].indexOf(location.hostname)!==-1){
+  document.querySelector("#brand a").setAttribute("href","/");
+}
+</script>
+</body>
+</html>

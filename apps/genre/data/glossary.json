@@ -1,0 +1,183 @@
+{
+  "title": "Glossary",
+  "subtitle": "Every term and symbol used across the BEARDOWN experiment — grouped, searchable, with equations in KaTeX.",
+  "groups": [
+    {
+      "id": "model",
+      "label": "Model & architecture",
+      "terms": [
+        {
+          "term": "Spectrogram",
+          "def": "A 2-D image of frequency content over time. The visual modality fed to the CNN."
+        },
+        {
+          "term": "Multimodal",
+          "def": "A model that consumes more than one input type at once — here a spectrogram image and a tabular feature vector."
+        },
+        {
+          "term": "Encoder",
+          "def": "A sub-network mapping one modality into a latent vector. BEARDOWN has two: a CNN and an MLP."
+        },
+        {
+          "term": "Embedding",
+          "def": "The compact learned vector an encoder produces — the modality reduced to a few hundred numbers."
+        },
+        {
+          "term": "CNN",
+          "def": "Convolutional neural network. The spectrogram encoder (conv $\\to$ ReLU $\\to$ pool $\\to$ flatten $\\to$ dense)."
+        },
+        {
+          "term": "MLP",
+          "def": "Multilayer perceptron — stacked dense layers. The tabular encoder over the 58 audio features."
+        },
+        {
+          "term": "Fusion (concat / gated)",
+          "def": "Combines the two embeddings into one vector — by concatenation or a learned gate. Deterministic."
+        },
+        {
+          "term": "Logits",
+          "def": "Raw, unnormalized class scores produced just before the softmax."
+        },
+        {
+          "term": "Softmax",
+          "def": "Maps logits to a probability distribution over the 10 genres.",
+          "eq": "\\mathrm{softmax}(z)_i=\\frac{e^{z_i}}{\\sum_j e^{z_j}}"
+        }
+      ]
+    },
+    {
+      "id": "bayes",
+      "label": "Bayesian / probabilistic",
+      "terms": [
+        {
+          "term": "Prior $p(w)$",
+          "def": "Belief about the head's weights before seeing data — a Gaussian whose width is set by $\\texttt{prior\\_scale}$."
+        },
+        {
+          "term": "Posterior $q_\\phi(w)$",
+          "def": "The fitted (approximate) belief about the weights after training. Here a mean-field Gaussian $\\mathcal{N}(\\mu,\\sigma^2)$."
+        },
+        {
+          "term": "Mean-field",
+          "def": "The posterior factorizes per-weight (a diagonal Gaussian) — no modeled correlations between weights. Cheap, but geometrically thin."
+        },
+        {
+          "term": "KL divergence",
+          "def": "How far $q$ sits from $p$; the regularizer that keeps the posterior honest.",
+          "eq": "\\mathrm{KL}(q\\,\\Vert\\,p)=\\int q(w)\\,\\log\\frac{q(w)}{p(w)}\\,dw"
+        },
+        {
+          "term": "Variational inference",
+          "def": "Approximating an intractable true posterior with a simpler family $q_\\phi$, fit by maximizing the ELBO."
+        },
+        {
+          "term": "Reparameterization trick",
+          "def": "Writing a sample so gradients flow through the randomness.",
+          "eq": "w=\\mu+\\sigma\\odot\\epsilon,\\qquad \\epsilon\\sim\\mathcal{N}(0,I)"
+        },
+        {
+          "term": "Flipout",
+          "def": "A variance-reduction scheme that decorrelates weight perturbations across a minibatch — cheaper, lower-noise gradients for the variational head."
+        },
+        {
+          "term": "MC-Dropout",
+          "def": "Leaving dropout active at inference and averaging repeated passes — a cheap approximate posterior. BEARDOWN's alternative head variant."
+        },
+        {
+          "term": "Monte-Carlo evaluation",
+          "def": "Averaging over $T$ sampled passes to form the predictive distribution.",
+          "eq": "p(y\\mid x)\\approx\\frac{1}{T}\\sum_{t=1}^{T}\\mathrm{softmax}\\!\\big(f(x;w_t)\\big),\\quad w_t\\sim q(w)"
+        },
+        {
+          "term": "Epistemic uncertainty",
+          "def": "Model uncertainty from limited data — reducible by collecting more. The signal behind “more data, or am I done?”"
+        },
+        {
+          "term": "Aleatoric uncertainty",
+          "def": "Irreducible noise in the data itself (ambiguous clips, mislabels) — more data won't remove it."
+        }
+      ]
+    },
+    {
+      "id": "training",
+      "label": "Training",
+      "terms": [
+        {
+          "term": "NLL",
+          "def": "Negative log-likelihood — the data-fit term of the loss. Low when the model assigns high probability to the true genre.",
+          "eq": "-\\log p(y\\mid x)"
+        },
+        {
+          "term": "ELBO",
+          "def": "Evidence lower bound — the training objective. Maximizing it is identical to minimizing the (negative-ELBO) loss.",
+          "eq": "\\mathrm{ELBO}=\\mathbb{E}_{q(w)}\\!\\big[\\log p(y\\mid x,w)\\big]-\\mathrm{KL}\\!\\big(q(w)\\,\\Vert\\,p(w)\\big)"
+        },
+        {
+          "term": "Optimizer",
+          "def": "The gradient-descent algorithm that minimizes the loss — Adam / AdamW / RMSprop, chosen per sweep. Distinct from the ELBO, which is the objective."
+        },
+        {
+          "term": "$\\texttt{kl\\_factor}$",
+          "def": "Sweep knob that rescales the weight of the KL term in the loss, trading data-fit against regularization."
+        }
+      ]
+    },
+    {
+      "id": "data",
+      "label": "Data & preprocessing",
+      "terms": [
+        {
+          "term": "z-score standardization",
+          "def": "Rescaling each feature to mean 0, std 1. Fit on the train split only.",
+          "eq": "z=\\frac{x-\\mu}{\\sigma}"
+        },
+        {
+          "term": "Winsorization",
+          "def": "Clipping extreme outliers to percentile caps so a few wild values don't dominate the scaler."
+        },
+        {
+          "term": "Track-level split",
+          "def": "Keeping every segment/representation of one recording in a single split, so the model can't memorize a song across train and test (the GTZAN leakage guard)."
+        },
+        {
+          "term": "Stratified split",
+          "def": "Splitting within each genre so all 10 classes keep their proportions across train / val / test."
+        },
+        {
+          "term": "Leakage",
+          "def": "When information about a test example reaches training — on GTZAN, segments of the same song landing in both splits, inflating accuracy (Sturm 2013)."
+        }
+      ]
+    },
+    {
+      "id": "eval",
+      "label": "Evaluation & metrics",
+      "terms": [
+        {
+          "term": "k-fold cross-validation",
+          "def": "Rotating train/validation over $k$ partitions and averaging — here $k=3$. Estimates stability, not just one-shot accuracy."
+        },
+        {
+          "term": "Hyperparameter sweep",
+          "def": "A randomized search over configurations (BEARDOWN: $n=20$) to find good settings without grid-searching everything."
+        },
+        {
+          "term": "RRM",
+          "def": "Robust Ranking Metric — folds accuracy, CV stability, and posterior dispersion into one reliability-aware score. Q2's central contribution."
+        },
+        {
+          "term": "Posterior dispersion",
+          "def": "How spread-out the posterior is — wider means the model is less certain about its weights."
+        },
+        {
+          "term": "Pareto front",
+          "def": "The set of configs where you can't gain accuracy without losing reliability (or vice-versa) — the honest tradeoff frontier."
+        },
+        {
+          "term": "Rank aggregation",
+          "def": "Combining several metric rankings into a single consensus ordering of configurations."
+        }
+      ]
+    }
+  ]
+}

@@ -232,7 +232,14 @@ def from_bundle(bundle_dir, tau=1.0, device="cpu"):
     hmc = LastLayerHMC(phi, y, n_classes=n_classes, tau=tau)
 
     # use the trained MAP weights as the HMC init (faster warmup)
-    import torch
+    try:
+        import torch
+    except ImportError:
+        hz = d / "head.npz"          # torch-free fallback: exported final Linear
+        if hz.exists():
+            h = np.load(hz)
+            hmc._theta0 = hmc._pack(h["W"], h["b"])
+        return hmc                    # no init is fine - just slower warmup
     sd = torch.load(d / "weights.pt", map_location=device)
     dphi = phi.shape[1]
     W = bkey = None

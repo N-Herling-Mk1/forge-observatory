@@ -6,3 +6,5 @@ models/*
 runs/
 *.pkl
 *.torch
+apps/*/models/*
+!apps/*/models/README.md

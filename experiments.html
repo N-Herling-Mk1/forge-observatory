@@ -132,7 +132,10 @@
     </div>
 
     <nav id="plates">
-      <a class="plate" href="coming-soon.html?exp=genre">
+      <!-- FLIPPED (session 3): plate -> genre app landing (model select -> dashboard).
+           Dead until the tunnel is live; if pushing to Pages before Phase-B P1,
+           revert this href to coming-soon.html?exp=genre -->
+      <a class="plate" id="plate-genre" href="https://genre.forge-observatory.com/">
         <span class="edge"></span><h2>Beardown</h2>
       </a>
       <a class="plate" href="coming-soon.html?exp=phonon">
@@ -149,5 +152,13 @@
     <a href="index.html">documentation hub</a>
   </footer>
 
+<script>
+  /* smart localhost: served by the local Flask stack, the Beardown plate
+     targets the in-process app instead of the public subdomain */
+  if (["127.0.0.1","localhost"].indexOf(location.hostname) !== -1) {
+    var g = document.getElementById("plate-genre");
+    if (g) g.setAttribute("href", "/select");
+  }
+</script>
 </body>
 </html>

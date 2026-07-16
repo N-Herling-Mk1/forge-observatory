@@ -245,7 +245,15 @@ def from_bundle(bundle_dir, device="cpu", last_linear_key=None) -> LastLayerLapl
     Lambda, U = eig["Lambda"], eig["U"]
     phi_train = np.load(d / "phi_train.npy")
 
-    import torch
+    try:
+        import torch
+    except ImportError:
+        hz = d / "head.npz"          # torch-free fallback: exported final Linear
+        if hz.exists():
+            h = np.load(hz)
+            return LastLayerLaplace(Lambda, U, h["W"], h["b"], phi_train=phi_train)
+        raise ImportError("torch unavailable and no head.npz in bundle "
+                          f"{d.name} - export one or install torch")
     sd = torch.load(d / "weights.pt", map_location=device)
     # find the final Linear: weight [C, d] with d == phi dim, prefer an explicit key
     dphi = phi_train.shape[1]
