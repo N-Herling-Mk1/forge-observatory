@@ -1,12 +1,12 @@
 ﻿# =====================================================================
-# publish_mk1.ps1  -  the "door 2" button.
+# publish_mk2.ps1  -  the "door 2" button.
 # Dev loop stays:  python apps\genre\app\server.py   (local, auto-port)
-# When happy:      .\publish_mk1.ps1                 (this file)
+# When happy:      .\publish_mk2.ps1                 (this file)
 #
 # What it does, in order:
 #   [1] Docker engine up (launches Docker Desktop + waits if needed)
 #   [2] docker compose build genre        (bakes current code + artifacts)
-#   [3] docker compose up -d genre        (container on 127.0.0.1:5001)
+#   [3] docker compose up -d genre        (container on 127.0.0.1:5601)
 #   [4] smoke the container health endpoint
 #   [5] tunnel: if .env carries TUNNEL_TOKEN -> up cloudflared + smoke the
 #       public subdomain; if not -> prints the ONE-TIME setup and continues
@@ -21,7 +21,7 @@ param(
 )
 $ErrorActionPreference = "Continue"
 $PIPE   = "\\.\pipe\dockerDesktopLinuxEngine"
-$LOCAL  = "http://127.0.0.1:5001/api/health"
+$LOCAL  = "http://127.0.0.1:5601/api/health"
 $PUBLIC = "https://genre.forge-observatory.com/api/health"
 
 function Say([string]$m, [string]$c = "Cyan") { Write-Host $m -ForegroundColor $c }
@@ -37,7 +37,7 @@ function Probe([string]$url, [int]$tries, [int]$gap, [string]$label) {
     return $false
 }
 
-Say "=== publish_mk1 ===" "Yellow"
+Say "=== publish_mk2 ===" "Yellow"
 
 # ---- [1/6] engine ------------------------------------------------------
 Say "[1/6] docker engine"
@@ -77,7 +77,7 @@ Say "     ok" "Green"
 
 # ---- [4/6] local smoke -----------------------------------------------------
 Say "[4/6] container smoke ($LOCAL)"
-if (Probe $LOCAL 10 2 "container") { Say "     ok  container answering on 127.0.0.1:5001" "Green" }
+if (Probe $LOCAL 10 2 "container") { Say "     ok  container answering on 127.0.0.1:5601" "Green" }
 else { Say "     FAIL - container not answering; docker compose logs genre" "Red"; exit 1 }
 
 # ---- [5/6] tunnel ------------------------------------------------------------
@@ -95,7 +95,7 @@ if ($hasToken) {
     Say "       1. one.dash.cloudflare.com -> Zero Trust -> Networks -> Tunnels -> Create (Cloudflared), name: forge" "DarkYellow"
     Say "       2. copy the token -> repo root .env:   TUNNEL_TOKEN=<paste>" "DarkYellow"
     Say "       3. tunnel Public Hostname: genre.forge-observatory.com -> HTTP -> genre:5000" "DarkYellow"
-    Say "       4. re-run .\publish_mk1.ps1  (fully hands-off from then on)" "DarkYellow"
+    Say "       4. re-run .\publish_mk2.ps1  (fully hands-off from then on)" "DarkYellow"
 }
 
 # ---- [6/6] push --------------------------------------------------------------
@@ -111,7 +111,7 @@ else {
 
 Say ""
 Say "PUBLISH COMPLETE." "Yellow"
-Say ("  local container : http://127.0.0.1:5001")
+Say ("  local container : http://127.0.0.1:5601")
 Say ("  public          : " + $(if ($hasToken) { "https://genre.forge-observatory.com  +  https://forge-observatory.com" } else { "skipped (no tunnel token yet)" }))
 Say "  dev loop untouched: python apps\genre\app\server.py"
 exit 0

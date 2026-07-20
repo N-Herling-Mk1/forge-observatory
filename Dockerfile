@@ -21,6 +21,10 @@ WORKDIR /workspace
 # deps first -> this layer survives source edits, so rebuilds are fast
 COPY pyproject.toml uv.lock* ./
 RUN uv sync --extra eda --extra app --frozen || uv sync --extra eda --extra app
+# The SERVE path (src/predict, src/bundle, src/bayes) is torch — pyproject only
+# documents the TF training tier, so torch must be added explicitly. CPU wheel:
+# the :cpu image should not haul CUDA. (GPU variant: swap index for cu121.)
+RUN uv pip install --python /opt/forge-venv/bin/python --no-cache torch --index-url https://download.pytorch.org/whl/cpu
 
 COPY . .
 ENV PYTHONPATH=/workspace

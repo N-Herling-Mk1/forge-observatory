@@ -1,0 +1,334 @@
+[
+  {
+    "label": "baseline",
+    "ts": "2026-07-20T18:37:53+00:00",
+    "device": "cpu",
+    "cache_bundles": false,
+    "import_ms": 1300.8,
+    "files": [
+      {
+        "wav": "Romeo Void - Never Say Never.wav",
+        "size_kb": 47860.1,
+        "repeats": [
+          {
+            "kind": "cold",
+            "total_ms": 24964.2,
+            "decode_ms": 6810.1,
+            "models": [
+              {
+                "label": "mk1 \u00b7 beardown",
+                "load_ms": 84.8,
+                "predict_ms": 6854.9,
+                "n_windows": 9,
+                "feat_mel_ms": 2120.7,
+                "feat_tab_ms": 53314.5,
+                "mc_fwd_ms": 600.8,
+                "n_fwd": 9,
+                "error": null
+              },
+              {
+                "label": "mk2 \u00b7 beardown_rrm",
+                "load_ms": 54.9,
+                "predict_ms": 2773.0,
+                "n_windows": 9,
+                "feat_mel_ms": 590.7,
+                "feat_tab_ms": 17637.5,
+                "mc_fwd_ms": 557.4,
+                "n_fwd": 9,
+                "error": null
+              },
+              {
+                "label": "mk3 \u00b7 beardown_3sec",
+                "load_ms": 54.0,
+                "predict_ms": 8424.3,
+                "n_windows": 92,
+                "feat_mel_ms": 152.8,
+                "feat_tab_ms": 68968.5,
+                "mc_fwd_ms": 5657.2,
+                "n_fwd": 92,
+                "error": null
+              }
+            ]
+          },
+          {
+            "kind": "warm",
+            "total_ms": 14097.1,
+            "decode_ms": 186.9,
+            "models": [
+              {
+                "label": "mk1 \u00b7 beardown",
+                "load_ms": 9.4,
+                "predict_ms": 2802.3,
+                "n_windows": 9,
+                "feat_mel_ms": 642.3,
+                "feat_tab_ms": 17350.3,
+                "mc_fwd_ms": 563.1,
+                "n_fwd": 9,
+                "error": null
+              },
+              {
+                "label": "mk2 \u00b7 beardown_rrm",
+                "load_ms": 13.4,
+                "predict_ms": 2814.9,
+                "n_windows": 9,
+                "feat_mel_ms": 673.7,
+                "feat_tab_ms": 17772.2,
+                "mc_fwd_ms": 510.7,
+                "n_fwd": 9,
+                "error": null
+              },
+              {
+                "label": "mk3 \u00b7 beardown_3sec",
+                "load_ms": 9.9,
+                "predict_ms": 8276.6,
+                "n_windows": 92,
+                "feat_mel_ms": 152.9,
+                "feat_tab_ms": 68876.3,
+                "mc_fwd_ms": 5548.4,
+                "n_fwd": 92,
+                "error": null
+              }
+            ]
+          },
+          {
+            "kind": "warm",
+            "total_ms": 14680.1,
+            "decode_ms": 177.3,
+            "models": [
+              {
+                "label": "mk1 \u00b7 beardown",
+                "load_ms": 9.3,
+                "predict_ms": 2815.3,
+                "n_windows": 9,
+                "feat_mel_ms": 604.2,
+                "feat_tab_ms": 16983.6,
+                "mc_fwd_ms": 640.8,
+                "n_fwd": 9,
+                "error": null
+              },
+              {
+                "label": "mk2 \u00b7 beardown_rrm",
+                "load_ms": 15.8,
+                "predict_ms": 2874.2,
+                "n_windows": 9,
+                "feat_mel_ms": 816.9,
+                "feat_tab_ms": 18248.5,
+                "mc_fwd_ms": 526.7,
+                "n_fwd": 9,
+                "error": null
+              },
+              {
+                "label": "mk3 \u00b7 beardown_3sec",
+                "load_ms": 10.5,
+                "predict_ms": 8796.8,
+                "n_windows": 92,
+                "feat_mel_ms": 157.4,
+                "feat_tab_ms": 72669.4,
+                "mc_fwd_ms": 5923.6,
+                "n_fwd": 92,
+                "error": null
+              }
+            ]
+          }
+        ],
+        "median": {
+          "basis": "warm",
+          "total_ms": 14388.6,
+          "decode_ms": 182.1,
+          "models": {
+            "mk1 \u00b7 beardown": {
+              "load_ms": 9.4,
+              "predict_ms": 2808.8,
+              "feat_mel_ms": 623.2,
+              "feat_tab_ms": 17166.9,
+              "mc_fwd_ms": 602.0,
+              "n_windows": 9
+            },
+            "mk2 \u00b7 beardown_rrm": {
+              "load_ms": 14.6,
+              "predict_ms": 2844.6,
+              "feat_mel_ms": 745.3,
+              "feat_tab_ms": 18010.3,
+              "mc_fwd_ms": 518.7,
+              "n_windows": 9
+            },
+            "mk3 \u00b7 beardown_3sec": {
+              "load_ms": 10.2,
+              "predict_ms": 8536.7,
+              "feat_mel_ms": 155.2,
+              "feat_tab_ms": 70772.9,
+              "mc_fwd_ms": 5736.0,
+              "n_windows": 92
+            }
+          }
+        }
+      }
+    ]
+  },
+  {
+    "label": "cache-preview",
+    "ts": "2026-07-20T18:38:59+00:00",
+    "device": "cpu",
+    "cache_bundles": true,
+    "import_ms": 1218.5,
+    "files": [
+      {
+        "wav": "Romeo Void - Never Say Never.wav",
+        "size_kb": 47860.1,
+        "repeats": [
+          {
+            "kind": "cold",
+            "total_ms": 18352.7,
+            "decode_ms": 1492.1,
+            "models": [
+              {
+                "label": "mk1 \u00b7 beardown",
+                "load_ms": 12.8,
+                "predict_ms": 4824.4,
+                "n_windows": 9,
+                "feat_mel_ms": 1252.2,
+                "feat_tab_ms": 36271.1,
+                "mc_fwd_ms": 631.2,
+                "n_fwd": 9,
+                "error": null
+              },
+              {
+                "label": "mk2 \u00b7 beardown_rrm",
+                "load_ms": 13.1,
+                "predict_ms": 3226.7,
+                "n_windows": 9,
+                "feat_mel_ms": 630.5,
+                "feat_tab_ms": 20625.1,
+                "mc_fwd_ms": 616.6,
+                "n_fwd": 9,
+                "error": null
+              },
+              {
+                "label": "mk3 \u00b7 beardown_3sec",
+                "load_ms": 10.1,
+                "predict_ms": 8782.9,
+                "n_windows": 92,
+                "feat_mel_ms": 149.9,
+                "feat_tab_ms": 72146.5,
+                "mc_fwd_ms": 5949.3,
+                "n_fwd": 92,
+                "error": null
+              }
+            ]
+          },
+          {
+            "kind": "warm",
+            "total_ms": 14358.2,
+            "decode_ms": 180.4,
+            "models": [
+              {
+                "label": "mk1 \u00b7 beardown",
+                "load_ms": 0.0,
+                "predict_ms": 2918.8,
+                "n_windows": 9,
+                "feat_mel_ms": 655.7,
+                "feat_tab_ms": 17957.4,
+                "mc_fwd_ms": 552.7,
+                "n_fwd": 9,
+                "error": null
+              },
+              {
+                "label": "mk2 \u00b7 beardown_rrm",
+                "load_ms": 0.0,
+                "predict_ms": 2936.6,
+                "n_windows": 9,
+                "feat_mel_ms": 658.6,
+                "feat_tab_ms": 18096.9,
+                "mc_fwd_ms": 591.1,
+                "n_fwd": 9,
+                "error": null
+              },
+              {
+                "label": "mk3 \u00b7 beardown_3sec",
+                "load_ms": 0.0,
+                "predict_ms": 8306.7,
+                "n_windows": 92,
+                "feat_mel_ms": 176.4,
+                "feat_tab_ms": 70590.8,
+                "mc_fwd_ms": 5527.2,
+                "n_fwd": 92,
+                "error": null
+              }
+            ]
+          },
+          {
+            "kind": "warm",
+            "total_ms": 14787.0,
+            "decode_ms": 177.7,
+            "models": [
+              {
+                "label": "mk1 \u00b7 beardown",
+                "load_ms": 0.0,
+                "predict_ms": 2995.4,
+                "n_windows": 9,
+                "feat_mel_ms": 663.3,
+                "feat_tab_ms": 19853.7,
+                "mc_fwd_ms": 518.6,
+                "n_fwd": 9,
+                "error": null
+              },
+              {
+                "label": "mk2 \u00b7 beardown_rrm",
+                "load_ms": 0.0,
+                "predict_ms": 3084.2,
+                "n_windows": 9,
+                "feat_mel_ms": 644.9,
+                "feat_tab_ms": 19427.3,
+                "mc_fwd_ms": 621.7,
+                "n_fwd": 9,
+                "error": null
+              },
+              {
+                "label": "mk3 \u00b7 beardown_3sec",
+                "load_ms": 0.0,
+                "predict_ms": 8515.1,
+                "n_windows": 92,
+                "feat_mel_ms": 159.6,
+                "feat_tab_ms": 72507.7,
+                "mc_fwd_ms": 5679.7,
+                "n_fwd": 92,
+                "error": null
+              }
+            ]
+          }
+        ],
+        "median": {
+          "basis": "warm",
+          "total_ms": 14572.6,
+          "decode_ms": 179.1,
+          "models": {
+            "mk1 \u00b7 beardown": {
+              "load_ms": 0.0,
+              "predict_ms": 2957.1,
+              "feat_mel_ms": 659.5,
+              "feat_tab_ms": 18905.6,
+              "mc_fwd_ms": 535.7,
+              "n_windows": 9
+            },
+            "mk2 \u00b7 beardown_rrm": {
+              "load_ms": 0.0,
+              "predict_ms": 3010.4,
+              "feat_mel_ms": 651.8,
+              "feat_tab_ms": 18762.1,
+              "mc_fwd_ms": 606.4,
+              "n_windows": 9
+            },
+            "mk3 \u00b7 beardown_3sec": {
+              "load_ms": 0.0,
+              "predict_ms": 8410.9,
+              "feat_mel_ms": 168.0,
+              "feat_tab_ms": 71549.2,
+              "mc_fwd_ms": 5603.4,
+              "n_windows": 92
+            }
+          }
+        }
+      }
+    ]
+  }
+]

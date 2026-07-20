@@ -1,0 +1,109 @@
+FORGE PERF PASS - SESSION RECORD (Jul 20, 2026)
+=================================================
+Status: PARKED by design. Genre (BEARDOWN) drop path measured + diagnosed;
+fixes scoped but NOT applied. Resume when phonon + ATLAS LLP are integrated
+and the complete site is up for whole-site testing.
+
+-------------------------------------------------------------------
+1. WHAT EXISTS (instruments - all read-only, none change the site)
+-------------------------------------------------------------------
+  lag_probe_mk1.ps1      repo root. GET latency: local container vs public
+                         tunnel, medians, cf-cache-status, -Burst serialization
+                         check. Run from the server box AND (still owed) from a
+                         phone hotspot / remote network for visitor truth.
+  drop_probe_mk1.ps1     for the VISITOR PC. POSTs a real wav to the public
+                         /api/predict N times; once perf delta mk1 is applied
+                         the response carries timing_ms and each row splits
+                         wall = server compute + network/queue.
+  bench_predict_mk2.py   repo root (supersedes bench_predict.py). Imports
+                         predict_upload_multi directly, per-stage shims
+                         (load / mel / tabular / MC forwards), labeled runs
+                         appended to bench_results.json, --cache-bundles
+                         preview, --compare A B. THE before/after record.
+  bench_results.json     repo root. Raw data: 'baseline' + 'cache-preview'
+                         runs on Romeo Void - Never Say Never.wav (48 MB).
+
+-------------------------------------------------------------------
+2. MEASUREMENTS (Jul 20, server box, native, CPU, torch threads = 20)
+-------------------------------------------------------------------
+GET layer (lag_probe): app compute 3-21 ms; tunnel+edge delta ~150-170 ms
+  same-box (upper-ish bound, hotspot run still owed); cf_cache DYNAMIC
+  everywhere (no edge caching until delta mk1's FORGE_EDGE_CACHE lands).
+Serialization (burst): local ratio 6.6x -> Werkzeug single-worker CONFIRMED.
+  Public 1.8x is a false negative (RTT overlap hides it). One drop = whole
+  site frozen for every visitor until gunicorn (delta mk1) is applied.
+Cold torch import: 1.3-2.5 s, once per process / container boot (H4).
+
+Drop path baseline (bench, warm medians, full ~4.5 min song):
+  TOTAL 14.4 s  =  ~7 s librosa features (wall, threaded)
+                 + ~6.8 s MC-dropout forwards (wall, serial)
+                 + 0.2 s decode (cold decode 6.8 s = OS file cache, ignore)
+
+  model            windows  load   features~wall  mc_fwd(wall)  predict
+  mk1 beardown        9     9 ms      ~2.1 s        0.60 s       2.81 s
+  mk2 beardown_rrm    9    15 ms      ~2.2 s        0.52 s       2.84 s
+  mk3 beardown_3sec  92    10 ms      ~2.7 s        5.74 s       8.54 s
+
+  (feat_* in the JSON are per-call sums across threads - CPU-cost-like,
+   inflated by contention; mc_fwd is serial so its sum IS wall.)
+
+-------------------------------------------------------------------
+3. HYPOTHESIS VERDICTS
+-------------------------------------------------------------------
+  H1 per-drop bundle reload   ACQUITTED. 35 ms/drop warm; cache-preview run
+                              changed nothing. DROPPED from the fix list.
+  H2 batch-1 MC forwards      CONFIRMED - biggest single block. mk3 does
+                              92 windows x 20 passes at batch 1 = 5.74 s
+                              serial (40% of the drop). Fix: 20 passes of
+                              batch-92; dropout masks independent per batch
+                              element -> sigma statistics identical.
+  H3 librosa per window       CONFIRMED co-monster (~half the drop) PLUS
+                              discovery: mk1 and mk2 compute IDENTICAL
+                              features on IDENTICAL 9 windows (~17-18 s CPU
+                              each, pure duplication; only scaler column
+                              order differs). Fix: compute the 30-s window
+                              feature set once, feed both. mk3's 92-window
+                              pass is training-recipe-bound - do not touch.
+  H4 cold torch import        SIZED: 1.3-2.5 s per boot. Optional boot
+                              warm-start later; not urgent.
+
+-------------------------------------------------------------------
+4. FIX LEDGER
+-------------------------------------------------------------------
+  perf delta mk1   DELIVERED, NOT APPLIED (forge_perf_delta_mk1.zip).
+                   Server layer only: gunicorn gthread -w 1 --threads 8
+                   (un-freezes site during inference), [predict] per-drop
+                   timer line + timing_ms in the JSON, FORGE_EDGE_CACHE
+                   env-gated Cloudflare headers, _FORGE/HMC locks,
+                   FORGE_BANNER. Dev loop untouched. Apply: Expand-Archive
+                   -Force at repo root -> publish_mk3 -NoPush (rebuild).
+                   Does NOT speed the drop itself.
+  perf delta mk2   SCOPED, NOT BUILT. src/predict.py only, fidelity-
+                   identical: (a) batch MC forwards for all models,
+                   (b) shared mk1<->mk2 30-s window features. Expected
+                   total ~14.4 s -> ~8-10 s warm (mk3 ~4-5 s). Verify:
+                   bench --label mk2, then --compare baseline mk2.
+  perf delta mk3   QUEUED IDEA. Progressive per-model cards (mk1/mk2
+                   render ~3 s while mk3 finishes) - the UX lever once
+                   the drop is feature-bound. Composes with delta mk1.
+  PARKED           Stage-A "site inspector" project: generalized
+                   lag_probe (any URL) + the labeled-run/shim bench
+                   pattern as its data layer. Enters via workflow stage A
+                   as a definitions doc, on request.
+
+-------------------------------------------------------------------
+5. RESUME CHECKLIST (when the complete site is up)
+-------------------------------------------------------------------
+  [ ] Re-run baseline: bench_predict_mk2.py <same wav> -N 3 --label base2
+      (same track = comparable; code may have moved under it)
+  [ ] Apply perf delta mk1 -> publish -> lag_probe -Burst (expect ~1-2x
+      local), verify cf_cache flips DYNAMIC -> HIT on figures/css
+  [ ] Build + apply perf delta mk2 -> bench --label mk2 -> --compare
+  [ ] drop_probe_mk1.ps1 from a REMOTE PC -> wall = server + network split
+  [ ] lag_probe from phone hotspot (the still-owed visitor-path numbers)
+  [ ] Per-experiment benches: phonon's heavy path is the LLLA/HMC API
+      (different shims, same labeled-run pattern); ATLAS LLP TBD when its
+      serve path exists. Site-wide pass = all three + the dashboards.
+  [ ] Decide delta mk3 (progressive cards) after mk2 numbers land.
+
+Raw data: bench_results.json | Conversation: Jul 20 perf pass session.
